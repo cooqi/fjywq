@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的待办",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "uni-data-checkbox": "../../uni_modules/uni-data-checkbox/components/uni-data-checkbox/uni-data-checkbox"
+  }
+}

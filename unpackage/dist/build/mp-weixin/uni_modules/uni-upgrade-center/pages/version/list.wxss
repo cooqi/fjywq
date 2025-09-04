@@ -1,0 +1,1 @@
+.page-loading{display:flex;justify-content:center;align-items:center;flex-direction:column;flex:1}.page-loading i{width:80rpx;height:80rpx}page,page .main,.page-loading{height:100%}.app-list{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-radius:4px;border:1px solid #2e76ba;color:#3a8ee6}.app-list uni-text{margin-left:10px}

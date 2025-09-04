@@ -1,0 +1,15 @@
+{
+  "id": "wn-calendar",
+  "name": "wn-calendar",
+  "displayName": "wn-calendar 展示打卡日历",
+  "version": "1.0.0",
+  "description": "展示打卡日历组件 | 主打轻巧易改、支持填充文本多色彩、选中日期返回、中英语言",
+  "keywords": [
+    "日历",
+    "calendar",
+    "日期",
+    "打卡",
+    "打点"
+],
+	"author": "Wenyp"
+}

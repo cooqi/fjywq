@@ -1,0 +1,298 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.sign-calendar.data-v-72eca62a {
+  width: 100%;
+  background-color: #f8f9fb;
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+.sign-calendar .top-section.data-v-72eca62a {
+  margin-bottom: 30rpx;
+}
+.sign-calendar .top-section .greeting-area.data-v-72eca62a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+}
+.sign-calendar .top-section .greeting-area .avatar-section.data-v-72eca62a {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.sign-calendar .top-section .greeting-area .avatar-section .avatar.data-v-72eca62a {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  background-color: white;
+  border: 3rpx solid #e5e5e5;
+  padding: 8rpx;
+  flex-shrink: 0;
+  z-index: 20;
+}
+.sign-calendar .top-section .greeting-area .speech-bubble.data-v-72eca62a {
+  position: relative;
+  background-color: white;
+  border-radius: 0 50rpx 50rpx 0;
+  padding: 14rpx 32rpx;
+  padding-left: 40rpx;
+  max-width: 80%;
+  border: #e5e5e5 3rpx solid;
+  left: -30rpx;
+  z-index: 2;
+  background: #c3ffff;
+}
+.sign-calendar .top-section .greeting-area .speech-bubble .greeting-text.data-v-72eca62a {
+  font-size: 26rpx;
+  color: #374151;
+  display: block;
+  font-weight: 500;
+  line-height: 1.4;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sign-calendar .top-section .greeting-area .plan-section.data-v-72eca62a {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+.sign-calendar .top-section .greeting-area .plan-section .plan-indicator.data-v-72eca62a {
+  width: 88rpx;
+  height: 88rpx;
+  background: #f4e8fd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 700;
+  position: relative;
+  transition: all 0.4s ease;
+}
+.sign-calendar .arrow-btn.data-v-72eca62a {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+.sign-calendar .arrow-btn.data-v-72eca62a:active {
+  transform: scale(0.95);
+  background-color: white;
+}
+.sign-calendar .arrow-btn .arrow-icon.data-v-72eca62a {
+  font-size: 36rpx;
+  color: #666;
+  font-weight: 500;
+}
+.sign-calendar .plan-title.data-v-72eca62a {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: 1rpx;
+}
+.sign-calendar .header .year-month-section.data-v-72eca62a {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  justify-content: space-between;
+  width: 100%;
+}
+.sign-calendar .header .year-month-section .year-month.data-v-72eca62a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sign-calendar .header .year-month-section .year-month .title.data-v-72eca62a {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 1rpx;
+}
+.sign-calendar .header .year-month-section .view-toggle.data-v-72eca62a {
+  display: flex;
+  justify-content: center;
+  gap: 20rpx;
+  align-items: center;
+}
+.sign-calendar .header .year-month-section .view-toggle .toggle-item.data-v-72eca62a {
+  width: 74rpx;
+  height: 74rpx;
+  line-height: 80rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background-color: #eff1f5;
+}
+.sign-calendar .header .year-month-section .view-toggle .toggle-item.active.data-v-72eca62a {
+  background-color: #8b5cf6;
+  color: white;
+}
+.sign-calendar .week-header.data-v-72eca62a {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx 0 10rpx;
+}
+.sign-calendar .week-header .week-item.data-v-72eca62a {
+  width: 14.2857142857%;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+.sign-calendar .calendar-grid.data-v-72eca62a {
+  position: relative;
+  height: 480rpx;
+  /* 6行 x 80rpx */
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+.sign-calendar .calendar-grid.week-view.data-v-72eca62a {
+  height: 80rpx;
+}
+.sign-calendar .calendar-grid .grid-container.data-v-72eca62a {
+  display: flex;
+  flex-wrap: wrap;
+  transition: transform 0.3s ease;
+  justify-content: space-between;
+}
+.sign-calendar .calendar-grid .grid-container .date-item.data-v-72eca62a {
+  width: 14.2857142857%;
+  height: 80rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 4rpx;
+}
+.sign-calendar .calendar-grid .grid-container .date-item.other-month .date-circle.data-v-72eca62a {
+  color: #d1d5db;
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.data-v-72eca62a {
+  position: relative;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28rpx;
+  color: #3a4050;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background-color: rgba(216, 216, 216, 0.4);
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.data-v-72eca62a:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.selected.data-v-72eca62a {
+  background-color: #8b5cf6;
+  color: white;
+  font-weight: 600;
+  border: 2px solid rgba(139, 92, 246, 0.8);
+  box-shadow: 0 6rpx 20rpx rgba(139, 92, 246, 0.4);
+  transform: scale(1.05);
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.data-v-72eca62a {
+  background-color: #8b5cf6;
+  color: white;
+  font-weight: 600;
+  position: relative;
+  /* 如果今天也是签到日期，需要显示绿色背景 */
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.data-v-72eca62a::after {
+  content: "";
+  position: absolute;
+  bottom: -2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20rpx;
+  line-height: 1;
+  color: white;
+  background-image: url("data:image/png;base64,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");
+  width: 41px;
+  height: 37px;
+  background-size: 100%;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.special-date.data-v-72eca62a {
+  background-color: #10b981;
+  /* 改为绿色 */
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.special-date.data-v-72eca62a::before {
+  content: "";
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  width: 16rpx;
+  height: 16rpx;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2rpx solid white;
+  z-index: 10;
+  /* 确保红点在最上层 */
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.special-date.data-v-72eca62a {
+  background-color: #10b981;
+  /* 绿色背景 */
+  color: white;
+  font-weight: 600;
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.special-date.data-v-72eca62a::before {
+  content: "";
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  width: 16rpx;
+  height: 16rpx;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2rpx solid white;
+  z-index: 10;
+  /* 确保红点在最上层 */
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.disabled.data-v-72eca62a {
+  color: rgba(41, 41, 41, 0.5);
+  pointer-events: none;
+}

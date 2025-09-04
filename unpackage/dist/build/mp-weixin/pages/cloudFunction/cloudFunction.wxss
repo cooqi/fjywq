@@ -1,0 +1,1 @@
+.content{padding:20px;background:#aaa1ce;color:#fff}.info{margin:10px 0;border-bottom:1px dashed #fff;padding:10px 0}.info:last-child{border-bottom:none}.date{font-size:20px;font-weight:700}

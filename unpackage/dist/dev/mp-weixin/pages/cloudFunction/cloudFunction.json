@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "宇青99",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "embed-calendar": "../../components/fd-EmbedCalendar/fd-EmbedCalendar"
+  }
+}

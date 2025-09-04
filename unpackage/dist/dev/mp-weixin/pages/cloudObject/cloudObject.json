@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "宇青公告",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "uni-link": "../../uni_modules/uni-link/components/uni-link/uni-link",
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
+    "uni-card": "../../uni_modules/uni-card/components/uni-card/uni-card"
+  }
+}
