@@ -38,7 +38,7 @@ const _sfc_main = {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
         this.list = res.result.data;
-        common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:67", res);
+        common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:66", res);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
@@ -46,7 +46,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/cloudObject/cloudObject.vue:75", err);
+        common_vendor.index.__f__("error", "at pages/cloudObject/cloudObject.vue:74", err);
       });
     },
     lower() {
@@ -58,7 +58,7 @@ const _sfc_main = {
       });
       try {
         const user = common_vendor.index.getStorageSync("userInfo");
-        common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:87", "user", user);
+        common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:86", "user", user);
         if (!user) {
           common_vendor.index.hideLoading();
           common_vendor.index.showModal({
@@ -77,7 +77,7 @@ const _sfc_main = {
             taskID: item._id
           }
         }).then((res) => {
-          common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:106", "res", res);
+          common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:105", "res", res);
           common_vendor.index.hideLoading();
           if (res.result.code) {
             common_vendor.index.showModal({
@@ -96,7 +96,7 @@ const _sfc_main = {
             content: `添加数据失败，错误信息为：${err.message}`,
             showCancel: false
           });
-          common_vendor.index.__f__("error", "at pages/cloudObject/cloudObject.vue:126", err);
+          common_vendor.index.__f__("error", "at pages/cloudObject/cloudObject.vue:125", err);
         });
       } catch (e) {
         common_vendor.index.hideLoading();
@@ -117,10 +117,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:149", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:148", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:152", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/cloudObject/cloudObject.vue:151", err.errMsg);
           }
         }
       });
@@ -180,9 +180,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           extra: item.type
         })
       });
-    }),
-    b: _ctx.scrollTop,
-    c: common_vendor.o((...args) => $options.lower && $options.lower(...args))
+    })
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

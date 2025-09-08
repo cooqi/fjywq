@@ -1,7 +1,6 @@
 <template>
 	<view class="content">
-		<scroll-view :scroll-top="scrollTop" scroll-y="true" class="scroll-Y" 
-							@scrolltolower="lower" >
+	
 		<uni-card :sub-title="item.top?'置顶':''" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
 		
 			<view class="content"  v-if="item.content">
@@ -19,7 +18,7 @@
 				</view>
 			</view>
 		</uni-card>
-		</scroll-view>
+		
 	</view>
 </template>
 

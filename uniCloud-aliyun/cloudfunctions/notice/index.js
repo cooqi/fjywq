@@ -1,5 +1,6 @@
 'use strict';
 const db = uniCloud.database()
+const dbCmd = db.command
 exports.main = async (event, context) => {
 	//event为客户端上传的参数
 	const collection = db.collection('notice')
@@ -24,6 +25,6 @@ exports.main = async (event, context) => {
 		
 	}
 	//返回数据给客户端
-	const res=await collection.orderBy("top", "desc").orderBy("_id", "desc").get()
+	const res=await collection.where({hide: dbCmd.neq('1')}).orderBy("top", "desc").orderBy("_id", "desc").get()
 	return res
 };

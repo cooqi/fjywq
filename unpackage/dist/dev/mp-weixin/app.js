@@ -6,6 +6,7 @@ if (!Math) {
   "./pages/cloudObject/cloudObject.js";
   "./pages/clientDB/demo/demo.js";
   "./pages/storage/storage.js";
+  "./pages/meet/meet.js";
 }
 const _sfc_main = {
   onLaunch: async function() {

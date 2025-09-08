@@ -7362,7 +7362,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_KhHP2g";
+  const id = "mp-weixin_w2rRyR";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8336,6 +8336,12 @@ const pages = [
       navigationBarTitleText: "我的待办",
       enablePullDownRefresh: true
     }
+  },
+  {
+    path: "pages/meet/meet",
+    style: {
+      navigationBarTitleText: "点亮见面"
+    }
   }
 ];
 const tabBar = {
@@ -8361,6 +8367,12 @@ const tabBar = {
       iconPath: "/static/tabbar/Baby.png",
       selectedIconPath: "static/tabbar/Baby1.png",
       text: "我的todo"
+    },
+    {
+      pagePath: "pages/meet/meet",
+      iconPath: "/static/tabbar/hd.png",
+      selectedIconPath: "static/tabbar/hd1.png",
+      text: "点亮见面"
     }
   ]
 };

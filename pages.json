@@ -29,6 +29,13 @@
         "navigationBarTitleText": "我的待办",
         "enablePullDownRefresh": true
       }
+    },
+    {
+    	"path" : "pages/meet/meet",
+    	"style" : 
+    	{
+    		"navigationBarTitleText" : "点亮见面"
+    	}
     }
     
 ],
@@ -54,7 +61,13 @@
         "iconPath": "/static/tabbar/Baby.png",
         "selectedIconPath": "static/tabbar/Baby1.png",
         "text": "我的todo"
-      }
+      },
+	  {
+	    "pagePath": "pages/meet/meet", 
+	    "iconPath": "/static/tabbar/hd.png",
+	    "selectedIconPath": "static/tabbar/hd1.png",
+	    "text": "点亮见面"
+	  }
     ]
   },
   "globalStyle": {
