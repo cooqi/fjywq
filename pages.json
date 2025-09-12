@@ -1,30 +1,24 @@
 {
   "pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
     {
-      "path": "pages/cloudFunction/cloudFunction",
+      "path": "pages/rili/rili",
       "style": {
         "navigationBarTitleText": "宇青99",
         "enablePullDownRefresh": false
       }
     },
     {
-      "path": "pages/cloudObject/cloudObject",
+      "path": "pages/notice/notice",
       "style": {
         "navigationBarTitleText": "宇青公告",
         "enablePullDownRefresh": true
       }
     },
     
-    {
-      "path": "pages/clientDB/demo/demo",
-      "style": {
-        "navigationBarTitleText": "留言板",
-        "enablePullDownRefresh": false
-      }
-    },
+   
     
     {
-      "path": "pages/storage/storage",
+      "path": "pages/myTodo/myTodo",
       "style": {
         "navigationBarTitleText": "我的待办",
         "enablePullDownRefresh": true
@@ -45,19 +39,19 @@
     "borderStyle": "black",
     "backgroundColor": "#ffffff",
     "list": [{
-        "pagePath": "pages/cloudFunction/cloudFunction",
+        "pagePath": "pages/rili/rili",
         "iconPath": "static/tabbar/ss.png",
         "selectedIconPath": "static/tabbar/ss1.png",
         "text": "日历"
       },
       {
-        "pagePath": "pages/cloudObject/cloudObject",
+        "pagePath": "pages/notice/notice",
         "iconPath": "static/tabbar/lm.png",
         "selectedIconPath": "static/tabbar/lm1.png",
         "text": "公告聚合"
       },
       {
-        "pagePath": "pages/storage/storage", 
+        "pagePath": "pages/myTodo/myTodo", 
         "iconPath": "/static/tabbar/Baby.png",
         "selectedIconPath": "static/tabbar/Baby1.png",
         "text": "我的todo"

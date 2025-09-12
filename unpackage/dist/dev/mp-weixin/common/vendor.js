@@ -265,12 +265,12 @@ function include(str, parts) {
 function startsWith(str, parts) {
   return parts.find((part) => str.indexOf(part) === 0);
 }
-function normalizeLocale(locale, messages2) {
+function normalizeLocale(locale, messages) {
   if (!locale) {
     return;
   }
   locale = locale.trim().replace(/_/g, "-");
-  if (messages2 && messages2[locale]) {
+  if (messages && messages[locale]) {
     return locale;
   }
   locale = locale.toLowerCase();
@@ -290,8 +290,8 @@ function normalizeLocale(locale, messages2) {
     return LOCALE_ZH_HANS;
   }
   let locales = [LOCALE_EN, LOCALE_FR, LOCALE_ES];
-  if (messages2 && Object.keys(messages2).length > 0) {
-    locales = Object.keys(messages2);
+  if (messages && Object.keys(messages).length > 0) {
+    locales = Object.keys(messages);
   }
   const lang = startsWith(locale, locales);
   if (lang) {
@@ -299,7 +299,7 @@ function normalizeLocale(locale, messages2) {
   }
 }
 class I18n {
-  constructor({ locale, fallbackLocale, messages: messages2, watcher, formater: formater2 }) {
+  constructor({ locale, fallbackLocale, messages, watcher, formater: formater2 }) {
     this.locale = LOCALE_EN;
     this.fallbackLocale = LOCALE_EN;
     this.message = {};
@@ -309,7 +309,7 @@ class I18n {
       this.fallbackLocale = fallbackLocale;
     }
     this.formater = formater2 || defaultFormatter;
-    this.messages = messages2 || {};
+    this.messages = messages || {};
     this.setLocale(locale || LOCALE_EN);
     if (watcher) {
       this.watchLocale(watcher);
@@ -391,14 +391,14 @@ function getDefaultLocale() {
   }
   return LOCALE_EN;
 }
-function initVueI18n(locale, messages2 = {}, fallbackLocale, watcher) {
+function initVueI18n(locale, messages = {}, fallbackLocale, watcher) {
   if (typeof locale !== "string") {
     const options = [
-      messages2,
+      messages,
       locale
     ];
     locale = options[0];
-    messages2 = options[1];
+    messages = options[1];
   }
   if (typeof locale !== "string") {
     locale = getDefaultLocale();
@@ -409,7 +409,7 @@ function initVueI18n(locale, messages2 = {}, fallbackLocale, watcher) {
   const i18n = new I18n({
     locale,
     fallbackLocale,
-    messages: messages2,
+    messages,
     watcher
   });
   let t2 = (key, values) => {
@@ -456,9 +456,6 @@ function initVueI18n(locale, messages2 = {}, fallbackLocale, watcher) {
   };
 }
 const SLOT_DEFAULT_NAME = "d";
-const UNI_SSR = "__uniSSR";
-const UNI_SSR_DATA = "data";
-const UNI_SSR_GLOBAL_DATA = "globalData";
 const ON_SHOW = "onShow";
 const ON_HIDE = "onHide";
 const ON_LAUNCH = "onLaunch";
@@ -1699,9 +1696,6 @@ function isRef(r2) {
 }
 function ref(value) {
   return createRef(value, false);
-}
-function shallowRef(value) {
-  return createRef(value, true);
 }
 function createRef(rawValue, shallow) {
   if (isRef(rawValue)) {
@@ -5463,78 +5457,12 @@ function vFor(source, renderItem) {
   }
   return ret;
 }
-function renderSlot(name, props = {}, key) {
-  const instance = getCurrentInstance();
-  const { parent, isMounted, ctx: { $scope } } = instance;
-  const vueIds = ($scope.properties || $scope.props).uI;
-  if (!vueIds) {
-    return;
-  }
-  if (!parent && !isMounted) {
-    onMounted(() => {
-      renderSlot(name, props, key);
-    }, instance);
-    return;
-  }
-  const invoker = findScopedSlotInvoker(vueIds, instance);
-  if (invoker) {
-    invoker(name, props, key);
-  }
-}
-function findScopedSlotInvoker(vueId, instance) {
-  let parent = instance.parent;
-  while (parent) {
-    const invokers = parent.$ssi;
-    if (invokers && invokers[vueId]) {
-      return invokers[vueId];
-    }
-    parent = parent.parent;
-  }
-}
-function withScopedSlot(fn, { name, path, vueId }) {
-  const instance = getCurrentInstance();
-  fn.path = path;
-  const scopedSlots = instance.$ssi || (instance.$ssi = {});
-  const invoker = scopedSlots[vueId] || (scopedSlots[vueId] = createScopedSlotInvoker(instance));
-  if (!invoker.slots[name]) {
-    invoker.slots[name] = {
-      fn
-    };
-  } else {
-    invoker.slots[name].fn = fn;
-  }
-  return getValueByDataPath(instance.ctx.$scope.data, path);
-}
-function createScopedSlotInvoker(instance) {
-  const invoker = (slotName, args, index2) => {
-    const slot = invoker.slots[slotName];
-    if (!slot) {
-      return;
-    }
-    const hasIndex = typeof index2 !== "undefined";
-    index2 = index2 || 0;
-    const prevInstance = setCurrentRenderingInstance(instance);
-    const data = slot.fn(args, slotName + (hasIndex ? "-" + index2 : ""), index2);
-    const path = slot.fn.path;
-    setCurrentRenderingInstance(prevInstance);
-    (instance.$scopedSlotsData || (instance.$scopedSlotsData = [])).push({
-      path,
-      index: index2,
-      data
-    });
-    instance.$updateScopedSlots();
-  };
-  invoker.slots = {};
-  return invoker;
-}
 function setRef(ref2, id, opts = {}) {
   const { $templateRefs } = getCurrentInstance();
   $templateRefs.push({ i: id, r: ref2, k: opts.k, f: opts.f });
 }
 const o$1 = (value, key) => vOn(value, key);
 const f$1 = (source, renderItem) => vFor(source, renderItem);
-const r$1 = (name, props, key) => renderSlot(name, props, key);
-const w$1 = (fn, options) => withScopedSlot(fn, options);
 const s$1 = (value) => stringifyStyle(value);
 const e$1 = (target, ...sources) => extend(target, ...sources);
 const n$1 = (value) => normalizeClass(value);
@@ -7270,23 +7198,23 @@ const messageQueue = [];
 const messageExtra = {};
 const EXCEPTION_BEGIN_MARK = "---BEGIN:EXCEPTION---";
 const EXCEPTION_END_MARK = "---END:EXCEPTION---";
-function sendConsoleMessages(messages2) {
+function sendConsoleMessages(messages) {
   if (sendConsole == null) {
-    messageQueue.push(...messages2);
+    messageQueue.push(...messages);
     return;
   }
   sendConsole(JSON.stringify(Object.assign({
     type: "console",
-    data: messages2
+    data: messages
   }, messageExtra)));
 }
 function setSendConsole(value, extra = {}) {
   sendConsole = value;
   Object.assign(messageExtra, extra);
   if (value != null && messageQueue.length > 0) {
-    const messages2 = messageQueue.slice();
+    const messages = messageQueue.slice();
     messageQueue.length = 0;
-    sendConsoleMessages(messages2);
+    sendConsoleMessages(messages);
   }
 }
 const atFileRegex = /^\s*at\s+[\w/./-]+:\d+$/;
@@ -7362,7 +7290,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_w2rRyR";
+  const id = "mp-weixin_4B8RCr";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8310,28 +8238,21 @@ const createSubpackageApp = initCreateSubpackageApp();
 }
 const pages = [
   {
-    path: "pages/cloudFunction/cloudFunction",
+    path: "pages/rili/rili",
     style: {
       navigationBarTitleText: "宇青99",
       enablePullDownRefresh: false
     }
   },
   {
-    path: "pages/cloudObject/cloudObject",
+    path: "pages/notice/notice",
     style: {
       navigationBarTitleText: "宇青公告",
       enablePullDownRefresh: true
     }
   },
   {
-    path: "pages/clientDB/demo/demo",
-    style: {
-      navigationBarTitleText: "留言板",
-      enablePullDownRefresh: false
-    }
-  },
-  {
-    path: "pages/storage/storage",
+    path: "pages/myTodo/myTodo",
     style: {
       navigationBarTitleText: "我的待办",
       enablePullDownRefresh: true
@@ -8351,19 +8272,19 @@ const tabBar = {
   backgroundColor: "#ffffff",
   list: [
     {
-      pagePath: "pages/cloudFunction/cloudFunction",
+      pagePath: "pages/rili/rili",
       iconPath: "static/tabbar/ss.png",
       selectedIconPath: "static/tabbar/ss1.png",
       text: "日历"
     },
     {
-      pagePath: "pages/cloudObject/cloudObject",
+      pagePath: "pages/notice/notice",
       iconPath: "static/tabbar/lm.png",
       selectedIconPath: "static/tabbar/lm1.png",
       text: "公告聚合"
     },
     {
-      pagePath: "pages/storage/storage",
+      pagePath: "pages/myTodo/myTodo",
       iconPath: "/static/tabbar/Baby.png",
       selectedIconPath: "static/tabbar/Baby1.png",
       text: "我的todo"
@@ -10262,10 +10183,10 @@ function Gt(e2, t2, n2) {
   return e2.replace(new RegExp((s2 = t2) && Vt.test(s2) ? s2.replace(zt, "\\$&") : s2, "g"), n2);
   var s2;
 }
-const Yt = { NONE: "none", REQUEST: "request", RESPONSE: "response", BOTH: "both" }, Qt = "_globalUniCloudStatus", Xt = "_globalUniCloudSecureNetworkCache__{spaceId}", Zt = "uni-secure-network", en$1 = { SYSTEM_ERROR: { code: 2e4, message: "System error" }, APP_INFO_INVALID: { code: 20101, message: "Invalid client" }, GET_ENCRYPT_KEY_FAILED: { code: 20102, message: "Get encrypt key failed" } };
+const Yt = { NONE: "none", REQUEST: "request", RESPONSE: "response", BOTH: "both" }, Qt = "_globalUniCloudStatus", Xt = "_globalUniCloudSecureNetworkCache__{spaceId}", Zt = "uni-secure-network", en = { SYSTEM_ERROR: { code: 2e4, message: "System error" }, APP_INFO_INVALID: { code: 20101, message: "Invalid client" }, GET_ENCRYPT_KEY_FAILED: { code: 20102, message: "Get encrypt key failed" } };
 function nn(e2) {
   const { errSubject: t2, subject: n2, errCode: s2, errMsg: r2, code: i2, message: o2, cause: a2 } = e2 || {};
-  return new te({ subject: t2 || n2 || Zt, code: s2 || i2 || en$1.SYSTEM_ERROR.code, message: r2 || o2, cause: a2 });
+  return new te({ subject: t2 || n2 || Zt, code: s2 || i2 || en.SYSTEM_ERROR.code, message: r2 || o2, cause: a2 });
 }
 let Kn;
 function Hn({ secretType: e2 } = {}) {
@@ -10305,7 +10226,7 @@ function zn({ provider: e2, spaceId: t2, functionName: n2 } = {}) {
     return false;
   if ((c2[h2] || []).find((e3 = {}) => e3.appId === s2 && (e3.platform || "").toLowerCase() === o2.toLowerCase()))
     return true;
-  throw console.error(`此应用[appId: ${s2}, platform: ${o2}]不在云端配置的允许访问的应用列表内，参考：https://uniapp.dcloud.net.cn/uniCloud/secure-network.html#verify-client`), nn(en$1.APP_INFO_INVALID);
+  throw console.error(`此应用[appId: ${s2}, platform: ${o2}]不在云端配置的允许访问的应用列表内，参考：https://uniapp.dcloud.net.cn/uniCloud/secure-network.html#verify-client`), nn(en.APP_INFO_INVALID);
 }
 function Vn({ functionName: e2, result: t2, logPvd: n2 }) {
   if (this.__dev__.debugLog && t2 && t2.requestId) {
@@ -10380,7 +10301,7 @@ function Xn(e2) {
   } };
 }
 const Zn = ["db.Geo", "db.command", "command.aggregate"];
-function es$1(e2, t2) {
+function es(e2, t2) {
   return Zn.indexOf(`${e2}.${t2}`) > -1;
 }
 function ts(e2) {
@@ -10499,7 +10420,7 @@ class ss {
 function rs(e2, t2, n2) {
   return Qn(new ss(e2, t2, n2), { get(e3, t3) {
     let s2 = "db";
-    return e3 && e3.content && (s2 = e3.content.$method), es$1(s2, t3) ? rs({ $method: t3 }, e3, n2) : function() {
+    return e3 && e3.content && (s2 = e3.content.$method), es(s2, t3) ? rs({ $method: t3 }, e3, n2) : function() {
       return rs({ $method: t3, $param: ts(Array.from(arguments)) }, e3, n2);
     };
   } });
@@ -10549,7 +10470,7 @@ class os {
   }
 }
 function as(e2, t2 = {}) {
-  return Qn(new e2(t2), { get: (e3, t3) => es$1("db", t3) ? rs({ $method: t3 }, null, e3) : function() {
+  return Qn(new e2(t2), { get: (e3, t3) => es("db", t3) ? rs({ $method: t3 }, null, e3) : function() {
     return rs({ $method: t3, $param: ts(Array.from(arguments)) }, null, e3);
   } });
 }
@@ -11234,95 +11155,18 @@ let er = new class {
     ;
 })();
 var tr = er;
-function getSSRDataType() {
-  return getCurrentInstance() ? UNI_SSR_DATA : UNI_SSR_GLOBAL_DATA;
-}
-function assertKey(key, shallow = false) {
-  if (!key) {
-    throw new Error(`${shallow ? "shallowSsrRef" : "ssrRef"}: You must provide a key.`);
-  }
-}
-const ssrClientRef = (value, key, shallow = false) => {
-  const valRef = shallow ? shallowRef(value) : ref(value);
-  if (typeof window === "undefined") {
-    return valRef;
-  }
-  const __uniSSR = window[UNI_SSR];
-  if (!__uniSSR) {
-    return valRef;
-  }
-  const type = getSSRDataType();
-  assertKey(key, shallow);
-  if (hasOwn$1(__uniSSR[type], key)) {
-    valRef.value = __uniSSR[type][key];
-    if (type === UNI_SSR_DATA) {
-      delete __uniSSR[type][key];
-    }
-  }
-  return valRef;
-};
-const ssrRef = (value, key) => {
-  return ssrClientRef(value, key);
-};
-const shallowSsrRef = (value, key) => {
-  return ssrClientRef(value, key, true);
-};
-const en = {
-  "uniCloud.component.add.success": "Success",
-  "uniCloud.component.update.success": "Success",
-  "uniCloud.component.remove.showModal.title": "Tips",
-  "uniCloud.component.remove.showModal.content": "是否删除该数据"
-};
-const es = {
-  "uniCloud.component.add.success": "新增成功",
-  "uniCloud.component.update.success": "修改成功",
-  "uniCloud.component.remove.showModal.title": "提示",
-  "uniCloud.component.remove.showModal.content": "是否删除该数据"
-};
-const fr = {
-  "uniCloud.component.add.success": "新增成功",
-  "uniCloud.component.update.success": "修改成功",
-  "uniCloud.component.remove.showModal.title": "提示",
-  "uniCloud.component.remove.showModal.content": "是否删除该数据"
-};
-const zhHans = {
-  "uniCloud.component.add.success": "新增成功",
-  "uniCloud.component.update.success": "修改成功",
-  "uniCloud.component.remove.showModal.title": "提示",
-  "uniCloud.component.remove.showModal.content": "是否删除该数据"
-};
-const zhHant = {
-  "uniCloud.component.add.success": "新增成功",
-  "uniCloud.component.update.success": "修改成功",
-  "uniCloud.component.remove.showModal.title": "提示",
-  "uniCloud.component.remove.showModal.content": "是否刪除數據"
-};
-const messages = {
-  en,
-  es,
-  fr,
-  "zh-Hans": zhHans,
-  "zh-Hant": zhHant
-};
 exports._export_sfc = _export_sfc;
 exports.createSSRApp = createSSRApp;
 exports.e = e$1;
 exports.f = f$1;
-exports.getCurrentInstance = getCurrentInstance;
 exports.index = index;
 exports.initVueI18n = initVueI18n;
-exports.messages = messages;
 exports.n = n$1;
 exports.o = o$1;
-exports.onMounted = onMounted;
 exports.p = p$1;
-exports.r = r$1;
 exports.resolveComponent = resolveComponent;
 exports.s = s$1;
-exports.shallowSsrRef = shallowSsrRef;
 exports.sr = sr;
-exports.ssrRef = ssrRef;
 exports.t = t$1;
 exports.tr = tr;
-exports.w = w$1;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/common/vendor.js.map

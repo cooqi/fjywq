@@ -1,9 +1,8 @@
 {
   "pages": [
-    "pages/cloudFunction/cloudFunction",
-    "pages/cloudObject/cloudObject",
-    "pages/clientDB/demo/demo",
-    "pages/storage/storage",
+    "pages/rili/rili",
+    "pages/notice/notice",
+    "pages/myTodo/myTodo",
     "pages/meet/meet"
   ],
   "window": {
@@ -19,19 +18,19 @@
     "backgroundColor": "#ffffff",
     "list": [
       {
-        "pagePath": "pages/cloudFunction/cloudFunction",
+        "pagePath": "pages/rili/rili",
         "iconPath": "static/tabbar/ss.png",
         "selectedIconPath": "static/tabbar/ss1.png",
         "text": "日历"
       },
       {
-        "pagePath": "pages/cloudObject/cloudObject",
+        "pagePath": "pages/notice/notice",
         "iconPath": "static/tabbar/lm.png",
         "selectedIconPath": "static/tabbar/lm1.png",
         "text": "公告聚合"
       },
       {
-        "pagePath": "pages/storage/storage",
+        "pagePath": "pages/myTodo/myTodo",
         "iconPath": "/static/tabbar/Baby.png",
         "selectedIconPath": "static/tabbar/Baby1.png",
         "text": "我的todo"

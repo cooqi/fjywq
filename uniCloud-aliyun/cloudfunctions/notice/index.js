@@ -25,6 +25,6 @@ exports.main = async (event, context) => {
 		
 	}
 	//返回数据给客户端
-	const res=await collection.where({hide: dbCmd.neq('1')}).orderBy("top", "desc").orderBy("_id", "desc").get()
+	const res=await collection.where({hide: dbCmd.neq('1')}).orderBy("top", "desc").orderBy("is_today_important", "desc").orderBy("_id", "desc").get()
 	return res
 };
