@@ -44,7 +44,7 @@
 		 onShareAppMessage: function () {
 		    return {
 		      title: '宇青青宇全肯定',
-		      path: '/pages/cloudFunction/cloudFunction'
+		      path: '/pages/rili/rili'
 		    }
 		  },
 		  onShareTimeline: function () {

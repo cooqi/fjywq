@@ -1,4 +1,6 @@
 {
   "component": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "jp-time-picker": "../jp-timePicker/jp-timePicker"
+  }
 }

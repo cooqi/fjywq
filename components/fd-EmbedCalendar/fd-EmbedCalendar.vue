@@ -21,7 +21,7 @@
 		<view class="header">
 			<view class="year-month-section">
 				<view class="year-month">
-					<view class="title">{{ y }}年 {{ m + 1 }}月</view>
+					<view class="title" @click="changeYM">{{ y }}年 {{ m + 1 }}月</view>
 				</view>
 
 				<!-- 月/周视图切换按钮 -->
@@ -66,12 +66,18 @@
 				</view>
 			</view>
 		</view>
+		
+		<jpTimePicker ref='date-time' datestype="year-month" :datestring='dateString' @confirm='dateTimeChange'></jpTimePicker>
 	</view>
 </template>
 
 <script>
+	 import jpTimePicker from '@/components/jp-timePicker/jp-timePicker.vue'
 	export default {
 		name: "EmbedCalendar",
+		components: {
+			jpTimePicker
+		},
 		props: {
 			// 第一列星期几
 			weekstart: {
@@ -124,6 +130,7 @@
 				choose: "",
 				currentWeekIndex: 0, // 当前周的索引（用于周视图导航）
 				selectedDate: null, // 当前选中的日期对象（用于周视图定位）
+				dateString:''
 			};
 		},
 		created() {
@@ -371,6 +378,26 @@
 					isToday: this.isToday(i.year, i.month, i.date),
 				});
 			},
+			changeYM(){
+				//
+				 this.$refs['date-time'].show();
+			},
+			 dateTimeChange(value) {
+				this.$emit("year-month-change",value);
+				// 如果当前显示的不是所在的月份，则跳转到的月份
+				let time=value.split('-')
+				this.y=time[0]
+				this.m=parseInt(time[1]) - 1 
+				this.dates = this.monthDay(this.y, this.m);
+				// 如果在周视图下，更新周位置
+				if (!this.monthOpen) {
+					this.updateWeekPosition();
+				}
+				this.positionTop = 0;
+				
+				// 重要：更新选中日期到新月份的对应日期，确保周视图能正确定位
+				this.updateSelectedDateToCurrentMonth();
+			},
 			// 上个月/周，下个月/周 - 智能导航
 			turning(_action) {
 				if (this.monthOpen) {
@@ -543,6 +570,7 @@
 					this.m = m;
 					this.dates = this.monthDay(this.y, this.m);
 				}
+				
 
 				// 选中今天的日期（这里可以选中，因为是用户主动点击）
 				this.choose = `${y}-${m + 1}-${d}`;
@@ -800,9 +828,12 @@
 							background-color: #8b5cf6;
 							color: white;
 							font-weight: 600;
-							border: 2px solid rgba(139, 92, 246, 0.8);
+							border: 3px solid rgba(139, 92, 246, 0.8);
 							box-shadow: 0 6rpx 20rpx rgba(139, 92, 246, 0.4);
 							transform: scale(1.05);
+							&.today{
+								border-width:1px
+							}
 						}
 
 						&.today {
@@ -812,18 +843,19 @@
 							position: relative;
 
 							&::after {
-								content: ""; //可以写字代替
+								content: "今"; //可以写字代替
 								position: absolute;
 								bottom: -2rpx;
 								left: 50%;
 								transform: translateX(-50%);
-								font-size: 20rpx;
+								font-size: 30rpx;
 								line-height: 1;
 								color: white;
 								//写字注释一下
-								background-image: url("./banyue.png");
-								width: 41px;
-								height: 37px;
+								background: #8b5cf6;
+								border-radius: 100%;
+								width: 30px;
+								height: 30px;
 								background-size: 100%;
 								background-repeat: no-repeat;
 								display: flex;

@@ -4,8 +4,8 @@ const dbCmd = db.command
 exports.main = async (event, context) => {
 	//event为客户端上传的参数
 	const collection = db.collection('notice')
-	console.log(event, context)
 	let type=event.type
+	let classType=event.classType 
 	switch (type){
 		case 'update':
 			await collection.doc(event.id).update(event.data) 
@@ -25,6 +25,12 @@ exports.main = async (event, context) => {
 		
 	}
 	//返回数据给客户端
-	const res=await collection.where({hide: dbCmd.neq('1')}).orderBy("top", "desc").orderBy("is_today_important", "desc").orderBy("_id", "desc").get()
+	// 构建灵活的查询条件
+	const queryConditions = {
+	  hide: dbCmd.neq('1'),
+	  classType:classType
+	};
+
+	const res=await collection.where(queryConditions).orderBy("top", "desc").orderBy("is_today_important", "desc").orderBy("_id", "desc").get()
 	return res
 };

@@ -1,7 +1,11 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const jpTimePicker = () => "../jp-timePicker/jp-timePicker.js";
 const _sfc_main = {
   name: "EmbedCalendar",
+  components: {
+    jpTimePicker
+  },
   props: {
     // 第一列星期几
     weekstart: {
@@ -58,8 +62,9 @@ const _sfc_main = {
       choose: "",
       currentWeekIndex: 0,
       // 当前周的索引（用于周视图导航）
-      selectedDate: null
+      selectedDate: null,
       // 当前选中的日期对象（用于周视图定位）
+      dateString: ""
     };
   },
   created() {
@@ -87,7 +92,7 @@ const _sfc_main = {
       month: m,
       date: d
     };
-    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:165", "初始化完成，无选中状态");
+    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:172", "初始化完成，无选中状态");
     if (!this.monthOpen) {
       this.updateWeekPosition();
     }
@@ -150,7 +155,7 @@ const _sfc_main = {
     isSigned(y, m, d) {
       let flag = false;
       if (!this.signedDates || !Array.isArray(this.signedDates)) {
-        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:233", "签到数组为空或不是数组:", this.signedDates);
+        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:240", "签到数组为空或不是数组:", this.signedDates);
         return flag;
       }
       const dateStr = `${m}-${d}`;
@@ -255,6 +260,21 @@ const _sfc_main = {
         day: i.date,
         isToday: this.isToday(i.year, i.month, i.date)
       });
+    },
+    changeYM() {
+      this.$refs["date-time"].show();
+    },
+    dateTimeChange(value) {
+      this.$emit("year-month-change", value);
+      let time = value.split("-");
+      this.y = time[0];
+      this.m = parseInt(time[1]) - 1;
+      this.dates = this.monthDay(this.y, this.m);
+      if (!this.monthOpen) {
+        this.updateWeekPosition();
+      }
+      this.positionTop = 0;
+      this.updateSelectedDateToCurrentMonth();
     },
     // 上个月/周，下个月/周 - 智能导航
     turning(_action) {
@@ -397,10 +417,14 @@ const _sfc_main = {
     },
     // 图片加载错误处理
     onImageError(e) {
-      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:562", "头像加载失败:", e);
+      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:590", "头像加载失败:", e);
     }
   }
 };
+if (!Array) {
+  const _component_jpTimePicker = common_vendor.resolveComponent("jpTimePicker");
+  _component_jpTimePicker();
+}
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: $props.showTopSection
@@ -411,19 +435,20 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}, {
     e: common_vendor.t($data.y),
     f: common_vendor.t($data.m + 1),
-    g: common_vendor.o(($event) => $options.turning("prev")),
-    h: $data.monthOpen ? 1 : "",
-    i: common_vendor.o((...args) => $options.switchToMonth && $options.switchToMonth(...args)),
-    j: !$data.monthOpen ? 1 : "",
-    k: common_vendor.o((...args) => $options.switchToWeek && $options.switchToWeek(...args)),
-    l: common_vendor.o(($event) => $options.turning("next")),
-    m: common_vendor.f($options.weekDay, (item, index, i0) => {
+    g: common_vendor.o((...args) => $options.changeYM && $options.changeYM(...args)),
+    h: common_vendor.o(($event) => $options.turning("prev")),
+    i: $data.monthOpen ? 1 : "",
+    j: common_vendor.o((...args) => $options.switchToMonth && $options.switchToMonth(...args)),
+    k: !$data.monthOpen ? 1 : "",
+    l: common_vendor.o((...args) => $options.switchToWeek && $options.switchToWeek(...args)),
+    m: common_vendor.o(($event) => $options.turning("next")),
+    n: common_vendor.f($options.weekDay, (item, index, i0) => {
       return {
         a: common_vendor.t(item),
         b: index
       };
     }),
-    n: common_vendor.f($data.dates, (item, index, i0) => {
+    o: common_vendor.f($data.dates, (item, index, i0) => {
       return {
         a: common_vendor.t(item.date),
         b: $data.choose == `${item.year}-${item.month + 1}-${item.date}` ? 1 : "",
@@ -435,8 +460,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         h: common_vendor.o(($event) => $options.selectOne(item, $event), index)
       };
     }),
-    o: `translateY(${$data.positionTop}rpx)`,
-    p: !$data.monthOpen ? 1 : ""
+    p: `translateY(${$data.positionTop}rpx)`,
+    q: !$data.monthOpen ? 1 : "",
+    r: common_vendor.sr("date-time", "72eca62a-0"),
+    s: common_vendor.o($options.dateTimeChange),
+    t: common_vendor.p({
+      datestype: "year-month",
+      datestring: $data.dateString
+    })
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-72eca62a"]]);

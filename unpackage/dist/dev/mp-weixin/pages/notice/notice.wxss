@@ -93,3 +93,6 @@
 .today .uni-card .uni-card__header .uni-card__header-content .uni-card__header-content-subtitle {
   background: #b9f0ff;
 }
+.tabs {
+  padding: 0 10px;
+}

@@ -40,3 +40,6 @@
   font-size: 20px;
   font-weight: bold;
 }
+.segmented {
+  margin-bottom: 15px;
+}

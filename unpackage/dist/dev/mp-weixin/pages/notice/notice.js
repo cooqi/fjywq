@@ -4,13 +4,15 @@ const _sfc_main = {
   data() {
     return {
       list: [],
-      url: ""
+      url: "",
+      items: ["通知公告", "存续商务", "在/待播作品", "演出/活动"],
+      current: 0
     };
   },
   onShareAppMessage: function() {
     return {
       title: "宇青青宇全肯定",
-      path: "/pages/cloudFunction/cloudFunction"
+      path: "/pages/rili/rili"
     };
   },
   onShareTimeline: function() {
@@ -25,6 +27,12 @@ const _sfc_main = {
     this.get();
   },
   methods: {
+    onClickItem(e) {
+      if (this.current !== e.currentIndex) {
+        this.current = e.currentIndex;
+        this.get();
+      }
+    },
     get() {
       common_vendor.index.showLoading({
         title: "处理中..."
@@ -32,13 +40,14 @@ const _sfc_main = {
       common_vendor.tr.callFunction({
         name: "notice",
         data: {
-          type: "get"
+          type: "get",
+          classType: this.current.toString()
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
         this.list = res.result.data;
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:66", res);
+        common_vendor.index.__f__("log", "at pages/notice/notice.vue:78", res);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
@@ -46,7 +55,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/notice/notice.vue:74", err);
+        common_vendor.index.__f__("error", "at pages/notice/notice.vue:86", err);
       });
     },
     lower() {
@@ -58,7 +67,7 @@ const _sfc_main = {
       });
       try {
         const user = common_vendor.index.getStorageSync("userInfo");
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:86", "user", user);
+        common_vendor.index.__f__("log", "at pages/notice/notice.vue:98", "user", user);
         if (!user) {
           common_vendor.index.hideLoading();
           common_vendor.index.showModal({
@@ -77,7 +86,7 @@ const _sfc_main = {
             taskID: item._id
           }
         }).then((res) => {
-          common_vendor.index.__f__("log", "at pages/notice/notice.vue:105", "res", res);
+          common_vendor.index.__f__("log", "at pages/notice/notice.vue:117", "res", res);
           common_vendor.index.hideLoading();
           if (res.result.code) {
             common_vendor.index.showModal({
@@ -96,7 +105,7 @@ const _sfc_main = {
             content: `添加数据失败，错误信息为：${err.message}`,
             showCancel: false
           });
-          common_vendor.index.__f__("error", "at pages/notice/notice.vue:125", err);
+          common_vendor.index.__f__("error", "at pages/notice/notice.vue:137", err);
         });
       } catch (e) {
         common_vendor.index.hideLoading();
@@ -117,10 +126,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:148", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:160", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:151", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:163", err.errMsg);
           }
         }
       });
@@ -128,24 +137,31 @@ const _sfc_main = {
   }
 };
 if (!Array) {
+  const _easycom_uni_segmented_control2 = common_vendor.resolveComponent("uni-segmented-control");
   const _easycom_uni_link2 = common_vendor.resolveComponent("uni-link");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_uni_card2 = common_vendor.resolveComponent("uni-card");
-  (_easycom_uni_link2 + _easycom_uni_icons2 + _easycom_uni_card2)();
+  (_easycom_uni_segmented_control2 + _easycom_uni_link2 + _easycom_uni_icons2 + _easycom_uni_card2)();
 }
+const _easycom_uni_segmented_control = () => "../../uni_modules/uni-segmented-control/components/uni-segmented-control/uni-segmented-control.js";
 const _easycom_uni_link = () => "../../uni_modules/uni-link/components/uni-link/uni-link.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_uni_card = () => "../../uni_modules/uni-card/components/uni-card/uni-card.js";
 if (!Math) {
-  (_easycom_uni_link + _easycom_uni_icons + _easycom_uni_card)();
+  (_easycom_uni_segmented_control + _easycom_uni_link + _easycom_uni_icons + _easycom_uni_card)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return {
-    a: common_vendor.f($data.list, (item, k0, i0) => {
+    a: common_vendor.o($options.onClickItem),
+    b: common_vendor.p({
+      current: $data.current,
+      values: $data.items
+    }),
+    c: common_vendor.f($data.list, (item, k0, i0) => {
       return common_vendor.e({
         a: item.content
       }, item.content ? {
-        b: common_vendor.t(item.content)
+        b: item.content
       } : {}, {
         c: item.imgs
       }, item.imgs ? {
@@ -156,15 +172,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           };
         })
       } : {}, {
-        e: common_vendor.t(item.bz),
-        f: "10caa2c9-1-" + i0 + "," + ("10caa2c9-0-" + i0),
+        e: item.bz,
+        f: "10caa2c9-2-" + i0 + "," + ("10caa2c9-1-" + i0),
         g: common_vendor.p({
           href: item.url,
           text: item.url
         }),
         h: item.type === "task"
       }, item.type === "task" ? {
-        i: "10caa2c9-2-" + i0 + "," + ("10caa2c9-0-" + i0),
+        i: "10caa2c9-3-" + i0 + "," + ("10caa2c9-1-" + i0),
         j: common_vendor.p({
           type: "heart",
           size: "18",
@@ -174,7 +190,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       } : {}, {
         l: common_vendor.n(item.is_today_important ? "today" : ""),
         m: item._id,
-        n: "10caa2c9-0-" + i0,
+        n: "10caa2c9-1-" + i0,
         o: common_vendor.p({
           ["sub-title"]: item.top ? "置顶" : item.is_today_important ? "今日关注" : "",
           title: item.title,

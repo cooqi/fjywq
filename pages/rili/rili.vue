@@ -9,15 +9,33 @@
 			:bgcolorGreeting="bgcolorGreeting"
 			@on-click="handleDateClick"
 			@today-plan-click="handleTodayPlanClick"
+			@year-month-change="yearMonthChange"
+			@month-change="yearMonthChange"
 		  />
 	  </view>
 	<view class="content">
-		<view v-for="item in dayInfo" :key="item._id" class="info">
-			<view class="date">{{item.date}}</view>
-			<view class="title">{{item.title}}</view>
-			<view class="bz">{{item.bz}}</view>
+		<view class="uni-padding-wrap uni-common-mt segmented">
+			<uni-segmented-control :current="current" :values="items" style-type="text"
+				 @clickItem="onClickItem" />
 		</view>
-		<view v-if="!dayInfo.length">当前日期暂无相青宇关信息，如需补充，请留言，待管理员审核确认添加</view>
+		
+		<view v-if="current === 0">
+			<view v-for="item in dayInfo" :key="item._id" class="info">
+				<view class="date">{{item.date}}</view>
+				<view class="title">{{item.title}}</view>
+				<view class="bz" v-html="item.bz"></view>
+			</view>
+			<view v-if="!dayInfo.length">当前日期暂无青宇当天事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
+		</view>
+		<view v-if="current === 1">
+			<view v-for="item in dayAboutInfo" :key="item._id" class="info">
+				<view class="date">{{item.date}}</view>
+				<view class="title">{{item.title}}</view>
+				<view class="bz" v-html="item.bz"></view>
+			</view>
+			<view v-if="!dayAboutInfo.length">当前日期暂无青宇相关事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
+		</view>
+		
 		
 	</view>
 </template>
@@ -36,7 +54,11 @@
 				  signedDates: [], // 已签到日期
 				  allRili:[],
 				  dayInfo:[],
-				  bgcolorGreeting:''
+				  dayAboutInfo:[],
+				  bgcolorGreeting:'',
+				  items: ['当天事件', '相关事件'],
+				  current: 0,
+				  				
 			}
 		},
 		onLoad() {
@@ -44,10 +66,24 @@
 			this.useCommon()
 			
 		},
+		watch:{
+			dayAboutInfo:{
+				handler(val){
+					let len= val.length
+					if(len){
+						this.items[1]=`相关事件(${len}条)`
+					}else{
+						this.items[1]='相关事件'
+					}
+				},
+				immediate:true,
+				deep:true
+			}
+		},
 		onShareAppMessage: function () {
 		   return {
 		     title: '宇青青宇全肯定',
-		     path: '/pages/cloudFunction/cloudFunction'
+		     path: '/pages/rili/rili'
 		   }
 		 },
 		 onShareTimeline: function () {
@@ -56,6 +92,7 @@
 		    }
 		  },
 		methods: {
+			
 			// 日期点击事件
 			    handleDateClick(dateInfo) {
 			     // console.log('选中日期:', dateInfo);
@@ -74,6 +111,11 @@
 			    handleTodayPlanClick() {
 			      this.getDetail()
 			    },
+				//年月切换
+				yearMonthChange(){
+					this.dayInfo=[]
+					this.current=0
+				},
 			add() {
 				uni.showLoading({
 					title: '处理中...'
@@ -162,6 +204,7 @@
 						d.shift()
 						return d.join('-')
 					})
+					console.log('arr',arr)
 					this.signedDates= [...new Set(arr)];
 				}).catch((err) => {
 					uni.hideLoading()
@@ -172,22 +215,50 @@
 					console.error(err)
 				})
 			},
+			onClickItem(e) {
+				if (this.current !== e.currentIndex) {
+					this.current = e.currentIndex
+				}
+			},
+			formatDate(date) {
+			  const year = date.getFullYear();
+			  const month = String(date.getMonth() + 1).padStart(2, '0');
+			  const day = String(date.getDate()).padStart(2, '0');
+			  return `${year}-${month}-${day}`;
+			},
 			getDetail(time) {
+				this.current=0
 				const now=time?new Date(time.replace(/-/g,'/')):new Date()
 		
 				// 获取月份 (0-11, 0表示一月)
 				const month = now.getMonth() + 1; // 需要 +1 得到实际月份
 				// 获取日期 (1-31)
 				const day = now.getDate();
-				
-				this.dayInfo=this.allRili.filter(item=>{
+				this.dayAboutInfo=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
 					const m=t.getMonth() + 1;
 					const d=t.getDate()
 					//console.log(time,month,day,m,d,item)
-					return month===m&&day===d
+					const tt=this.formatDate(t)
+					const nn=this.formatDate(now)
+					return month===m&&day===d&&tt!=nn
 					
 				})
+					
+				
+				this.dayInfo=this.allRili.filter(item=>{
+					const t=new Date(item.date.replace(/-/g,'/'));
+					const m=this.formatDate(t)
+					const n=this.formatDate(now)
+					console.log(1,m,n)
+					return m===n
+					
+				})
+				if(!this.dayInfo.length&&this.dayAboutInfo.length){
+					this.current=1
+				}else{
+					this.current=0
+				}
 			},
 			useCommon() {
 				
@@ -232,6 +303,9 @@
 	.date{
 		font-size: 20px;
 		font-weight: bold;
+	}
+	.segmented{
+		margin-bottom: 15px;;
 	}
 
 	

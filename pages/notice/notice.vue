@@ -1,15 +1,18 @@
 <template>
 	<view class="content">
-	
+		<view class="tabs">
+			<uni-segmented-control :current="current" :values="items"
+			 @clickItem="onClickItem" />
+		 </view>
 		<uni-card :sub-title="item.top?'置顶':item.is_today_important?'今日关注':''" :class="[item.is_today_important?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
 		
 			<view class="content"  v-if="item.content">
-				<text class="uni-body" user-select>{{item.content}}</text>
+				<view class="uni-body" user-select v-html="item.content"></view>
 			</view>
 			<view class="imgs" v-if="item.imgs">
 				<image @click="preImg(item.imgs,index)" v-for="(img,index) in item.imgs.split(';')" class="img" :src="img" mode="aspectFill"></image>
 			</view>
-			<text class="uni-body bz">{{item.bz}}</text>
+			<view class="uni-body bz" v-html="item.bz"></view>
 			<uni-link :href="item.url" :text="item.url"></uni-link>
 			<view slot="actions" class="card-actions" v-if="item.type==='task'">
 				<view class="card-actions-item" @click="addTask(item)">
@@ -28,13 +31,15 @@
 		data() {
 			return {
 				list:[],
-				url:''
+				url:'',
+				items: ['通知公告', '存续商务','在/待播作品','演出/活动'],
+				current: 0,
 			}
 		},
 		onShareAppMessage: function () {
 		   return {
 		     title: '宇青青宇全肯定',
-		     path: '/pages/cloudFunction/cloudFunction'
+		     path: '/pages/rili/rili'
 		   }
 		 },
 		 onShareTimeline: function () {
@@ -49,6 +54,12 @@
 		  	this.get()
 		  },
 		methods: {
+			onClickItem(e){
+				if (this.current !== e.currentIndex) {
+					this.current = e.currentIndex
+					this.get()
+				}
+			},
 			
 			get() {
 				uni.showLoading({
@@ -57,7 +68,8 @@
 				uniCloud.callFunction({
 					name: 'notice',
 					data:{
-						type:'get'
+						type:'get',
+						classType:this.current.toString()
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -229,5 +241,8 @@
 		.uni-card .uni-card__header .uni-card__header-content .uni-card__header-content-subtitle{
 			background: #b9f0ff;
 		}
+	}
+	.tabs{
+		padding: 0 10px;
 	}
 </style>
