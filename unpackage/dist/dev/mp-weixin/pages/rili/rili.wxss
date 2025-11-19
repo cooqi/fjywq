@@ -28,6 +28,39 @@
   background: #aaa1ce;
   color: #fff;
 }
+.content .title {
+  font-weight: 600;
+  color: #926eff;
+  position: relative;
+}
+.content .title:before {
+  position: absolute;
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 100%;
+  background: #926eff;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  left: -7px;
+}
+.content .date {
+  font-size: 20px;
+  font-weight: bold;
+}
+.content .about .title:before {
+  background: transparent;
+}
+.content .about .date .t0 {
+  color: #aaffff;
+}
+.content .about .displayText {
+  font-weight: 100;
+  margin-left: 20px;
+  font-size: 14px;
+  color: #aaffff;
+}
 .info {
   margin: 10px 0;
   border-bottom: 1px dashed #fff;
@@ -35,10 +68,6 @@
 }
 .info:last-child {
   border-bottom: none;
-}
-.date {
-  font-size: 20px;
-  font-weight: bold;
 }
 .segmented {
   margin-bottom: 15px;

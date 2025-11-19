@@ -6,7 +6,8 @@ const _sfc_main = {
       list: [],
       url: "",
       items: ["通知公告", "存续商务", "在/待播作品", "演出/活动"],
-      current: 0
+      current: 0,
+      loading: false
     };
   },
   onShareAppMessage: function() {
@@ -37,6 +38,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
+      this.loading = true;
       common_vendor.tr.callFunction({
         name: "notice",
         data: {
@@ -47,7 +49,7 @@ const _sfc_main = {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
         this.list = res.result.data;
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:78", res);
+        this.loading = false;
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.stopPullDownRefresh();
@@ -55,7 +57,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/notice/notice.vue:86", err);
+        this.loading = false;
       });
     },
     lower() {
@@ -67,7 +69,7 @@ const _sfc_main = {
       });
       try {
         const user = common_vendor.index.getStorageSync("userInfo");
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:98", "user", user);
+        common_vendor.index.__f__("log", "at pages/notice/notice.vue:101", "user", user);
         if (!user) {
           common_vendor.index.hideLoading();
           common_vendor.index.showModal({
@@ -86,7 +88,7 @@ const _sfc_main = {
             taskID: item._id
           }
         }).then((res) => {
-          common_vendor.index.__f__("log", "at pages/notice/notice.vue:117", "res", res);
+          common_vendor.index.__f__("log", "at pages/notice/notice.vue:120", "res", res);
           common_vendor.index.hideLoading();
           if (res.result.code) {
             common_vendor.index.showModal({
@@ -105,7 +107,7 @@ const _sfc_main = {
             content: `添加数据失败，错误信息为：${err.message}`,
             showCancel: false
           });
-          common_vendor.index.__f__("error", "at pages/notice/notice.vue:137", err);
+          common_vendor.index.__f__("error", "at pages/notice/notice.vue:140", err);
         });
       } catch (e) {
         common_vendor.index.hideLoading();
@@ -126,10 +128,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:160", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:163", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:163", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:166", err.errMsg);
           }
         }
       });
@@ -151,7 +153,7 @@ if (!Math) {
   (_easycom_uni_segmented_control + _easycom_uni_link + _easycom_uni_icons + _easycom_uni_card)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-  return {
+  return common_vendor.e({
     a: common_vendor.o($options.onClickItem),
     b: common_vendor.p({
       current: $data.current,
@@ -197,8 +199,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           extra: item.type
         })
       });
-    })
-  };
+    }),
+    d: !$data.list.length && !$data.loading
+  }, !$data.list.length && !$data.loading ? {} : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;

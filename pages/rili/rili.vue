@@ -19,17 +19,21 @@
 				 @clickItem="onClickItem" />
 		</view>
 		
-		<view v-if="current === 0">
+		<view v-if="current === 0" class="today">
+			<view class="date">{{time}}</view>
 			<view v-for="item in dayInfo" :key="item._id" class="info">
-				<view class="date">{{item.date}}</view>
+				
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
 			<view v-if="!dayInfo.length">当前日期暂无青宇当天事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
 		</view>
-		<view v-if="current === 1">
+		<view v-if="current === 1" class="about">
 			<view v-for="item in dayAboutInfo" :key="item._id" class="info">
-				<view class="date">{{item.date}}</view>
+				<view class="date" v-if="item.date">
+					<text v-for="(t,i) in setArr(item.date)" :key="i"><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
+					<text v-show="item.distanceInfo.displayText" class="displayText">{{item.distanceInfo.displayText}}</text>
+				</view>
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
@@ -42,6 +46,7 @@
 
 <script>
 	import EmbedCalendar from '../../components/fd-EmbedCalendar/fd-EmbedCalendar.vue'
+	import {processJQLResults} from './rili.js'
 	export default {
 		components: {
 		  EmbedCalendar
@@ -49,7 +54,7 @@
 		data() {
 			return {
 				 userAvatar: '/static/user-avatar.png',
-				  customGreeting: '豹豹杯杯儿，今天也要加油哦！',
+				  customGreeting: '杯杯儿，今天也要加油哦！',
 				  //1 onlyFJY 2onlyWQ 3all
 				  signedDates: [], // 已签到日期
 				  allRili:[],
@@ -58,7 +63,7 @@
 				  bgcolorGreeting:'',
 				  items: ['当天事件', '相关事件'],
 				  current: 0,
-				  				
+				time:''
 			}
 		},
 		onLoad() {
@@ -92,6 +97,11 @@
 		    }
 		  },
 		methods: {
+			setArr(date){
+				if(!date) return [];
+				let arr=date.split('-')
+				return arr
+			},
 			
 			// 日期点击事件
 			    handleDateClick(dateInfo) {
@@ -114,6 +124,7 @@
 				//年月切换
 				yearMonthChange(){
 					this.dayInfo=[]
+					this.dayAboutInfo=[]
 					this.current=0
 				},
 			add() {
@@ -204,7 +215,7 @@
 						d.shift()
 						return d.join('-')
 					})
-					console.log('arr',arr)
+					//console.log('arr',arr)
 					this.signedDates= [...new Set(arr)];
 				}).catch((err) => {
 					uni.hideLoading()
@@ -229,12 +240,15 @@
 			getDetail(time) {
 				this.current=0
 				const now=time?new Date(time.replace(/-/g,'/')):new Date()
-		
+				
+				const year=now.getFullYear()
 				// 获取月份 (0-11, 0表示一月)
 				const month = now.getMonth() + 1; // 需要 +1 得到实际月份
 				// 获取日期 (1-31)
 				const day = now.getDate();
-				this.dayAboutInfo=this.allRili.filter(item=>{
+				this.time=year+'-'+month+'-'+day
+				
+				let data=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
 					const m=t.getMonth() + 1;
 					const d=t.getDate()
@@ -244,13 +258,14 @@
 					return month===m&&day===d&&tt!=nn
 					
 				})
+				this.dayAboutInfo=processJQLResults(data)
 					
 				
 				this.dayInfo=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
 					const m=this.formatDate(t)
 					const n=this.formatDate(now)
-					console.log(1,m,n)
+					//console.log(1,m,n)
 					return m===n
 					
 				})
@@ -290,6 +305,47 @@
 		padding: 20px;
 		background: #aaa1ce;
 		color: #fff;
+		.title{
+			font-weight: 600;
+			color: #926eff;
+			position: relative;
+			&:before{
+				position: absolute;
+				content: '';
+				width:5px;
+				height: 5px;
+				border-radius: 100%;
+				background:#926eff ;
+				top:0;
+				bottom: 0;
+				margin: auto;
+				left: -7px;
+			}
+		}
+		.date{
+			font-size: 20px;
+			font-weight: bold;
+			
+		}
+		.about{
+			.title{
+				
+				&:before{
+					background:transparent ;
+				}
+			}
+			.date{
+				.t0{
+					color: #aaffff;
+				}
+			}
+			.displayText{
+				font-weight: 100;
+				margin-left: 20px;
+				font-size: 14px;
+				color: #aaffff;
+			}
+		}
 	}
 	.info{
 		margin: 10px 0;
@@ -300,10 +356,6 @@
 		}
 	}
 	
-	.date{
-		font-size: 20px;
-		font-weight: bold;
-	}
 	.segmented{
 		margin-bottom: 15px;;
 	}

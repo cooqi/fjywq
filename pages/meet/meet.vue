@@ -1,6 +1,12 @@
 <template>
 	<view>
-		<button type="primary" @click="choose" style="backgroundColor:#aaa1ce;margin: 10px;">点这里选择你已见过青宇的见面会</button>
+		<view class="content" v-if="!userInfo._id">
+		     <view class="flex padding justify-center">
+		         <button class="cu-btn round bg-red" @click="getUserInfo">立即登录</button>
+		     </view>
+		 </view>
+		<view v-else>
+		<button type="primary" @click="choose" style="backgroundColor:#aaa1ce;margin: 10px;">点这里选择你参加过的青宇公开活动</button>
 		<view class="tips">{{tips}}</view>
 		<uni-popup ref="popup" background-color="#fff" type="bottom" border-radius="10px 10px 0 0">
 			<view class="popup-content" >
@@ -19,6 +25,7 @@
 					</view>
 				</uni-list-chat>
 		</uni-list>
+		</view>
 	</view>
 </template>
 
@@ -81,7 +88,48 @@
 			choose(){
 				this.$refs.popup.open()
 			},
+			getUserInfo() {
+				const _this = this
+			    uni.getUserProfile({desc: '用于完善会员资料',success: (result) => {
+			            _this.userInfo = result.userInfo
+			            _this.wxLogin()
+			        },fail: () => {
+			            uni.hideLoading();
+			            uni.showModal({content: '获取用户信息失败',showCancel: false
+			            })
+			        }
+			    })
+			},
+			wxLogin() {
+				const _this = this
+			    uni.showLoading({title: '加载中' });
 			
+			    uni.login({provider: 'weixin',success: (res) => {            // 获取 code
+			
+			            if(res.code) {
+			                uniCloud.callFunction({
+								name: 'user',
+								data: {
+									action: 'code2Session',
+									js_code: res.code,
+									user_info: _this.userInfo,
+								},
+								success: (res) => {
+									console.log('云函数返回的值：：：：', res.result)
+			                        uni.hideLoading();
+									if(res.result.result.result._id) {
+			                            uni.setStorageSync('userInfo', JSON.stringify(res.result.result.result))
+			                            _this.getUserTodoList(res.result.result.result._id)
+			                        }
+			                    },fail: (err) => {
+			                        uni.hideLoading();
+									console.log('云函数调用失败',err)
+			                    }
+			                })
+			            }
+			        }
+			    })
+			},
 			getList() {
 				uni.showLoading({
 					title: '处理中...'
@@ -91,7 +139,7 @@
 				}).then((res) => {
 					uni.hideLoading()
 					this.meetList=res.result.data.map(item=>{
-						return {text:item.title+' '+item.time,value:item._id}
+						return {text:item.title+' '+item.time+' '+item.bz,value:item._id}
 					})
 				}).catch((err) => {
 					uni.hideLoading()

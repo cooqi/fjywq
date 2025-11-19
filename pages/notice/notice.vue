@@ -21,6 +21,7 @@
 				</view>
 			</view>
 		</uni-card>
+		<view v-if="!list.length&&!loading" class="tips">暂无数据</view>
 		
 	</view>
 </template>
@@ -34,6 +35,7 @@
 				url:'',
 				items: ['通知公告', '存续商务','在/待播作品','演出/活动'],
 				current: 0,
+				loading:false
 			}
 		},
 		onShareAppMessage: function () {
@@ -65,6 +67,7 @@
 				uni.showLoading({
 					title: '处理中...'
 				})
+				this.loading=true
 				uniCloud.callFunction({
 					name: 'notice',
 					data:{
@@ -75,7 +78,7 @@
 					uni.hideLoading()
 					uni.stopPullDownRefresh();
 					this.list=res.result.data
-					console.log(res)
+					this.loading=false
 				}).catch((err) => {
 					uni.hideLoading()
 					uni.stopPullDownRefresh();
@@ -83,7 +86,7 @@
 						content: `查询失败，错误信息为：${err.message}`,
 						showCancel: false
 					})
-					console.error(err)
+					this.loading=false
 				})
 			},
 			lower(){
@@ -244,5 +247,10 @@
 	}
 	.tabs{
 		padding: 0 10px;
+	}
+	.tips{
+		text-align: center;
+		color: #ddd;
+		padding: 20px;
 	}
 </style>

@@ -96,3 +96,8 @@
 .tabs {
   padding: 0 10px;
 }
+.tips {
+  text-align: center;
+  color: #ddd;
+  padding: 20px;
+}

@@ -54,6 +54,54 @@ const _sfc_main = {
     choose() {
       this.$refs.popup.open();
     },
+    getUserInfo() {
+      const _this = this;
+      common_vendor.index.getUserProfile({
+        desc: "用于完善会员资料",
+        success: (result) => {
+          _this.userInfo = result.userInfo;
+          _this.wxLogin();
+        },
+        fail: () => {
+          common_vendor.index.hideLoading();
+          common_vendor.index.showModal({
+            content: "获取用户信息失败",
+            showCancel: false
+          });
+        }
+      });
+    },
+    wxLogin() {
+      const _this = this;
+      common_vendor.index.showLoading({ title: "加载中" });
+      common_vendor.index.login({
+        provider: "weixin",
+        success: (res) => {
+          if (res.code) {
+            common_vendor.tr.callFunction({
+              name: "user",
+              data: {
+                action: "code2Session",
+                js_code: res.code,
+                user_info: _this.userInfo
+              },
+              success: (res2) => {
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:118", "云函数返回的值：：：：", res2.result);
+                common_vendor.index.hideLoading();
+                if (res2.result.result.result._id) {
+                  common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
+                  _this.getUserTodoList(res2.result.result.result._id);
+                }
+              },
+              fail: (err) => {
+                common_vendor.index.hideLoading();
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:126", "云函数调用失败", err);
+              }
+            });
+          }
+        }
+      });
+    },
     getList() {
       common_vendor.index.showLoading({
         title: "处理中..."
@@ -63,7 +111,7 @@ const _sfc_main = {
       }).then((res) => {
         common_vendor.index.hideLoading();
         this.meetList = res.result.data.map((item) => {
-          return { text: item.title + " " + item.time, value: item._id };
+          return { text: item.title + " " + item.time + " " + item.bz, value: item._id };
         });
       }).catch((err) => {
         common_vendor.index.hideLoading();
@@ -71,7 +119,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/meet/meet.vue:102", err);
+        common_vendor.index.__f__("error", "at pages/meet/meet.vue:150", err);
       });
     },
     updateList(data) {
@@ -99,12 +147,12 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:129", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:177", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/meet/meet.vue:134", e);
+      common_vendor.index.__f__("log", "at pages/meet/meet.vue:182", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
       common_vendor.tr.callFunction({
@@ -120,7 +168,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:152", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:200", "云函数调用失败", err);
         }
       });
     },
@@ -145,11 +193,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:176", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:224", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/meet/meet.vue:180", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/meet/meet.vue:228", "用户点击取消");
           }
         }
       });
@@ -171,10 +219,14 @@ if (!Math) {
   (_easycom_uni_data_checkbox + _easycom_uni_popup + _easycom_uni_list_chat + _easycom_uni_list)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-  return {
-    a: common_vendor.o((...args) => $options.choose && $options.choose(...args)),
-    b: common_vendor.t($options.tips),
-    c: common_vendor.f($data.meetList, (item, index, i0) => {
+  return common_vendor.e({
+    a: !$data.userInfo._id
+  }, !$data.userInfo._id ? {
+    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args))
+  } : {
+    c: common_vendor.o((...args) => $options.choose && $options.choose(...args)),
+    d: common_vendor.t($options.tips),
+    e: common_vendor.f($data.meetList, (item, index, i0) => {
       return {
         a: common_vendor.o($options.change, item.value),
         b: "ebcbaa2e-1-" + i0 + ",ebcbaa2e-0",
@@ -189,13 +241,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         e: item.value
       };
     }),
-    d: common_vendor.sr("popup", "ebcbaa2e-0"),
-    e: common_vendor.p({
+    f: common_vendor.sr("popup", "ebcbaa2e-0"),
+    g: common_vendor.p({
       ["background-color"]: "#fff",
       type: "bottom",
       ["border-radius"]: "10px 10px 0 0"
     }),
-    f: common_vendor.f($data.my_meet, (item, k0, i0) => {
+    h: common_vendor.f($data.my_meet, (item, k0, i0) => {
       return {
         a: common_vendor.o(($event) => $options.del(item), item._id),
         b: item._id,
@@ -207,10 +259,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         })
       };
     }),
-    g: common_vendor.p({
+    i: common_vendor.p({
       border: true
     })
-  };
+  });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;
