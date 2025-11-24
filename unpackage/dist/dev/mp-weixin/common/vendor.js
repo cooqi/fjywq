@@ -612,7 +612,8 @@ const MINI_PROGRAM_PAGE_RUNTIME_HOOKS = /* @__PURE__ */ (() => {
   return {
     onPageScroll: 1,
     onShareAppMessage: 1 << 1,
-    onShareTimeline: 1 << 2
+    onShareTimeline: 1 << 2,
+    onShareChat: 1 << 3
   };
 })();
 function isUniLifecycleHook(name, value, checkType = true) {
@@ -6395,9 +6396,9 @@ function populateParameters(fromRes, toRes) {
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
-    uniCompileVersion: "4.76",
-    uniCompilerVersion: "4.76",
-    uniRuntimeVersion: "4.76",
+    uniCompileVersion: "4.85",
+    uniCompilerVersion: "4.85",
+    uniRuntimeVersion: "4.85",
     uniPlatform: "mp-weixin",
     deviceBrand,
     deviceModel: model,
@@ -6546,9 +6547,9 @@ const getAppBaseInfo = {
       appLanguage: getAppLanguage(hostLanguage),
       isUniAppX: false,
       uniPlatform: "mp-weixin",
-      uniCompileVersion: "4.76",
-      uniCompilerVersion: "4.76",
-      uniRuntimeVersion: "4.76"
+      uniCompileVersion: "4.85",
+      uniCompilerVersion: "4.85",
+      uniRuntimeVersion: "4.85"
     };
     extend(toRes, parameters);
   }
@@ -6899,18 +6900,22 @@ function initOnError() {
       originalConsole.error(err);
     }
   }
-  if (typeof index.onError === "function") {
-    index.onError(onError2);
-  }
-  if (typeof index.onUnhandledRejection === "function") {
-    index.onUnhandledRejection(onError2);
+  if (typeof index !== "undefined") {
+    if (typeof index.onError === "function") {
+      index.onError(onError2);
+    }
+    if (typeof index.onUnhandledRejection === "function") {
+      index.onUnhandledRejection(onError2);
+    }
   }
   return function offError2() {
-    if (typeof index.offError === "function") {
-      index.offError(onError2);
-    }
-    if (typeof index.offUnhandledRejection === "function") {
-      index.offUnhandledRejection(onError2);
+    if (typeof index !== "undefined") {
+      if (typeof index.offError === "function") {
+        index.offError(onError2);
+      }
+      if (typeof index.offUnhandledRejection === "function") {
+        index.offUnhandledRejection(onError2);
+      }
     }
   };
 }
@@ -7290,7 +7295,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_st4-dq";
+  const id = "mp-weixin_2us5m5";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8262,6 +8267,12 @@ const pages = [
     path: "pages/meet/meet",
     style: {
       navigationBarTitleText: "点亮见面"
+    }
+  },
+  {
+    path: "pages/edit/edit",
+    style: {
+      navigationBarTitleText: "编辑"
     }
   }
 ];
@@ -10000,7 +10011,7 @@ function Mt({ url: e2, data: t2, method: n2 = "POST", headers: s2 = {}, timeout:
   });
 }
 function qt(e2, t2) {
-  const { path: n2, data: s2, method: r2 = "GET" } = e2, { url: i2, headers: o2 } = Dt(n2, { functionName: "", data: s2, method: r2, headers: { "x-alipay-cloud-mode": "oss", "x-data-api-type": "oss", "x-expire-timestamp": Date.now() + 6e4 }, signHeaderKeys: ["x-data-api-type", "x-expire-timestamp"], config: t2 });
+  const { path: n2, data: s2, method: r2 = "GET" } = e2, { url: i2, headers: o2 } = Dt(n2, { functionName: "", data: s2, method: r2, headers: { "x-alipay-cloud-mode": "oss", "x-data-api-type": "oss", "x-expire-timestamp": String(Date.now() + 6e4) }, signHeaderKeys: ["x-data-api-type", "x-expire-timestamp"], config: t2 });
   return Mt({ url: i2, data: s2, method: r2, headers: o2 }).then((e3) => {
     const t3 = e3.data || {};
     if (!t3.success)

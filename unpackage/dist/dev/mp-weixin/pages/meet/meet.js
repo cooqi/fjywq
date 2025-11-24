@@ -111,7 +111,8 @@ const _sfc_main = {
       }).then((res) => {
         common_vendor.index.hideLoading();
         this.meetList = res.result.data.map((item) => {
-          return { text: item.title + " " + item.time + " " + item.bz, value: item._id };
+          let bz = item.bz || "";
+          return { text: item.title + " " + item.time + " " + bz, value: item._id };
         });
       }).catch((err) => {
         common_vendor.index.hideLoading();
@@ -119,7 +120,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/meet/meet.vue:150", err);
+        common_vendor.index.__f__("error", "at pages/meet/meet.vue:151", err);
       });
     },
     updateList(data) {
@@ -147,12 +148,12 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:177", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:178", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/meet/meet.vue:182", e);
+      common_vendor.index.__f__("log", "at pages/meet/meet.vue:183", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
       common_vendor.tr.callFunction({
@@ -168,7 +169,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:200", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:201", "云函数调用失败", err);
         }
       });
     },
@@ -193,11 +194,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:224", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:225", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/meet/meet.vue:228", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/meet/meet.vue:229", "用户点击取消");
           }
         }
       });

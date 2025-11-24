@@ -30,7 +30,14 @@
     	{
     		"navigationBarTitleText" : "点亮见面"
     	}
-    }
+	},
+	
+	{
+		"path": "pages/edit/edit",
+		"style": {
+			"navigationBarTitleText": "编辑"
+		}
+	}
     
 ],
   "tabBar": {

@@ -139,7 +139,8 @@
 				}).then((res) => {
 					uni.hideLoading()
 					this.meetList=res.result.data.map(item=>{
-						return {text:item.title+' '+item.time+' '+item.bz,value:item._id}
+						let bz=item.bz||''
+						return {text:item.title+' '+item.time+' '+bz,value:item._id}
 					})
 				}).catch((err) => {
 					uni.hideLoading()

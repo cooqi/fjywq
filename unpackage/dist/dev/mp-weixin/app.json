@@ -3,7 +3,8 @@
     "pages/rili/rili",
     "pages/notice/notice",
     "pages/myTodo/myTodo",
-    "pages/meet/meet"
+    "pages/meet/meet",
+    "pages/edit/edit"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -42,6 +43,12 @@
         "text": "点亮见面"
       }
     ]
+  },
+  "oauth": {
+    "weixin": {
+      "appid": "wx7bcde2e9584e2dc0",
+      "appsecret": "01d6259aead42a6ce41e6af927dd5c25"
+    }
   },
   "usingComponents": {}
 }

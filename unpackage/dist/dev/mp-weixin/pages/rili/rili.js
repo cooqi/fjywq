@@ -68,12 +68,18 @@ const _sfc_main = {
       bgcolorGreeting: "",
       items: ["当天事件", "相关事件"],
       current: 0,
-      time: ""
+      time: "",
+      userInfo: ""
     };
   },
   onLoad() {
     this.getList();
     this.useCommon();
+    try {
+      const userInfo = common_vendor.index.getStorageSync("userInfo");
+      this.userInfo = JSON.parse(userInfo);
+    } catch (e) {
+    }
   },
   watch: {
     dayAboutInfo: {
@@ -101,6 +107,11 @@ const _sfc_main = {
     };
   },
   methods: {
+    edit() {
+      common_vendor.index.navigateTo({
+        url: "/pages/edit/edit"
+      });
+    },
     setArr(date) {
       if (!date)
         return [];
@@ -120,88 +131,25 @@ const _sfc_main = {
       this.getDetail();
     },
     //年月切换
-    yearMonthChange() {
+    yearMonthChange(val) {
       this.dayInfo = [];
       this.dayAboutInfo = [];
       this.current = 0;
+      this.time = "";
+      this.getList(val.month);
     },
-    add() {
+    getList(month) {
+      if (!month) {
+        (/* @__PURE__ */ new Date()).getMonth() + 1;
+      }
       common_vendor.index.showLoading({
         title: "处理中..."
       });
       common_vendor.tr.callFunction({
-        name: "rili-add",
+        name: "rili-get",
         data: {
-          product: "uniCloud",
-          create_time: Date.now()
+          //month:m
         }
-      }).then((res) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: `成功添加一条数据，文档id为：${res.result.id}`,
-          showCancel: false
-        });
-      }).catch((err) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: `添加数据失败，错误信息为：${err.message}`,
-          showCancel: false
-        });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:152", err);
-      });
-    },
-    remove() {
-      common_vendor.index.showLoading({
-        title: "处理中..."
-      });
-      common_vendor.tr.callFunction({
-        name: "remove"
-      }).then((res) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: res.result.msg,
-          showCancel: false
-        });
-      }).catch((err) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: `删除失败，错误信息为：${err.message}`,
-          showCancel: false
-        });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:174", err);
-      });
-    },
-    update() {
-      common_vendor.index.showLoading({
-        title: "处理中..."
-      });
-      common_vendor.tr.callFunction({
-        name: "update",
-        data: {
-          product: "uni-app",
-          create_time: Date.now()
-        }
-      }).then((res) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: res.result.msg,
-          showCancel: false
-        });
-      }).catch((err) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.showModal({
-          content: `更新操作执行失败，错误信息为：${err.message}`,
-          showCancel: false
-        });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:200", err);
-      });
-    },
-    getList() {
-      common_vendor.index.showLoading({
-        title: "处理中..."
-      });
-      common_vendor.tr.callFunction({
-        name: "rili-get"
       }).then((res) => {
         common_vendor.index.hideLoading();
         this.allRili = JSON.parse(JSON.stringify(res.result.data));
@@ -218,7 +166,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:226", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:174", err);
       });
     },
     onClickItem(e) {
@@ -272,7 +220,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:291", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:239", err);
       });
     },
     toRedisPage() {
@@ -346,7 +294,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       });
     }),
     n: !$data.dayAboutInfo.length
-  }, !$data.dayAboutInfo.length ? {} : {}) : {});
+  }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
+    o: $data.userInfo._id === "68b547748a5c782a2b48ac30"
+  }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
+    p: common_vendor.o((...args) => $options.edit && $options.edit(...args))
+  } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;

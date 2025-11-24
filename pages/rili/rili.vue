@@ -40,6 +40,7 @@
 			<view v-if="!dayAboutInfo.length">当前日期暂无青宇相关事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
 		</view>
 		
+		<view @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
 		
 	</view>
 </template>
@@ -63,13 +64,19 @@
 				  bgcolorGreeting:'',
 				  items: ['当天事件', '相关事件'],
 				  current: 0,
-				time:''
+				time:'',
+				userInfo:''
 			}
 		},
 		onLoad() {
 			this.getList()
 			this.useCommon()
-			
+			try {
+				const userInfo = uni.getStorageSync('userInfo');
+				this.userInfo=JSON.parse(userInfo)
+			} catch (e) {
+				// error
+			}
 		},
 		watch:{
 			dayAboutInfo:{
@@ -97,6 +104,11 @@
 		    }
 		  },
 		methods: {
+			edit(){
+				uni.navigateTo({
+					url: '/pages/edit/edit'
+				});
+			},
 			setArr(date){
 				if(!date) return [];
 				let arr=date.split('-')
@@ -122,90 +134,27 @@
 			      this.getDetail()
 			    },
 				//年月切换
-				yearMonthChange(){
+				yearMonthChange(val){
 					this.dayInfo=[]
 					this.dayAboutInfo=[]
 					this.current=0
+					this.time=''
+					this.getList(val.month)
 				},
-			add() {
+			
+			getList(month) {
+				let m=month
+				if(!month){
+					m=new Date().getMonth() + 1;
+				}
 				uni.showLoading({
 					title: '处理中...'
 				})
 				uniCloud.callFunction({
-					name: 'rili-add',
-					data: {
-						product: 'uniCloud',
-						create_time: Date.now()
+					name: 'rili-get',
+					data:{
+						//month:m
 					}
-				}).then((res) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: `成功添加一条数据，文档id为：${res.result.id}`,
-						showCancel: false
-					})
-				}).catch((err) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: `添加数据失败，错误信息为：${err.message}`,
-						showCancel: false
-					})
-					console.error(err)
-				})
-			},
-			remove() {
-				uni.showLoading({
-					title: '处理中...'
-				})
-				uniCloud.callFunction({
-					name: 'remove'
-				}).then((res) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: res.result.msg,
-						showCancel: false
-					})
-					//console.log(res)
-				}).catch((err) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: `删除失败，错误信息为：${err.message}`,
-						showCancel: false
-					})
-					console.error(err)
-				})
-			},
-			update() {
-				uni.showLoading({
-					title: '处理中...'
-				})
-				uniCloud.callFunction({
-					name: 'update',
-					data: {
-						product: 'uni-app',
-						create_time: Date.now()
-					}
-				}).then((res) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: res.result.msg,
-						showCancel: false
-					})
-					//console.log(res)
-				}).catch((err) => {
-					uni.hideLoading()
-					uni.showModal({
-						content: `更新操作执行失败，错误信息为：${err.message}`,
-						showCancel: false
-					})
-					console.error(err)
-				})
-			},
-			getList() {
-				uni.showLoading({
-					title: '处理中...'
-				})
-				uniCloud.callFunction({
-					name: 'rili-get'
 				}).then((res) => {
 					uni.hideLoading()
 					this.allRili=JSON.parse(JSON.stringify(res.result.data))
@@ -215,7 +164,6 @@
 						d.shift()
 						return d.join('-')
 					})
-					//console.log('arr',arr)
 					this.signedDates= [...new Set(arr)];
 				}).catch((err) => {
 					uni.hideLoading()
