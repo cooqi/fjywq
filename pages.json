@@ -33,9 +33,15 @@
 	},
 	
 	{
-		"path": "pages/edit/edit",
+		"path": "pages/edit/rili",
 		"style": {
-			"navigationBarTitleText": "编辑"
+			"navigationBarTitleText": "编辑日历"
+		}
+	},
+	{
+		"path": "pages/edit/notice",
+		"style": {
+			"navigationBarTitleText": "编辑公告"
 		}
 	}
     

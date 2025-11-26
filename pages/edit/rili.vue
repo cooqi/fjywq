@@ -1,16 +1,19 @@
 <template>
 	<view>
-		
-		<view>
-			<view v-for="(item,i) in list" :key="i" @click="editInfo(item)">
+		<view class="search-box">
+			<text class="title">日期搜索</text>
+			<input class="uni-input" name="date" v-model="search.date" placeholder="请输入"  @blur="getList"/>
+		</view>
+		<view class="list">
+			<view class="list-item" v-for="(item,i) in list" :key="i" @click="editInfo(item)">
 				{{item.date}}-{{item.title}}
 			</view>
 		</view>
 		
 		 <view class="page">
 		      <form>
-				  <view class="uni-form-item flex-row">
-					<text class="title">日期选择</text>
+				  <view class="uni-form-item ">
+					<text class="title">日期</text>
 					<input class="uni-input" name="date" v-model="formData.date" placeholder="请输入"  />
 				  </view>
 				  
@@ -27,11 +30,12 @@
 		        
 		        
 		       
-		        <view class="flex-row">
-		          <button type="primary" class="uni-button" @click="submit('update')" v-if="formData._id">更新</button>
-		          <button type="primary" class="uni-button" @click="remove(formData._id)" v-if="formData._id">删除</button>
-		          <button type="primary" class="uni-button" @click="submit('add')" v-else>保存</button>
+		        <view class="flex-row" v-if="formData._id">
+		          <button type="primary" class="uni-button" @click="submit('update')" >更新</button>
+		          <button type="primary" class="uni-button" @click="remove(formData._id)">删除</button>
+		         <button type="primary" class="uni-button" @click="clearForm" >清空</button>
 		        </view>
+				 <button type="primary" class="uni-button" @click="submit('add')" v-else>保存</button>
 		      </form>
 
 		 </view>
@@ -48,16 +52,17 @@
 					bz:'',
 					date:''
 				},
-				time:'2015-11-21'
+				search:{
+					date:''
+				}
 			}
 		},
 		onLoad() {
-			this.getList()
+			
 		},
 		methods:{
 			editInfo(item){
-				alert(1)
-				this.formData=item
+				this.formData= {...item};
 			},
 			add() {
 				uni.showLoading({
@@ -75,7 +80,7 @@
 						content: `成功添加一条数据，文档id为：${res.result.id}`,
 						showCancel: false
 					})
-					this.getList()
+					this.clearForm()
 				}).catch((err) => {
 					uni.hideLoading()
 					uni.showModal({
@@ -93,7 +98,7 @@
 					name: 'rili-add',
 					data: {
 						type:'del',
-						params:this.formData.id
+						params:this.formData._id
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -154,12 +159,12 @@
 				uniCloud.callFunction({
 					name: 'rili-get',
 					data:{
-						time:this.time
+						search:this.search
 					}
 				}).then((res) => {
 					uni.hideLoading()
 					
-					this.list=res.result.data
+					this.list=res.result.data ||[]
 				}).catch((err) => {
 					uni.hideLoading()
 					uni.showModal({
@@ -169,10 +174,37 @@
 					console.error(err)
 				})
 			},
+			clearForm(){
+				this.formData._id=''
+				this.formData.date=''
+				this.formData.title=''
+				this.formData.bz=''
+				
+			}
 		}
 	}
 </script>
 
-<style>
-	       
+<style lang="scss">
+	.flex-row{display: flex;}
+	.title{color: cadetblue;}
+	.page{
+		padding: 5px;
+	}
+	.uni-form-item{
+		margin-bottom: 10px;
+	}
+	  .search-box{
+		  background: #eee;
+		  margin-bottom: 15px;
+		  padding: 3px;
+	  }   
+		.list{
+			margin-bottom: 20px;
+			.list-item{
+				background: #ddd;
+				margin-bottom: 5px;
+				padding: 3px;
+			}
+		}
 </style>

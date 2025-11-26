@@ -1,0 +1,1 @@
+{"version":3,"file":"edit.js","sources":["D:/ruanjian/HBuilderX.3.6.18.20230117/HBuilderX/plugins/uniapp-cli-vite/uniPage:/cGFnZXMvZWRpdC9lZGl0L2VkaXQudnVl"],"sourcesContent":["import MiniProgramPage from 'E:/web/cooqi/fjywq/pages/edit/edit/edit.vue'\nwx.createPage(MiniProgramPage)"],"names":[],"mappings":";;;;;;;AACA,GAAG,WAAW,eAAe;"}

@@ -40,7 +40,7 @@
 			<view v-if="!dayAboutInfo.length">当前日期暂无青宇相关事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
 		</view>
 		
-		<view @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
+		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
 		
 	</view>
 </template>
@@ -69,6 +69,7 @@
 			}
 		},
 		onLoad() {
+			this.time=this.formatDate(new Date())
 			this.getList()
 			this.useCommon()
 			try {
@@ -106,7 +107,7 @@
 		methods: {
 			edit(){
 				uni.navigateTo({
-					url: '/pages/edit/edit'
+					url: '/pages/edit/rili'
 				});
 			},
 			setArr(date){
@@ -120,6 +121,7 @@
 			     // console.log('选中日期:', dateInfo);
 			      // dateInfo 包含：date, year, month, day, isToday
 				  let {month, day,date}=dateInfo
+				  this.time=date
 				  this.getDetail(date)
 			    },
 			
@@ -131,6 +133,7 @@
 			
 			    // 今日计划点击事件
 			    handleTodayPlanClick() {
+				  this.time=this.formatDate(new Date())
 			      this.getDetail()
 			    },
 				//年月切换
@@ -194,7 +197,7 @@
 				const month = now.getMonth() + 1; // 需要 +1 得到实际月份
 				// 获取日期 (1-31)
 				const day = now.getDate();
-				this.time=year+'-'+month+'-'+day
+				
 				
 				let data=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
@@ -302,6 +305,10 @@
 		&:last-child{
 			border-bottom:none;
 		}
+	}
+	.edit{
+		position: fixed;
+		right: 5px;bottom: 30px;border-radius: 100%;width: 38px;height: 38px;background: #aaffff;color: #926eff;font-size: 12px;line-height: 38px;text-align: center;box-shadow: 0 0 13px 5px rgba(0,0,0,.1);
 	}
 	
 	.segmented{

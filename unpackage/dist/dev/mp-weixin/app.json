@@ -4,7 +4,8 @@
     "pages/notice/notice",
     "pages/myTodo/myTodo",
     "pages/meet/meet",
-    "pages/edit/edit"
+    "pages/edit/rili",
+    "pages/edit/notice"
   ],
   "window": {
     "navigationBarTextStyle": "black",

@@ -4,7 +4,7 @@
 			<uni-segmented-control :current="current" :values="items"
 			 @clickItem="onClickItem" />
 		 </view>
-		<uni-card :sub-title="item.top?'置顶':item.is_today_important?'今日关注':''" :class="[item.is_today_important?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
+		<uni-card @click="edit(item._id)" :sub-title="item.top?'置顶':item.is_today_important?'今日关注':''" :class="[item.is_today_important?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
 		
 			<view class="content"  v-if="item.content">
 				<view class="uni-body" user-select v-html="item.content"></view>
@@ -20,8 +20,10 @@
 					<text class="card-actions-item-text">添加到我的任务</text>
 				</view>
 			</view>
+		
 		</uni-card>
 		<view v-if="!list.length&&!loading" class="tips">暂无数据</view>
+		<view class="edit" @click="edit()" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">+</view>
 		
 	</view>
 </template>
@@ -35,7 +37,10 @@
 				url:'',
 				items: ['通知公告', '存续商务','在/待播作品','演出/活动'],
 				current: 0,
-				loading:false
+				loading:false,
+				userInfo:{
+					_id:''
+				}
 			}
 		},
 		onShareAppMessage: function () {
@@ -51,11 +56,24 @@
 		  },
 		  onLoad() {
 		  	this.get()
+			try {
+				const userInfo = uni.getStorageSync('userInfo');
+				this.userInfo=JSON.parse(userInfo)
+			} catch (e) {
+				// error
+			}
 		  },
 		  onPullDownRefresh() {
 		  	this.get()
 		  },
 		methods: {
+			edit(id){
+				if(this.userInfo._id!=='68b547748a5c782a2b48ac30') return
+				id=id||''
+				uni.navigateTo({
+					url:`/pages/edit/notice?id=${id}`
+				});
+			},
 			onClickItem(e){
 				if (this.current !== e.currentIndex) {
 					this.current = e.currentIndex
@@ -252,5 +270,9 @@
 		text-align: center;
 		color: #ddd;
 		padding: 20px;
+	}
+	.edit{
+		position: fixed;
+		right: 5px;bottom: 30px;border-radius: 100%;width: 38px;height: 38px;background: #aaffff;color: #926eff;font-size: 12px;line-height: 38px;text-align: center;box-shadow: 0 0 13px 5px rgba(0,0,0,.1);
 	}
 </style>

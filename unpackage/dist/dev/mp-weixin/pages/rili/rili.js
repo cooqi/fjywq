@@ -73,6 +73,7 @@ const _sfc_main = {
     };
   },
   onLoad() {
+    this.time = this.formatDate(/* @__PURE__ */ new Date());
     this.getList();
     this.useCommon();
     try {
@@ -109,7 +110,7 @@ const _sfc_main = {
   methods: {
     edit() {
       common_vendor.index.navigateTo({
-        url: "/pages/edit/edit"
+        url: "/pages/edit/rili"
       });
     },
     setArr(date) {
@@ -121,6 +122,7 @@ const _sfc_main = {
     // 日期点击事件
     handleDateClick(dateInfo) {
       let { month, day, date } = dateInfo;
+      this.time = date;
       this.getDetail(date);
     },
     // 月份变化事件
@@ -128,6 +130,7 @@ const _sfc_main = {
     },
     // 今日计划点击事件
     handleTodayPlanClick() {
+      this.time = this.formatDate(/* @__PURE__ */ new Date());
       this.getDetail();
     },
     //年月切换
@@ -166,7 +169,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:174", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:177", err);
       });
     },
     onClickItem(e) {
@@ -183,10 +186,9 @@ const _sfc_main = {
     getDetail(time) {
       this.current = 0;
       const now = time ? new Date(time.replace(/-/g, "/")) : /* @__PURE__ */ new Date();
-      const year = now.getFullYear();
+      now.getFullYear();
       const month = now.getMonth() + 1;
       const day = now.getDate();
-      this.time = year + "-" + month + "-" + day;
       let data = this.allRili.filter((item) => {
         const t = new Date(item.date.replace(/-/g, "/"));
         const m = t.getMonth() + 1;
@@ -220,7 +222,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:239", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:242", err);
       });
     },
     toRedisPage() {

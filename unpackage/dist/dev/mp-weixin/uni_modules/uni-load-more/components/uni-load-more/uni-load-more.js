@@ -3,7 +3,7 @@ const common_vendor = require("../../../../common/vendor.js");
 const uni_modules_uniLoadMore_components_uniLoadMore_i18n_index = require("./i18n/index.js");
 let platform;
 setTimeout(() => {
-  platform = common_vendor.index.getSystemInfoSync().platform;
+  platform = common_vendor.index.getDeviceInfo().platform;
 }, 16);
 const {
   t

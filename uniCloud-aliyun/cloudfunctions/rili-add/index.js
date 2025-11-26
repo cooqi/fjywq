@@ -7,7 +7,9 @@ exports.main = async (event, context) => {
 	let res=null
 	switch (type){
 		case 'update':
-			res = await collection.doc(params._id).update(params) 
+			let id=params._id
+			delete params._id 
+			res = await collection.doc(id).update(params) 
 		break;
 		case 'del':
 			res = await collection.doc(params).remove() 

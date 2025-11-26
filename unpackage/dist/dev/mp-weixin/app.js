@@ -6,7 +6,8 @@ if (!Math) {
   "./pages/notice/notice.js";
   "./pages/myTodo/myTodo.js";
   "./pages/meet/meet.js";
-  "./pages/edit/edit.js";
+  "./pages/edit/rili.js";
+  "./pages/edit/notice.js";
 }
 const _sfc_main = {
   onLaunch: async function() {

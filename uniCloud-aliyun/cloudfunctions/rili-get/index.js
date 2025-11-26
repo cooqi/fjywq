@@ -2,7 +2,7 @@
 const db = uniCloud.database()
 exports.main = async (event, context) => {
 	const collection = db.collection('riliCalendar')
-	 const { month ,time} = event // 从事件参数中获取年份和月份
+	 const { month ,time,search} = event // 从事件参数中获取年份和月份
 	  
 	const allRes  = await collection.orderBy("date", "desc").limit(999).get()
 	let res=allRes
@@ -27,9 +27,9 @@ exports.main = async (event, context) => {
 			data: filteredData,
 			total: filteredData.length
 		  }
-	}else if(time){
+	}else if(search){
 		// 过滤出指定日期的数据
-		res=await collection.where({date:time}).get()
+		res=await collection.where(search).get()
 	}
 	
 	return res

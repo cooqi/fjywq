@@ -7,7 +7,10 @@ const _sfc_main = {
       url: "",
       items: ["通知公告", "存续商务", "在/待播作品", "演出/活动"],
       current: 0,
-      loading: false
+      loading: false,
+      userInfo: {
+        _id: ""
+      }
     };
   },
   onShareAppMessage: function() {
@@ -23,11 +26,24 @@ const _sfc_main = {
   },
   onLoad() {
     this.get();
+    try {
+      const userInfo = common_vendor.index.getStorageSync("userInfo");
+      this.userInfo = JSON.parse(userInfo);
+    } catch (e) {
+    }
   },
   onPullDownRefresh() {
     this.get();
   },
   methods: {
+    edit(id) {
+      if (this.userInfo._id !== "68b547748a5c782a2b48ac30")
+        return;
+      id = id || "";
+      common_vendor.index.navigateTo({
+        url: `/pages/edit/notice?id=${id}`
+      });
+    },
     onClickItem(e) {
       if (this.current !== e.currentIndex) {
         this.current = e.currentIndex;
@@ -69,7 +85,7 @@ const _sfc_main = {
       });
       try {
         const user = common_vendor.index.getStorageSync("userInfo");
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:101", "user", user);
+        common_vendor.index.__f__("log", "at pages/notice/notice.vue:119", "user", user);
         if (!user) {
           common_vendor.index.hideLoading();
           common_vendor.index.showModal({
@@ -88,7 +104,7 @@ const _sfc_main = {
             taskID: item._id
           }
         }).then((res) => {
-          common_vendor.index.__f__("log", "at pages/notice/notice.vue:120", "res", res);
+          common_vendor.index.__f__("log", "at pages/notice/notice.vue:138", "res", res);
           common_vendor.index.hideLoading();
           if (res.result.code) {
             common_vendor.index.showModal({
@@ -107,7 +123,7 @@ const _sfc_main = {
             content: `添加数据失败，错误信息为：${err.message}`,
             showCancel: false
           });
-          common_vendor.index.__f__("error", "at pages/notice/notice.vue:140", err);
+          common_vendor.index.__f__("error", "at pages/notice/notice.vue:158", err);
         });
       } catch (e) {
         common_vendor.index.hideLoading();
@@ -128,10 +144,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:163", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:181", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:166", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:184", err.errMsg);
           }
         }
       });
@@ -190,10 +206,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         }),
         k: common_vendor.o(($event) => $options.addTask(item), item._id)
       } : {}, {
-        l: common_vendor.n(item.is_today_important ? "today" : ""),
-        m: item._id,
-        n: "10caa2c9-1-" + i0,
-        o: common_vendor.p({
+        l: common_vendor.o(($event) => $options.edit(item._id), item._id),
+        m: common_vendor.n(item.is_today_important ? "today" : ""),
+        n: item._id,
+        o: "10caa2c9-1-" + i0,
+        p: common_vendor.p({
           ["sub-title"]: item.top ? "置顶" : item.is_today_important ? "今日关注" : "",
           title: item.title,
           extra: item.type
@@ -201,7 +218,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       });
     }),
     d: !$data.list.length && !$data.loading
-  }, !$data.list.length && !$data.loading ? {} : {});
+  }, !$data.list.length && !$data.loading ? {} : {}, {
+    e: $data.userInfo._id === "68b547748a5c782a2b48ac30"
+  }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
+    f: common_vendor.o(($event) => $options.edit())
+  } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;
