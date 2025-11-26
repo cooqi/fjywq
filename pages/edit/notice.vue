@@ -21,11 +21,8 @@
 					<textarea class="uni-input" name="content" v-model="formData.content" placeholder="请输入"  />
 				  </view>
 				<view class="uni-form-item ">
-					<text class="title">是否置顶</text>
-					<uni-data-select
-					      v-model="formData.top"
-					      :localdata="sf"
-					    ></uni-data-select>
+					<text class="title">置顶</text>
+					<input class="uni-input" name="top" v-model="formData.top" placeholder="请输入"  />
 				</view>
 				<view class="uni-form-item ">
 					<text class="title">是否隐藏</text>
@@ -57,7 +54,10 @@
 					    ></uni-data-select>
 					
 				</view>
-				
+				<view class="uni-form-item ">
+					<text class="title">图片</text>
+					<textarea class="uni-input" name="imgs" v-model="formData.imgs" placeholder="请输入"  />
+				</view>
 					<view class="uni-form-item">
 					  <text class="title">备注</text>
 					  <textarea name="bz" v-model="formData.bz" placeholder="请输入备注" style="background: #FFF;" />
@@ -90,7 +90,8 @@
 					content:'',
 					hide:'',
 					is_today_important:'',
-					classType:''
+					classType:'',
+					imgs:''
 					
 				},
 				search:{

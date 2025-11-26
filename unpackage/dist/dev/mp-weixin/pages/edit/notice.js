@@ -12,7 +12,8 @@ const _sfc_main = {
         content: "",
         hide: "",
         is_today_important: "",
-        classType: ""
+        classType: "",
+        imgs: ""
       },
       search: {
         title: ""
@@ -36,7 +37,7 @@ const _sfc_main = {
   },
   onLoad(option) {
     let id = option.id;
-    common_vendor.index.__f__("log", "at pages/edit/notice.vue:118", option, id);
+    common_vendor.index.__f__("log", "at pages/edit/notice.vue:119", option, id);
     if (id) {
       this.getDetail(id);
     }
@@ -68,7 +69,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:150", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:151", err);
       });
     },
     remove(id) {
@@ -94,7 +95,7 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:177", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:178", err);
       });
     },
     update() {
@@ -119,7 +120,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:203", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:204", err);
       });
     },
     submit(type) {
@@ -150,7 +151,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:234", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:235", err);
       });
     },
     getList() {
@@ -173,7 +174,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:258", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:259", err);
       });
     },
     reset() {
@@ -214,11 +215,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     f: common_vendor.o(($event) => $data.formData.title = $event.detail.value),
     g: $data.formData.content,
     h: common_vendor.o(($event) => $data.formData.content = $event.detail.value),
-    i: common_vendor.o(($event) => $data.formData.top = $event),
-    j: common_vendor.p({
-      localdata: $data.sf,
-      modelValue: $data.formData.top
-    }),
+    i: $data.formData.top,
+    j: common_vendor.o(($event) => $data.formData.top = $event.detail.value),
     k: common_vendor.o(($event) => $data.formData.hide = $event),
     l: common_vendor.p({
       localdata: $data.sf,
@@ -239,17 +237,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       localdata: $data.range,
       modelValue: $data.formData.type
     }),
-    s: $data.formData.bz,
-    t: common_vendor.o(($event) => $data.formData.bz = $event.detail.value),
-    v: $data.formData._id
-  }, $data.formData._id ? {
-    w: common_vendor.o(($event) => $options.submit("update"))
-  } : {}, {
+    s: $data.formData.imgs,
+    t: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value),
+    v: $data.formData.bz,
+    w: common_vendor.o(($event) => $data.formData.bz = $event.detail.value),
     x: $data.formData._id
   }, $data.formData._id ? {
-    y: common_vendor.o(($event) => $options.remove($data.formData._id))
+    y: common_vendor.o(($event) => $options.submit("update"))
+  } : {}, {
+    z: $data.formData._id
+  }, $data.formData._id ? {
+    A: common_vendor.o(($event) => $options.remove($data.formData._id))
   } : {
-    z: common_vendor.o(($event) => $options.submit("add"))
+    B: common_vendor.o(($event) => $options.submit("add"))
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
