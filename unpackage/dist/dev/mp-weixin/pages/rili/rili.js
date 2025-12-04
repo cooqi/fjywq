@@ -142,8 +142,10 @@ const _sfc_main = {
       this.getList(val.month);
     },
     getList(month) {
+      let m = month;
+      let currentMonth = (/* @__PURE__ */ new Date()).getMonth() + 1;
       if (!month) {
-        (/* @__PURE__ */ new Date()).getMonth() + 1;
+        m = currentMonth;
       }
       common_vendor.index.showLoading({
         title: "处理中..."
@@ -156,7 +158,10 @@ const _sfc_main = {
       }).then((res) => {
         common_vendor.index.hideLoading();
         this.allRili = JSON.parse(JSON.stringify(res.result.data));
-        this.getDetail();
+        if (currentMonth === m) {
+          this.time = this.formatDate(/* @__PURE__ */ new Date());
+          this.getDetail();
+        }
         const arr = res.result.data.map((item) => {
           let d = item.date.split("-");
           d.shift();
@@ -169,7 +174,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:177", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:182", err);
       });
     },
     onClickItem(e) {
@@ -222,7 +227,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:242", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:247", err);
       });
     },
     toRedisPage() {

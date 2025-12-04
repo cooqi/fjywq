@@ -147,8 +147,9 @@
 			
 			getList(month) {
 				let m=month
+				let currentMonth=new Date().getMonth() + 1
 				if(!month){
-					m=new Date().getMonth() + 1;
+					m=currentMonth;
 				}
 				uni.showLoading({
 					title: '处理中...'
@@ -161,7 +162,11 @@
 				}).then((res) => {
 					uni.hideLoading()
 					this.allRili=JSON.parse(JSON.stringify(res.result.data))
-					this.getDetail()
+
+					if(currentMonth===m){
+						this.time=this.formatDate(new Date())
+						this.getDetail()
+					}
 					const arr=res.result.data.map(item=>{
 						let d=item.date.split('-')
 						d.shift()

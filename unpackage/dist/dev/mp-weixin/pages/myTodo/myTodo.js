@@ -192,7 +192,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       return {
         a: common_vendor.o(($event) => $options.del(item), item.value),
         b: common_vendor.o($options.change, item.value),
-        c: "161e64ee-0-" + i0,
+        c: "725aa436-0-" + i0,
         d: common_vendor.o(($event) => $data.todo = $event, item.value),
         e: common_vendor.p({
           max: "1",

@@ -191,14 +191,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         })
       } : {}, {
         e: item.bz,
-        f: "10caa2c9-2-" + i0 + "," + ("10caa2c9-1-" + i0),
+        f: "e3970d14-2-" + i0 + "," + ("e3970d14-1-" + i0),
         g: common_vendor.p({
           href: item.url,
           text: item.url
         }),
         h: item.type === "task"
       }, item.type === "task" ? {
-        i: "10caa2c9-3-" + i0 + "," + ("10caa2c9-1-" + i0),
+        i: "e3970d14-3-" + i0 + "," + ("e3970d14-1-" + i0),
         j: common_vendor.p({
           type: "heart",
           size: "18",
@@ -209,7 +209,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         l: common_vendor.o(($event) => $options.edit(item._id), item._id),
         m: common_vendor.n(item.is_today_important ? "today" : ""),
         n: item._id,
-        o: "10caa2c9-1-" + i0,
+        o: "e3970d14-1-" + i0,
         p: common_vendor.p({
           ["sub-title"]: item.top ? "置顶" : item.is_today_important ? "今日关注" : "",
           title: item.title,
