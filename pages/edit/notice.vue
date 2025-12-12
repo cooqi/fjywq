@@ -56,7 +56,11 @@
 				</view>
 				<view class="uni-form-item ">
 					<text class="title">图片</text>
-					<textarea class="uni-input" name="imgs" v-model="formData.imgs" placeholder="请输入"  />
+					<textarea class="uni-input" name="imgs" v-model="formData.imgs" placeholder="请输入" maxlength="1000"/>
+				</view>
+				<view class="uni-form-item ">
+					<text class="title">url</text>
+					<textarea class="uni-input" name="imgs" v-model="formData.url" placeholder="请输入" maxlength="1000"/>
 				</view>
 					<view class="uni-form-item">
 					  <text class="title">备注</text>
@@ -91,7 +95,8 @@
 					hide:'',
 					is_today_important:'',
 					classType:'',
-					imgs:''
+					imgs:'',
+					url:''
 					
 				},
 				search:{

@@ -832,7 +832,9 @@
 							box-shadow: 0 6rpx 20rpx rgba(139, 92, 246, 0.4);
 							transform: scale(1.05);
 							&.today{
-								border-width:1px
+								&::after{
+									line-height: 20px;
+								}
 							}
 						}
 
@@ -845,22 +847,19 @@
 							&::after {
 								content: "今"; //可以写字代替
 								position: absolute;
-								bottom: -2rpx;
-								left: 50%;
-								transform: translateX(-50%);
+								bottom: 0;
+								top:0;
+								left:0;
+								right:0;
+								margin: auto;
 								font-size: 30rpx;
-								line-height: 1;
+								line-height: 24px;
+								text-align: center;
 								color: white;
 								//写字注释一下
-								background: #8b5cf6;
+								background: #c4b9f6;
 								border-radius: 100%;
-								width: 30px;
-								height: 30px;
-								background-size: 100%;
-								background-repeat: no-repeat;
-								display: flex;
-								justify-content: center;
-								align-items: center;
+								
 								z-index: 5;
 							}
 

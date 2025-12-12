@@ -38,14 +38,14 @@ function calculateDateDistance(targetDateStr) {
   
   let result = '';
   
-  if (isFuture) {
+  if (isFuture&&absoluteDays>0) {
     // 未来日期 - 倒计时
     result = `倒计时${absoluteDays}天`;
   } else {
     // 过去日期 - 距离今天
     if (exactYears > 0) {
       result = `距离今天${exactYears}年`;
-    }else {
+    }else if (absoluteDays > 0) {
       result = `距离今天${absoluteDays}天`;
     }
   }

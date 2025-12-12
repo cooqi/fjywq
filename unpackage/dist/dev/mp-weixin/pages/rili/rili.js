@@ -23,12 +23,12 @@ function calculateDateDistance(targetDateStr) {
   const isFuture = daysDiff > 0;
   const exactYears = isExactYears(today, targetDate);
   let result = "";
-  if (isFuture) {
+  if (isFuture && absoluteDays > 0) {
     result = `倒计时${absoluteDays}天`;
   } else {
     if (exactYears > 0) {
       result = `距离今天${exactYears}年`;
-    } else {
+    } else if (absoluteDays > 0) {
       result = `距离今天${absoluteDays}天`;
     }
   }
@@ -69,7 +69,8 @@ const _sfc_main = {
       items: ["当天事件", "相关事件"],
       current: 0,
       time: "",
-      userInfo: ""
+      userInfo: "",
+      dayText: ""
     };
   },
   onLoad() {
@@ -139,6 +140,7 @@ const _sfc_main = {
       this.dayAboutInfo = [];
       this.current = 0;
       this.time = "";
+      this.dayText = "";
       this.getList(val.month);
     },
     getList(month) {
@@ -153,7 +155,7 @@ const _sfc_main = {
       common_vendor.tr.callFunction({
         name: "rili-get",
         data: {
-          //month:m
+          month: m
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -174,7 +176,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:182", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:183", err);
       });
     },
     onClickItem(e) {
@@ -189,6 +191,7 @@ const _sfc_main = {
       return `${year}-${month}-${day}`;
     },
     getDetail(time) {
+      var _a;
       this.current = 0;
       const now = time ? new Date(time.replace(/-/g, "/")) : /* @__PURE__ */ new Date();
       now.getFullYear();
@@ -203,12 +206,14 @@ const _sfc_main = {
         return month === m && day === d && tt != nn;
       });
       this.dayAboutInfo = processJQLResults(data);
-      this.dayInfo = this.allRili.filter((item) => {
+      let data2 = this.allRili.filter((item) => {
         const t = new Date(item.date.replace(/-/g, "/"));
-        const m = this.formatDate(t);
-        const n = this.formatDate(now);
-        return m === n;
+        const tt = this.formatDate(t);
+        const nn = this.formatDate(now);
+        return tt === nn;
       });
+      this.dayInfo = processJQLResults(data2);
+      this.dayText = ((_a = this.dayInfo[0]) == null ? void 0 : _a.distanceInfo.displayText) || "";
       if (!this.dayInfo.length && this.dayAboutInfo.length) {
         this.current = 1;
       } else {
@@ -227,7 +232,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:247", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:250", err);
       });
     },
     toRedisPage() {
@@ -269,18 +274,22 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     h: $data.current === 0
   }, $data.current === 0 ? common_vendor.e({
     i: common_vendor.t($data.time),
-    j: common_vendor.f($data.dayInfo, (item, k0, i0) => {
+    j: $data.dayText
+  }, $data.dayText ? {
+    k: common_vendor.t($data.dayText)
+  } : {}, {
+    l: common_vendor.f($data.dayInfo, (item, k0, i0) => {
       return {
         a: common_vendor.t(item.title),
         b: item.bz,
         c: item._id
       };
     }),
-    k: !$data.dayInfo.length
+    m: !$data.dayInfo.length
   }, !$data.dayInfo.length ? {} : {}) : {}, {
-    l: $data.current === 1
+    n: $data.current === 1
   }, $data.current === 1 ? common_vendor.e({
-    m: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
+    o: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
       return common_vendor.e({
         a: item.date
       }, item.date ? {
@@ -300,11 +309,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         g: item._id
       });
     }),
-    n: !$data.dayAboutInfo.length
+    p: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
-    o: $data.userInfo._id === "68b547748a5c782a2b48ac30"
+    q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    p: common_vendor.o((...args) => $options.edit && $options.edit(...args))
+    r: common_vendor.o((...args) => $options.edit && $options.edit(...args))
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

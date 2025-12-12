@@ -55,7 +55,7 @@
 .content .about .date .t0 {
   color: #aaffff;
 }
-.content .about .displayText {
+.displayText {
   font-weight: 100;
   margin-left: 20px;
   font-size: 14px;

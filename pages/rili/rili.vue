@@ -20,9 +20,8 @@
 		</view>
 		
 		<view v-if="current === 0" class="today">
-			<view class="date">{{time}}</view>
+			<view class="date">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
 			<view v-for="item in dayInfo" :key="item._id" class="info">
-				
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
@@ -65,7 +64,8 @@
 				  items: ['当天事件', '相关事件'],
 				  current: 0,
 				time:'',
-				userInfo:''
+				userInfo:'',
+				dayText:''
 			}
 		},
 		onLoad() {
@@ -142,6 +142,7 @@
 					this.dayAboutInfo=[]
 					this.current=0
 					this.time=''
+					this.dayText=''
 					this.getList(val.month)
 				},
 			
@@ -157,7 +158,7 @@
 				uniCloud.callFunction({
 					name: 'rili-get',
 					data:{
-						//month:m
+						month:m
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -203,7 +204,7 @@
 				// 获取日期 (1-31)
 				const day = now.getDate();
 				
-				
+				//和今天日期相关的事件
 				let data=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
 					const m=t.getMonth() + 1;
@@ -217,14 +218,16 @@
 				this.dayAboutInfo=processJQLResults(data)
 					
 				
-				this.dayInfo=this.allRili.filter(item=>{
+				//今天
+				let data2=this.allRili.filter(item=>{
 					const t=new Date(item.date.replace(/-/g,'/'));
-					const m=this.formatDate(t)
-					const n=this.formatDate(now)
-					//console.log(1,m,n)
-					return m===n
+					const tt=this.formatDate(t)
+					const nn=this.formatDate(now)
+					return tt===nn
 					
 				})
+				this.dayInfo=processJQLResults(data2)
+				this.dayText=this.dayInfo[0]?.distanceInfo.displayText||''
 				if(!this.dayInfo.length&&this.dayAboutInfo.length){
 					this.current=1
 				}else{
@@ -295,13 +298,14 @@
 					color: #aaffff;
 				}
 			}
-			.displayText{
-				font-weight: 100;
-				margin-left: 20px;
-				font-size: 14px;
-				color: #aaffff;
-			}
+			
 		}
+	}
+	.displayText{
+		font-weight: 100;
+		margin-left: 20px;
+		font-size: 14px;
+		color: #aaffff;
 	}
 	.info{
 		margin: 10px 0;
