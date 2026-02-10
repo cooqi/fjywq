@@ -130,9 +130,11 @@ const _sfc_main = {
     handleMonthChange(monthInfo) {
     },
     // 今日计划点击事件
-    handleTodayPlanClick() {
+    handleTodayPlanClick(val) {
       this.time = this.formatDate(/* @__PURE__ */ new Date());
       this.getDetail();
+      let m = (/* @__PURE__ */ new Date()).getMonth() + 1;
+      this.getList(m);
     },
     //年月切换
     yearMonthChange(val) {
@@ -142,6 +144,7 @@ const _sfc_main = {
       this.time = "";
       this.dayText = "";
       this.getList(val.month);
+      this.useCommon();
     },
     getList(month) {
       let m = month;
@@ -176,7 +179,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:183", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:188", err);
       });
     },
     onClickItem(e) {
@@ -222,17 +225,20 @@ const _sfc_main = {
     },
     useCommon() {
       common_vendor.tr.callFunction({
-        name: "welcome"
+        name: "welcome",
+        data: {
+          type: "get"
+        }
       }).then((res) => {
         let data = res.result.data[0];
-        this.customGreeting = data.title || "豹豹杯杯儿，你们最棒";
+        this.customGreeting = data.title || "杯杯儿，你们最棒";
         this.bgcolorGreeting = data.bgcolor;
       }).catch((err) => {
         common_vendor.index.showModal({
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:250", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:258", err);
       });
     },
     toRedisPage() {

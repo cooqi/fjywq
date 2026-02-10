@@ -6,7 +6,7 @@
 		     </view>
 		 </view>
 		<view v-else>
-		<button type="primary" @click="choose" style="backgroundColor:#aaa1ce;margin: 10px;">点这里选择你参加过的青宇公开活动</button>
+		<button type="primary" @click="choose" style="backgroundColor:#aaa1ce;margin: 10px;">点这里选择你参加过的宇青公开活动</button>
 		<view class="tips">{{tips}}</view>
 		<uni-popup ref="popup" background-color="#fff" type="bottom" border-radius="10px 10px 0 0">
 			<view class="popup-content" >

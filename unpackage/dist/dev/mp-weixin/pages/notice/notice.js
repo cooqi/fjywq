@@ -207,11 +207,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         k: common_vendor.o(($event) => $options.addTask(item), item._id)
       } : {}, {
         l: common_vendor.o(($event) => $options.edit(item._id), item._id),
-        m: common_vendor.n(item.is_today_important ? "today" : ""),
+        m: common_vendor.n(item.is_today_important === "1" ? "today" : ""),
         n: item._id,
         o: "e3970d14-1-" + i0,
         p: common_vendor.p({
-          ["sub-title"]: item.top ? "置顶" : item.is_today_important ? "今日关注" : "",
+          ["sub-title"]: item.top ? "置顶" : item.is_today_important === "1" ? "今日关注" : "",
           title: item.title,
           extra: item.type
         })

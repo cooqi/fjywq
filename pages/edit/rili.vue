@@ -39,6 +39,17 @@
 		      </form>
 
 		 </view>
+		 
+		 <view class="customGreeting">
+			 <form>
+				  <view class="uni-form-item ">
+					<text class="title">问候语</text>
+					<input class="uni-input" name="date" v-model="customGreeting.title" placeholder="请输入"  />
+				  </view>
+				  
+				 <button type="primary" class="uni-button customGreeting-save-btn" @click="add_customGreeting" size="mini" >保存</button>
+			  </form>
+		 </view>
 	</view>
 </template>
 
@@ -54,6 +65,9 @@
 				},
 				search:{
 					date:''
+				},
+				customGreeting:{
+					title:''
 				}
 			}
 		},
@@ -63,6 +77,40 @@
 		methods:{
 			editInfo(item){
 				this.formData= {...item};
+			},
+			add_customGreeting(){
+				if(!this.customGreeting.title&&!this.customGreeting.bgcolor){
+					uni.showModal({
+						content: `请输入有效数据`,
+						showCancel: false
+					})
+					return
+					
+				}
+				uni.showLoading({
+					title: '处理中...'
+				})
+				uniCloud.callFunction({
+					name: 'welcome',
+					data: {
+						type:'update',
+						params:this.customGreeting,
+					}
+				}).then((res) => {
+					uni.hideLoading()
+					uni.showModal({
+						content: `问候语修改成功`,
+						showCancel: false
+					})
+					this.clearForm()
+				}).catch((err) => {
+					uni.hideLoading()
+					uni.showModal({
+						content: `修改数据失败`,
+						showCancel: false
+					})
+					console.error(err)
+				})
 			},
 			add() {
 				uni.showLoading({
@@ -206,5 +254,9 @@
 				margin-bottom: 5px;
 				padding: 3px;
 			}
+		}
+		.customGreeting{
+			margin-top: 30px;
+			.customGreeting-save-btn{margin: auto;text-align: center;}
 		}
 </style>

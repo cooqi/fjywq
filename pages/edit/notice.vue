@@ -18,7 +18,7 @@
 				  </view>
 				  <view class="uni-form-item ">
 					<text class="title">内容</text>
-					<textarea class="uni-input" name="content" v-model="formData.content" placeholder="请输入"  />
+					<textarea class="uni-input" name="content" v-model="formData.content" placeholder="请输入"  maxlength="2000"/>
 				  </view>
 				<view class="uni-form-item ">
 					<text class="title">置顶</text>

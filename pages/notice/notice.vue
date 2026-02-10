@@ -4,7 +4,7 @@
 			<uni-segmented-control :current="current" :values="items"
 			 @clickItem="onClickItem" />
 		 </view>
-		<uni-card @click="edit(item._id)" :sub-title="item.top?'置顶':item.is_today_important?'今日关注':''" :class="[item.is_today_important?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
+		<uni-card @click="edit(item._id)" :sub-title="item.top?'置顶':item.is_today_important==='1'?'今日关注':''" :class="[item.is_today_important==='1'?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
 		
 			<view class="content"  v-if="item.content">
 				<view class="uni-body" user-select v-html="item.content"></view>

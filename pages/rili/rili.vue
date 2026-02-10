@@ -25,7 +25,7 @@
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
-			<view v-if="!dayInfo.length">当前日期暂无青宇当天事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
+			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员，但你不一定联系得上</view>
 		</view>
 		<view v-if="current === 1" class="about">
 			<view v-for="item in dayAboutInfo" :key="item._id" class="info">
@@ -36,7 +36,7 @@
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
-			<view v-if="!dayAboutInfo.length">当前日期暂无青宇相关事件，如需补充，请联系管理员，如不认识管理员请小红书发帖带上tag#宇青青宇备忘录#，管理员看到后会核实添加</view>
+			<view v-if="!dayAboutInfo.length">当前日期暂无宇青相关事件，如需补充，请联系管理员，虽然你不一定联系得上</view>
 		</view>
 		
 		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
@@ -132,9 +132,13 @@
 			    },
 			
 			    // 今日计划点击事件
-			    handleTodayPlanClick() {
+			    handleTodayPlanClick(val) {
+					
 				  this.time=this.formatDate(new Date())
 			      this.getDetail()
+				  //获取列表
+				  let m=new Date().getMonth()+1
+				  this.getList(m)
 			    },
 				//年月切换
 				yearMonthChange(val){
@@ -144,6 +148,7 @@
 					this.time=''
 					this.dayText=''
 					this.getList(val.month)
+					this.useCommon()
 				},
 			
 			getList(month) {
@@ -237,10 +242,13 @@
 			useCommon() {
 				
 				uniCloud.callFunction({
-					name: 'welcome'
+					name: 'welcome',
+					data:{
+						type:'get'
+					}
 				}).then((res) => {
 					let data=res.result.data[0]
-					this.customGreeting=data.title || '豹豹杯杯儿，你们最棒'
+					this.customGreeting=data.title || '杯杯儿，你们最棒'
 					this.bgcolorGreeting=data.bgcolor
 				}).catch((err) => {
 					uni.showModal({

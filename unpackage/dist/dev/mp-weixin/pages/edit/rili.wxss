@@ -48,3 +48,10 @@
   margin-bottom: 5px;
   padding: 3px;
 }
+.customGreeting {
+  margin-top: 30px;
+}
+.customGreeting .customGreeting-save-btn {
+  margin: auto;
+  text-align: center;
+}

@@ -11,6 +11,9 @@ const _sfc_main = {
       },
       search: {
         date: ""
+      },
+      customGreeting: {
+        title: ""
       }
     };
   },
@@ -19,6 +22,39 @@ const _sfc_main = {
   methods: {
     editInfo(item) {
       this.formData = { ...item };
+    },
+    add_customGreeting() {
+      if (!this.customGreeting.title && !this.customGreeting.bgcolor) {
+        common_vendor.index.showModal({
+          content: `请输入有效数据`,
+          showCancel: false
+        });
+        return;
+      }
+      common_vendor.index.showLoading({
+        title: "处理中..."
+      });
+      common_vendor.tr.callFunction({
+        name: "welcome",
+        data: {
+          type: "update",
+          params: this.customGreeting
+        }
+      }).then((res) => {
+        common_vendor.index.hideLoading();
+        common_vendor.index.showModal({
+          content: `问候语修改成功`,
+          showCancel: false
+        });
+        this.clearForm();
+      }).catch((err) => {
+        common_vendor.index.hideLoading();
+        common_vendor.index.showModal({
+          content: `修改数据失败`,
+          showCancel: false
+        });
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:112", err);
+      });
     },
     add() {
       common_vendor.index.showLoading({
@@ -43,7 +79,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:90", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:138", err);
       });
     },
     remove(id) {
@@ -69,7 +105,7 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:117", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:165", err);
       });
     },
     update() {
@@ -95,7 +131,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:144", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:192", err);
       });
     },
     submit(type) {
@@ -123,7 +159,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:174", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:222", err);
       });
     },
     clearForm() {
@@ -160,6 +196,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     n: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args))
   } : {
     o: common_vendor.o(($event) => $options.submit("add"))
+  }, {
+    p: $data.customGreeting.title,
+    q: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value),
+    r: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args))
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
