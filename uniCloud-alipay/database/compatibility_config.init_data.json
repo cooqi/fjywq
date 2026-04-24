@@ -1,0 +1,170 @@
+[
+  {
+    "type": "yi_tags",
+    "content": "即兴舞蹈",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "yi_tags",
+    "content": "妙语连珠",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "yi_tags",
+    "content": "精打细算",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "yi_tags",
+    "content": "甜度超标",
+    "sort": 4,
+    "is_active": true
+  },
+  {
+    "type": "ji_tags",
+    "content": "争吵",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "ji_tags",
+    "content": "冷战",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "ji_tags",
+    "content": "犹豫不决",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "au_titles",
+    "title": "森林公园的兔系邂逅",
+    "content": "你在森林公园写生时，突然听见'ABCD'的哼唱声。转头看见抱着野餐篮的她，她正用面包屑引诱松鼠跳《TT》手势舞。'要加入我的动物应援团吗？'她眼睛弯成月牙问。你们用树枝打拍子教麻雀跳《CHEER UP》，结果引来管理员警告。最后她偷偷在你素描本画了只哭哭兔，写着'下次带胡萝卜来赔罪'——就像演唱会上的小纸条一样让人心跳加速。",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "au_titles",
+    "title": "游乐园的双人游戏",
+    "content": "在游乐园排队时，她突然指着旋转木马说'我们来比赛谁更像Candy Pop里的小兔子'。你笑着点头，结果发现她真的在模仿MV里的动作，引来周围人注目。'输的人要请喝草莓牛奶！'她眨眨眼。夕阳西下，你们坐在长椅上分享同一杯饮料，她轻轻靠在你肩上：'今天比你想象中更甜呢。'",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "au_titles",
+    "title": "图书馆的星座冒险",
+    "content": "图书馆偶遇，她正在看星座运势，抬头看见你：'诶，我们的星座说今天适合一起做疯狂的事！'你们偷偷在自习室玩'谁先笑谁就输'的游戏，用书挡着脸互相做鬼脸。最后她忍不住笑出声，赶紧捂住嘴巴，眼睛亮晶晶的：'你犯规了！'最后你们在笔记本上写满彼此的绰号，像发现了新大陆一样兴奋。",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "descriptions",
+    "content": "虽然合拍度中等，但正是这种互补让你们更加有趣。今天要多沟通，会发现彼此更多闪光点！",
+    "score_range": "60-69",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "descriptions",
+    "content": "你们的合拍度像TWICE的舞台一样充满活力，虽然财运略显平淡，但感情和沟通的火花足以点亮整个森林公园！",
+    "score_range": "70-79",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "descriptions",
+    "content": "今天你们的默契如同精心编排的舞蹈，每一个眼神交汇都充满心意。虽然有小波折，但甜蜜更多！",
+    "score_range": "80-89",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "descriptions",
+    "content": "合拍度爆表！你们就像最佳拍档，即使不说话也能懂对方的心思。今天适合一起尝试新事物！",
+    "score_range": "90-100",
+    "sort": 4,
+    "is_active": true
+  },
+  {
+    "type": "au_contents",
+    "content": "你在森林公园写生时，突然听见'ABCD'的哼唱声。转头看见抱着野餐篮的她，她正用面包屑引诱松鼠跳《TT》手势舞。'要加入我的动物应援团吗？'她眼睛弯成月牙问。你们用树枝打拍子教麻雀跳《CHEER UP》，结果引来管理员警告。最后她偷偷在你素描本画了只哭哭兔，写着'下次带胡萝卜来赔罪'——就像演唱会上的小纸条一样让人心跳加速。",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "au_contents",
+    "content": "在游乐园排队时，她突然指着旋转木马说'我们来比赛谁更像Candy Pop里的小兔子'。你笑着点头，结果发现她真的在模仿MV里的动作，引来周围人注目。'输的人要请喝草莓牛奶！'她眨眨眼。夕阳西下，你们坐在长椅上分享同一杯饮料，她轻轻靠在你肩上：'今天比你想象中更甜呢。'",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "au_contents",
+    "content": "图书馆偶遇，她正在看星座运势，抬头看见你：'诶，我们的星座说今天适合一起做疯狂的事！'你们偷偷在自习室玩'谁先笑谁就输'的游戏，用书挡着脸互相做鬼脸。最后她忍不住笑出声，赶紧捂住嘴巴，眼睛亮晶晶的：'你犯规了！'最后你们在笔记本上写满彼此的绰号，像发现了新大陆一样兴奋。",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "moments",
+    "content": "她递给你耳机时说'分你一半'，指尖不经意触碰的瞬间，心跳漏了一拍",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "moments",
+    "content": "一起看晚霞时，她突然转头看你，眼睛比夕阳还温柔",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "moments",
+    "content": "她哼着你喜欢的歌，发现你在看她，害羞地笑了",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "moments",
+    "content": "雨天共撑一把伞，她悄悄把伞往你这边倾斜",
+    "sort": 4,
+    "is_active": true
+  },
+  {
+    "type": "fortunes",
+    "content": "财运平稳，建议理性消费，不要冲动购物",
+    "score_range": "50-59",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "type": "fortunes",
+    "content": "适合投资自己的小确幸，买杯奶茶劄劳自己吧",
+    "score_range": "60-69",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "type": "fortunes",
+    "content": "今天偏财运不错，可能会收到小惊喜哦",
+    "score_range": "70-79",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "type": "fortunes",
+    "content": "财运旺盛，但要注意不要过度消费",
+    "score_range": "80-89",
+    "sort": 4,
+    "is_active": true
+  },
+  {
+    "type": "fortunes",
+    "content": "财运爆棚！今天可能会有意外之财，记得请客哦",
+    "score_range": "90-100",
+    "sort": 5,
+    "is_active": true
+  }
+]

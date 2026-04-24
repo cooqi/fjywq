@@ -1,0 +1,72 @@
+[
+  {
+    "card_type": "daily_question",
+    "name": "偶遇问题",
+    "content": "我会在哪个场所偶遇你...",
+    "sort": 1,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "爱情问题",
+    "content": "我们的感情会有什么样的发展...",
+    "sort": 2,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "事业问题",
+    "content": "我最近的工作运势如何...",
+    "sort": 3,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "财运问题",
+    "content": "这个月我的财运会怎样...",
+    "sort": 4,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "健康問題",
+    "content": "我需要注意哪些健康方面...",
+    "sort": 5,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "人际关系",
+    "content": "我和TA的关系会如何发展...",
+    "sort": 6,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "学业问题",
+    "content": "我最近的考试运势如何...",
+    "sort": 7,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "旅行运势",
+    "content": "下一次旅行会带来什么惊喜...",
+    "sort": 8,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "梦想实现",
+    "content": "我的梦想什么时候能实现...",
+    "sort": 9,
+    "is_active": true
+  },
+  {
+    "card_type": "daily_question",
+    "name": "内心指引",
+    "content": "宇宙想告诉我什么...",
+    "sort": 10,
+    "is_active": true
+  }
+]

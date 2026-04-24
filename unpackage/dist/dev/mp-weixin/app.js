@@ -8,6 +8,12 @@ if (!Math) {
   "./pages/meet/meet.js";
   "./pages/edit/rili.js";
   "./pages/edit/notice.js";
+  "./pages/game/game.js";
+  "./pages/game/shengbei.js";
+  "./pages/game/tarot.js";
+  "./pages/game/compatibility.js";
+  "./pages/game/match.js";
+  "./pages/game/draw.js";
 }
 const _sfc_main = {
   onLaunch: async function() {

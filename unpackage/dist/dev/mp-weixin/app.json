@@ -5,7 +5,13 @@
     "pages/myTodo/myTodo",
     "pages/meet/meet",
     "pages/edit/rili",
-    "pages/edit/notice"
+    "pages/edit/notice",
+    "pages/game/game",
+    "pages/game/shengbei",
+    "pages/game/tarot",
+    "pages/game/compatibility",
+    "pages/game/match",
+    "pages/game/draw"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -42,6 +48,12 @@
         "iconPath": "/static/tabbar/hd.png",
         "selectedIconPath": "static/tabbar/hd1.png",
         "text": "点亮见面"
+      },
+      {
+        "pagePath": "pages/game/game",
+        "iconPath": "/static/tabbar/game.png",
+        "selectedIconPath": "static/tabbar/game1.png",
+        "text": "游戏"
       }
     ]
   },

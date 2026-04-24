@@ -1,0 +1,210 @@
+
+.container.data-v-35557016 {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e9d5ff 0%, #f3e8ff 50%, #ffffff 100%);
+  padding-bottom: 20px;
+}
+
+/* 顶部导航 */
+.header.data-v-35557016 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+.header-left.data-v-35557016, .header-right.data-v-35557016 {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-icon.data-v-35557016 {
+  font-size: 32px;
+  color: #7c3aed;
+  font-weight: bold;
+}
+.history-icon.data-v-35557016 {
+  font-size: 24px;
+}
+.header-title.data-v-35557016 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #7c3aed;
+}
+
+/* 扇形牌堆 */
+.fan-deck-container.data-v-35557016 {
+  padding: 20px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.question-area.data-v-35557016 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.question-text.data-v-35557016 {
+  font-size: 18px;
+  color: #7c3aed;
+  font-weight: 500;
+}
+.fan-deck.data-v-35557016 {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-bottom: 30px;
+}
+.fan-card.data-v-35557016 {
+  position: absolute;
+  bottom: 0;
+  width: 80px;
+  height: 130px;
+  transition: transform 0.3s;
+}
+.fan-card.data-v-35557016:active {
+  transform: translateY(-20px) !important;
+}
+.fan-card-back.data-v-35557016 {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.fan-card-pattern.data-v-35557016 {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.hint-text.data-v-35557016 {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* 结果容器 */
+.result-container.data-v-35557016 {
+  padding: 20px;
+}
+.result-header.data-v-35557016 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.result-title.data-v-35557016 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #7c3aed;
+  display: block;
+}
+.result-date.data-v-35557016, .result-question.data-v-35557016 {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-top: 5px;
+  display: block;
+}
+.single-card-result.data-v-35557016 {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
+}
+.card-display.data-v-35557016 {
+  width: 150px;
+  height: 220px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  cursor: pointer;
+  position: relative;
+}
+.card-display.data-v-35557016::after {
+  content: '🔍';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  opacity: 0.7;
+}
+.card-emoji.data-v-35557016 {
+  font-size: 80px;
+  line-height: 1;
+  transition: transform 0.5s ease;
+}
+.card-emoji-reversed.data-v-35557016 {
+  transform: rotate(180deg);
+}
+.card-image.data-v-35557016 {
+  width: 90%;
+  height: 90%;
+  border-radius: 8px;
+  transition: transform 0.5s ease;
+}
+.card-reversed.data-v-35557016 {
+  transform: rotate(180deg);
+}
+.card-position.data-v-35557016 {
+  font-size: 14px;
+  color: #a78bfa;
+  display: block;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+.position-reversed.data-v-35557016 {
+  color: #ef4444;
+}
+.card-name.data-v-35557016 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #7c3aed;
+  display: block;
+  margin-bottom: 5px;
+}
+.card-info.data-v-35557016 {
+  margin-bottom: 20px;
+}
+.info-label.data-v-35557016 {
+  font-size: 14px;
+  color: #9ca3af;
+  display: block;
+  margin-bottom: 5px;
+}
+.info-content.data-v-35557016 {
+  font-size: 15px;
+  color: #6b7280;
+  display: block;
+}
+.card-interpretation-box.data-v-35557016 {
+  background: #f3e8ff;
+  border-radius: 12px;
+  padding: 15px;
+}
+.interpretation-text.data-v-35557016 {
+  font-size: 14px;
+  color: #7c3aed;
+  line-height: 1.6;
+}
+.action-btn.data-v-35557016 {
+  margin-top: 20px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: bold;
+}

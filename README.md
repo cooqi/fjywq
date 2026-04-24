@@ -1,4 +1,5 @@
 ### uniCloud 示例项目
+uniApp
 
 ### 仓库分支与 HBuilder 版本对应关系
 

@@ -7322,9 +7322,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "192.168.0.85,172.43.3.45,127.0.0.1";
+  const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_lT1Pjo";
+  const id = "mp-weixin_UKwVnN";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8309,6 +8309,48 @@ const pages = [
     style: {
       navigationBarTitleText: "编辑公告"
     }
+  },
+  {
+    path: "pages/game/game",
+    style: {
+      navigationBarTitleText: "游戏中心",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/shengbei",
+    style: {
+      navigationBarTitleText: "掷圣杯",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/tarot",
+    style: {
+      navigationBarTitleText: "塔罗牌",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/compatibility",
+    style: {
+      navigationBarTitleText: "今日合拍度",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/match",
+    style: {
+      navigationBarTitleText: "青宇对对碰",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/draw",
+    style: {
+      navigationBarTitleText: "创意画板",
+      enablePullDownRefresh: false
+    }
   }
 ];
 const tabBar = {
@@ -8340,6 +8382,12 @@ const tabBar = {
       iconPath: "/static/tabbar/hd.png",
       selectedIconPath: "static/tabbar/hd1.png",
       text: "点亮见面"
+    },
+    {
+      pagePath: "pages/game/game",
+      iconPath: "/static/tabbar/game.png",
+      selectedIconPath: "static/tabbar/game1.png",
+      text: "游戏"
     }
   ]
 };
@@ -8679,7 +8727,7 @@ class S {
 function T(e2) {
   return e2 && "string" == typeof e2 ? JSON.parse(e2) : e2;
 }
-const b = true, E = "mp-weixin", A = T(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), P = E, C = T('{"address":["127.0.0.1","192.168.0.85","172.43.3.45"],"servePort":7001,"debugPort":9001,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","D:/programs/HBuilderX.4.85.2025110510/HBuilderX/plugins/unicloud/**/*.js"]}'), O = T('[{"provider":"aliyun","spaceName":"fjywq","spaceId":"mp-ac82fe76-0af1-4c03-bd6a-3988a33eb80a","clientSecret":"K4PE8P59ZLDni7Q30sB0aA==","endpoint":"https://api.next.bspapp.com"}]') || [];
+const b = true, E = "mp-weixin", A = T(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), P = E, C = T('{"address":["127.0.0.1","192.168.0.85"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","D:/programs/HBuilderX.4.85.2025110510/HBuilderX/plugins/unicloud/**/*.js"]}'), O = T('[{"provider":"alipay","spaceName":"fjywq","spaceId":"env-00jy66xyyok3","spaceAppId":"2021006132612208","accessKey":"Ccy83BSQ5lbkW3hW","secretKey":"311RGUj2JQuy0wlT"}]') || [];
 let N = "";
 try {
   N = "__UNI__F7BEF5E";

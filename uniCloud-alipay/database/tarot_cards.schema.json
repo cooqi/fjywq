@@ -1,0 +1,97 @@
+{
+  "bsonType": "object",
+  "required": [],
+  "permission": {
+    "read": true,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "card_type": {
+      "bsonType": "string",
+      "description": "卡片类型：tarot_card（塔罗牌）, daily_question（每日问题）",
+      "trim": "both",
+      "forceDefaultValue": "tarot_card"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "塔罗牌名称",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "emoji": {
+      "bsonType": "string",
+      "description": "塔罗牌图标/表情符号（没有图片时使用）",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "image": {
+      "bsonType": "string",
+      "description": "正位图片URL（可选，优先显示图片，没有则显示emoji）",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "reversed_image": {
+      "bsonType": "string",
+      "description": "逆位图片URL（可选，如果没有则使用正位图片并CSS翻转）",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "reversed_emoji": {
+      "bsonType": "string",
+      "description": "逆位图标（可选，如果没有则使用正位emoji并CSS翻转）",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "meaning_upright": {
+      "bsonType": "string",
+      "description": "正位牌义关键词",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "meaning_reversed": {
+      "bsonType": "string",
+      "description": "逆位牌义关键词",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "interpretation_upright": {
+      "bsonType": "string",
+      "description": "正位详细解读",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "interpretation_reversed": {
+      "bsonType": "string",
+      "description": "逆位详细解读",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "sort": {
+      "bsonType": "int",
+      "description": "排序序号",
+      "minimum": 0,
+      "maximum": 999,
+      "forceDefaultValue": 0
+    },
+    "is_active": {
+      "bsonType": "bool",
+      "description": "是否启用",
+      "forceDefaultValue": true
+    },
+    "create_date": {
+      "bsonType": "timestamp",
+      "label": "创建时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      },
+      "componentForEdit": {
+        "name": "uni-dateformat"
+      }
+    }
+  }
+}

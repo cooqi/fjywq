@@ -213,7 +213,7 @@
 
 	.content {
 		border-bottom:1px solid #ccc;
-		padding: 10px 0;
+		padding: 30px 0 10px;
 	}
 	.bz{
 		color: #aaa1ce;
@@ -265,6 +265,12 @@
 	}
 	.tabs{
 		padding: 0 10px;
+		position: fixed;
+		top:0;
+		left: 0;
+		width: 100%;
+		z-index: 99;
+		background: #fff;
 	}
 	.tips{
 		text-align: center;

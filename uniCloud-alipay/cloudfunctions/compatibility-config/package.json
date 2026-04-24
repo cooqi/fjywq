@@ -1,0 +1,13 @@
+{
+  "name": "compatibility-config",
+  "version": "1.0.0",
+  "description": "获取今日合拍度配置数据",
+  "main": "index.js",
+  "dependencies": {},
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 5,
+    "path": "/compatibility-config",
+    "concurrency": 10
+  }
+}

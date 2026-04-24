@@ -1,0 +1,432 @@
+
+.container.data-v-cd824c5a {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 30%, #ffffff 100%);
+  padding: 0 0 20px 0;
+}
+
+/* 日历区域 */
+.calendar-section.data-v-cd824c5a {
+  background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%);
+  padding: 30px 20px 50px;
+  border-radius: 0 0 30px 30px;
+  position: relative;
+  overflow: hidden;
+}
+.calendar-header.data-v-cd824c5a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.month.data-v-cd824c5a {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 2px;
+}
+.expand-btn.data-v-cd824c5a {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  cursor: pointer;
+}
+.expand-text.data-v-cd824c5a {
+  font-size: 12px;
+  color: #ffffff;
+  margin-right: 4px;
+}
+.expand-icon.data-v-cd824c5a {
+  font-size: 14px;
+  color: #ffffff;
+}
+.calendar-body.data-v-cd824c5a {
+  transition: max-height 0.3s ease;
+  overflow: hidden;
+}
+.calendar-body.data-v-cd824c5a:not(.expanded) {
+  max-height: 120px;
+}
+.calendar-body.expanded.data-v-cd824c5a {
+  max-height: 400px;
+}
+.calendar-days.data-v-cd824c5a {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 10px;
+}
+.day-label.data-v-cd824c5a {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.calendar-dates.data-v-cd824c5a {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+.date-item.data-v-cd824c5a {
+  width: 100%;
+  text-align: center;
+  padding: 8px 0;
+  position: relative;
+  box-sizing: border-box;
+}
+.date-number.data-v-cd824c5a {
+  font-size: 14px;
+  color: #ffffff;
+}
+.date-item.today .date-number.data-v-cd824c5a {
+  background: #ffffff;
+  color: #a78bfa;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+.event-dot.data-v-cd824c5a {
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  border-radius: 50%;
+  margin: 2px auto 0;
+}
+
+/* 波浪装饰 */
+.wave-decoration.data-v-cd824c5a {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 100%);
+  -webkit-clip-path: polygon(
+    0% 0%, 
+    5% 40%, 
+    10% 0%, 
+    15% 40%, 
+    20% 0%, 
+    25% 40%, 
+    30% 0%, 
+    35% 40%, 
+    40% 0%, 
+    45% 40%, 
+    50% 0%, 
+    55% 40%, 
+    60% 0%, 
+    65% 40%, 
+    70% 0%, 
+    75% 40%, 
+    80% 0%, 
+    85% 40%, 
+    90% 0%, 
+    95% 40%, 
+    100% 0%, 
+    100% 100%, 
+    0% 100%
+  );
+          clip-path: polygon(
+    0% 0%, 
+    5% 40%, 
+    10% 0%, 
+    15% 40%, 
+    20% 0%, 
+    25% 40%, 
+    30% 0%, 
+    35% 40%, 
+    40% 0%, 
+    45% 40%, 
+    50% 0%, 
+    55% 40%, 
+    60% 0%, 
+    65% 40%, 
+    70% 0%, 
+    75% 40%, 
+    80% 0%, 
+    85% 40%, 
+    90% 0%, 
+    95% 40%, 
+    100% 0%, 
+    100% 100%, 
+    0% 100%
+  );
+}
+
+/* 合拍度区域 */
+.compatibility-section.data-v-cd824c5a {
+  padding: 30px 20px;
+  text-align: center;
+}
+.section-title.data-v-cd824c5a {
+  font-size: 20px;
+  font-weight: bold;
+  color: #6b21a8;
+  display: block;
+  margin-bottom: 25px;
+}
+.avatar-area.data-v-cd824c5a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+.avatar-item.data-v-cd824c5a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.avatar-circle.data-v-cd824c5a {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e9d5ff 0%, #c4b5fd 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
+}
+.avatar-icon.data-v-cd824c5a {
+  font-size: 32px;
+}
+.avatar-name.data-v-cd824c5a {
+  font-size: 14px;
+  color: #6b21a8;
+  font-weight: 500;
+}
+.heart-icon.data-v-cd824c5a {
+  font-size: 36px;
+  margin: 0 20px;
+  animation: heartbeat-cd824c5a 1.5s ease-in-out infinite;
+}
+@keyframes heartbeat-cd824c5a {
+0%, 100% { transform: scale(1);
+}
+50% { transform: scale(1.2);
+}
+}
+.score-display.data-v-cd824c5a {
+  position: relative;
+  margin-bottom: 20px;
+}
+.score-label.data-v-cd824c5a {
+  display: block;
+  font-size: 16px;
+  color: #a78bfa;
+  margin-bottom: 10px;
+}
+.score-number.data-v-cd824c5a {
+  font-size: 72px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.score-unit.data-v-cd824c5a {
+  font-size: 20px;
+  color: #a78bfa;
+  margin-left: 5px;
+}
+.compatibility-desc.data-v-cd824c5a {
+  background: #f3e8ff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 20px;
+}
+.compatibility-desc text.data-v-cd824c5a {
+  font-size: 13px;
+  color: #6b21a8;
+  line-height: 1.6;
+}
+
+/* 宜忌区域 */
+.yi-ji-section.data-v-cd824c5a {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.yi-main.data-v-cd824c5a, .ji-main.data-v-cd824c5a {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.yi-big-label.data-v-cd824c5a, .ji-big-label.data-v-cd824c5a {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.yi-big-label.data-v-cd824c5a {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+.ji-big-label.data-v-cd824c5a {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+.yi-text.data-v-cd824c5a, .ji-text.data-v-cd824c5a {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+}
+.yi-tags-grid.data-v-cd824c5a, .ji-tags-grid.data-v-cd824c5a {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.yi-tag-item.data-v-cd824c5a, .ji-tag-item.data-v-cd824c5a {
+  background: #f3e8ff;
+  border: 1px solid #c4b5fd;
+  border-radius: 8px;
+  padding: 10px 6px;
+  text-align: center;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ji-tag-item.data-v-cd824c5a {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+.yi-tag-text.data-v-cd824c5a, .ji-tag-text.data-v-cd824c5a {
+  font-size: 12px;
+  color: #6b21a8;
+  font-weight: 500;
+}
+.ji-tag-text.data-v-cd824c5a {
+  color: #dc2626;
+}
+
+/* AU小剧场 */
+.au-section.data-v-cd824c5a {
+  padding: 20px;
+}
+.au-header.data-v-cd824c5a {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.au-icon.data-v-cd824c5a {
+  font-size: 24px;
+  margin-right: 8px;
+}
+.au-title.data-v-cd824c5a {
+  font-size: 18px;
+  font-weight: bold;
+  color: #6b21a8;
+}
+.au-card.data-v-cd824c5a {
+  background: #ffffff;
+  border: 2px solid #e9d5ff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(167, 139, 250, 0.1);
+}
+.au-subtitle.data-v-cd824c5a {
+  display: block;
+  font-size: 16px;
+  font-weight: bold;
+  color: #7c3aed;
+  margin-bottom: 12px;
+}
+.au-content.data-v-cd824c5a {
+  font-size: 13px;
+  color: #6b21a8;
+  line-height: 1.8;
+}
+.au-content text.data-v-cd824c5a {
+  display: block;
+}
+
+/* 心动瞬间 */
+.moment-section.data-v-cd824c5a {
+  padding: 0 20px 20px;
+}
+.moment-header.data-v-cd824c5a {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.moment-icon.data-v-cd824c5a {
+  font-size: 24px;
+  margin-right: 8px;
+}
+.moment-title.data-v-cd824c5a {
+  font-size: 18px;
+  font-weight: bold;
+  color: #6b21a8;
+}
+.moment-card.data-v-cd824c5a {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border-radius: 16px;
+  padding: 20px;
+}
+.moment-text.data-v-cd824c5a {
+  font-size: 14px;
+  color: #be185d;
+  line-height: 1.8;
+}
+
+/* 财运 */
+.fortune-section.data-v-cd824c5a {
+  padding: 0 20px 20px;
+}
+.fortune-card.data-v-cd824c5a {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+.fortune-label.data-v-cd824c5a {
+  display: block;
+  font-size: 16px;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+.fortune-score.data-v-cd824c5a {
+  display: block;
+  font-size: 48px;
+  font-weight: bold;
+  color: #d97706;
+  margin-bottom: 10px;
+}
+.fortune-desc.data-v-cd824c5a {
+  font-size: 13px;
+  color: #92400e;
+}
+
+/* 底部按钮 */
+.action-buttons.data-v-cd824c5a {
+  padding: 20px;
+}
+.action-btn.data-v-cd824c5a {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon.data-v-cd824c5a {
+  margin-right: 8px;
+  font-size: 18px;
+}
+.btn-text.data-v-cd824c5a {
+  color: #ffffff;
+}
