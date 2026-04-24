@@ -58,6 +58,17 @@ const _sfc_main = {
       ]
     };
   },
+  onShareAppMessage: function() {
+    return {
+      title: "宇青青宇全肯定",
+      path: "/pages/game/game"
+    };
+  },
+  onShareTimeline: function() {
+    return {
+      title: "宇青青宇全肯定"
+    };
+  },
   methods: {
     throwCups() {
       if (this.isThrowing)
@@ -115,5 +126,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-963c17c7"]]);
+_sfc_main.__runtimeHooks = 6;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/game/shengbei.js.map

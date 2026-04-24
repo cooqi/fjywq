@@ -20,6 +20,17 @@ const _sfc_main = {
   onLoad() {
     this.loadTarotCards();
   },
+  onShareAppMessage: function() {
+    return {
+      title: "宇青青宇全肯定",
+      path: "/pages/game/game"
+    };
+  },
+  onShareTimeline: function() {
+    return {
+      title: "宇青青宇全肯定"
+    };
+  },
   methods: {
     goBack() {
       common_vendor.index.navigateBack();
@@ -45,7 +56,7 @@ const _sfc_main = {
           throw new Error(res.result.msg || "获取塔罗牌数据失败");
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/game/tarot.vue:121", "加载塔罗牌数据异常:", error);
+        common_vendor.index.__f__("error", "at pages/game/tarot.vue:132", "加载塔罗牌数据异常:", error);
         common_vendor.index.showToast({
           title: error.message || "加载失败，请重试",
           icon: "none",
@@ -107,10 +118,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["保存图片"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/game/tarot.vue:196", "选择了第" + (data.tapIndex + 1) + "个按钮");
+            common_vendor.index.__f__("log", "at pages/game/tarot.vue:207", "选择了第" + (data.tapIndex + 1) + "个按钮");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/game/tarot.vue:199", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/game/tarot.vue:210", err.errMsg);
           }
         }
       });
@@ -157,5 +168,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }) : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-35557016"]]);
+_sfc_main.__runtimeHooks = 6;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/game/tarot.js.map

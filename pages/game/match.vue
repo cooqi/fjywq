@@ -171,6 +171,17 @@ export default {
   onUnload() {
     this.clearTimer()
   },
+  onShareAppMessage: function () {
+    return {
+        title: '宇青青宇全肯定',
+        path: '/pages/game/game'
+    }
+    },
+    onShareTimeline: function () {
+    return {
+        title: '宇青青宇全肯定'
+    }
+    },
   methods: {
     // 选择难度
     selectDifficulty(difficulty) {

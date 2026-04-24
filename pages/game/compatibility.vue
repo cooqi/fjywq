@@ -185,6 +185,17 @@ export default {
     this.initCalendar()
     this.loadConfigData()
   },
+  onShareAppMessage: function () {
+    return {
+        title: '宇青青宇全肯定',
+        path: '/pages/game/game'
+    }
+    },
+    onShareTimeline: function () {
+    return {
+        title: '宇青青宇全肯定'
+    }
+},
   methods: {
     // 从云数据库加载配置数据
     async loadConfigData() {

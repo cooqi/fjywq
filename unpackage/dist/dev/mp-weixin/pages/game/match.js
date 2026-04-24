@@ -46,6 +46,17 @@ const _sfc_main = {
   onUnload() {
     this.clearTimer();
   },
+  onShareAppMessage: function() {
+    return {
+      title: "宇青青宇全肯定",
+      path: "/pages/game/game"
+    };
+  },
+  onShareTimeline: function() {
+    return {
+      title: "宇青青宇全肯定"
+    };
+  },
   methods: {
     // 选择难度
     selectDifficulty(difficulty) {
@@ -214,5 +225,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b398df43"]]);
+_sfc_main.__runtimeHooks = 6;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/game/match.js.map

@@ -89,6 +89,17 @@ export default {
   onLoad() {
     this.loadTarotCards()
   },
+  onShareAppMessage: function () {
+    return {
+        title: '宇青青宇全肯定',
+        path: '/pages/game/game'
+    }
+    },
+    onShareTimeline: function () {
+    return {
+        title: '宇青青宇全肯定'
+    }
+    },
   methods: {
     goBack() {
       uni.navigateBack()

@@ -48,6 +48,17 @@ const _sfc_main = {
     this.initCalendar();
     this.loadConfigData();
   },
+  onShareAppMessage: function() {
+    return {
+      title: "宇青青宇全肯定",
+      path: "/pages/game/game"
+    };
+  },
+  onShareTimeline: function() {
+    return {
+      title: "宇青青宇全肯定"
+    };
+  },
   methods: {
     // 从云数据库加载配置数据
     async loadConfigData() {
@@ -67,7 +78,7 @@ const _sfc_main = {
           throw new Error(res.result.msg || "获取配置数据失败");
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:214", "加载配置数据异常:", error);
+        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:225", "加载配置数据异常:", error);
         common_vendor.index.hideLoading();
         common_vendor.index.showToast({
           title: error.message || "加载失败，请重试",
@@ -283,5 +294,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-cd824c5a"]]);
+_sfc_main.__runtimeHooks = 6;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/game/compatibility.js.map
