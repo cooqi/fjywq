@@ -86,7 +86,7 @@ const _sfc_main = {
                 user_info: _this.userInfo
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:118", "云函数返回的值：：：：", res2.result);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:123", "云函数返回的值：：：：", res2.result);
                 common_vendor.index.hideLoading();
                 if (res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
@@ -95,7 +95,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:126", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:131", "云函数调用失败", err);
               }
             });
           }
@@ -120,7 +120,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/meet/meet.vue:151", err);
+        common_vendor.index.__f__("error", "at pages/meet/meet.vue:156", err);
       });
     },
     updateList(data) {
@@ -148,12 +148,12 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:178", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:183", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/meet/meet.vue:183", e);
+      common_vendor.index.__f__("log", "at pages/meet/meet.vue:188", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
       common_vendor.tr.callFunction({
@@ -169,7 +169,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:201", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:206", "云函数调用失败", err);
         }
       });
     },
@@ -194,11 +194,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:225", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:230", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/meet/meet.vue:229", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/meet/meet.vue:234", "用户点击取消");
           }
         }
       });
@@ -208,16 +208,16 @@ const _sfc_main = {
 if (!Array) {
   const _easycom_uni_data_checkbox2 = common_vendor.resolveComponent("uni-data-checkbox");
   const _easycom_uni_popup2 = common_vendor.resolveComponent("uni-popup");
-  const _easycom_uni_list_chat2 = common_vendor.resolveComponent("uni-list-chat");
+  const _easycom_uni_list_item2 = common_vendor.resolveComponent("uni-list-item");
   const _easycom_uni_list2 = common_vendor.resolveComponent("uni-list");
-  (_easycom_uni_data_checkbox2 + _easycom_uni_popup2 + _easycom_uni_list_chat2 + _easycom_uni_list2)();
+  (_easycom_uni_data_checkbox2 + _easycom_uni_popup2 + _easycom_uni_list_item2 + _easycom_uni_list2)();
 }
 const _easycom_uni_data_checkbox = () => "../../uni_modules/uni-data-checkbox/components/uni-data-checkbox/uni-data-checkbox.js";
 const _easycom_uni_popup = () => "../../uni_modules/uni-popup/components/uni-popup/uni-popup.js";
-const _easycom_uni_list_chat = () => "../../uni_modules/uni-list/components/uni-list-chat/uni-list-chat.js";
+const _easycom_uni_list_item = () => "../../uni_modules/uni-list/components/uni-list-item/uni-list-item.js";
 const _easycom_uni_list = () => "../../uni_modules/uni-list/components/uni-list/uni-list.js";
 if (!Math) {
-  (_easycom_uni_data_checkbox + _easycom_uni_popup + _easycom_uni_list_chat + _easycom_uni_list)();
+  (_easycom_uni_data_checkbox + _easycom_uni_popup + _easycom_uni_list_item + _easycom_uni_list)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
@@ -255,7 +255,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         c: "9189ceae-3-" + i0 + ",9189ceae-2",
         d: common_vendor.p({
           title: item.meet_info.title,
-          avatar: item.meet_info.img || $data.qy,
+          ["thumb-size"]: "lg",
+          thumb: item.meet_info.img || $data.qy,
           note: item.meet_info.content
         })
       };

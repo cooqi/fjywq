@@ -19,11 +19,16 @@
 			</view>
 		</uni-popup>
 		<uni-list :border="true">
-				<uni-list-chat v-for="item in my_meet" :key="item._id" :title="item.meet_info.title" :avatar="item.meet_info.img||qy" :note="item.meet_info.content"  >
+		
+				<uni-list-item v-for="item in my_meet" :key="item._id" :title="item.meet_info.title" thumb-size="lg" :thumb="item.meet_info.img||qy" :note="item.meet_info.content"  >
+					
+					
+					<template v-slot:footer>
 					<view class="chat-custom-right">
 						<text class="chat-custom-text del" @click="del(item)">删除</text>
 					</view>
-				</uni-list-chat>
+					</template>
+				</uni-list-item>
 		</uni-list>
 		</view>
 	</view>
