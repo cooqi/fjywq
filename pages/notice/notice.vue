@@ -1,5 +1,5 @@
 <template>
-	<view class="content">
+	<view class="content-box">
 		<view class="tabs">
 			<uni-segmented-control :current="current" :values="items"
 			 @clickItem="onClickItem" />
@@ -191,6 +191,9 @@
 </script>
 
 <style lang="scss">
+.content-box {
+	padding: 30px 0 10px;
+}
 	.card-actions {
 			display: flex;
 			flex-direction: row;

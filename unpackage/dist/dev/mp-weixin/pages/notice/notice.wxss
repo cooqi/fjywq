@@ -23,6 +23,9 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
+.content-box {
+  padding: 30px 0 10px;
+}
 .card-actions {
   display: flex;
   flex-direction: row;
