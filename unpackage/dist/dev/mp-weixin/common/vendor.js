@@ -11264,5 +11264,4 @@ exports.s = s$1;
 exports.sr = sr;
 exports.t = t$1;
 exports.tr = tr;
-exports.wx$1 = wx$1;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/common/vendor.js.map

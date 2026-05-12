@@ -179,7 +179,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:194", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:190", err);
       });
     },
     onClickItem(e) {
@@ -238,7 +238,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:264", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:260", err);
       });
     },
     toRedisPage() {
@@ -320,10 +320,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
     r: common_vendor.o((...args) => $options.edit && $options.edit(...args))
-  } : {}, {
-    s: _ctx.showScreenshotWatermark
-  }, _ctx.showScreenshotWatermark ? {
-    t: common_vendor.t(_ctx.watermarkText)
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

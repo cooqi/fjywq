@@ -66,11 +66,6 @@
       
       <button class="action-btn" @click="resetGame">重新抽牌</button>
     </view>
-    
-    <!-- 截图水印 -->
-    <view class="screenshot-watermark" v-if="showScreenshotWatermark">
-      <text class="watermark-text-large">{{ watermarkText }}</text>
-    </view>
   </view>
 </template>
 
@@ -460,28 +455,5 @@ export default {
   padding: 12px 40px;
   font-size: 16px;
   font-weight: bold;
-}
-
-/* 截图水印样式 */
-.screenshot-watermark {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 99999;
-  pointer-events: none;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.watermark-text-large {
-  font-size: 80px;
-  font-weight: bold;
-  color: rgba(0, 0, 0, 0.15);
-  transform: rotate(-45deg);
-  user-select: none;
 }
 </style>

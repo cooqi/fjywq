@@ -1,6 +1,5 @@
 <template>
-	<view class="page-container">
-		<view class="calendar">
+	<view class="calendar">
 		  <EmbedCalendar
 		    :show-top-section="true"
 		    :greeting-text="customGreeting"
@@ -42,12 +41,8 @@
 		
 		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
 		
-		<!-- 截图水印 -->
-		<view class="screenshot-watermark" v-if="showScreenshotWatermark">
-		  <text class="watermark-text-large">{{ watermarkText }}</text>
-		</view>
 	</view>
-	</view>
+
 </template>
 
 <script>
@@ -85,6 +80,7 @@
 				// error
 			}
 		},
+	
 		watch:{
 			dayAboutInfo:{
 				handler(val){
@@ -338,5 +334,17 @@
 		margin-bottom: 15px;;
 	}
 
-	
+	.watermark {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(255, 255, 255, 0.5);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-size: 20px;
+		color: #999;
+	}
 </style>
