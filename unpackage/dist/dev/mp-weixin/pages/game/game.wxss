@@ -61,6 +61,9 @@
 .draw-icon.data-v-84820fe1 {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
+.huarongdao-icon.data-v-84820fe1 {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
 .game-info.data-v-84820fe1 {
   flex: 1;
 }

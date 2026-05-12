@@ -19,9 +19,11 @@ const _sfc_main = {
       difficultyConfig: {
         easy: { pairs: 7, grid: "4x4", columns: 4 },
         medium: { pairs: 10, grid: "4x5", columns: 4 },
-        hard: { pairs: 15, grid: "5x6", columns: 5 }
+        hard: { pairs: 15, grid: "5x6", columns: 5 },
+        ultimate: { pairs: 21, grid: "6x7", columns: 6 },
+        extreme: { pairs: 30, grid: "6x10", columns: 6 }
       },
-      // 配对图片的网络URL（至少需要15张）
+      // 配对图片的网络URL（至少需要30张）
       imageUrls: [
         "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy1.jpg",
         "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy2.jpg",
@@ -37,7 +39,22 @@ const _sfc_main = {
         "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy12.jpg",
         "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy13.jpg",
         "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy14.jpg",
-        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy15.jpg"
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy15.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy16.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy17.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy18.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy19.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy20.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy21.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy22.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy23.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy24.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy25.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy26.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy27.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy28.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy29.jpg",
+        "https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy30.jpg"
       ]
     };
   },
@@ -180,7 +197,9 @@ const _sfc_main = {
       const names = {
         easy: "简单",
         medium: "中等",
-        hard: "困难"
+        hard: "困难",
+        ultimate: "地域",
+        extreme: "极限"
       };
       return names[this.selectedDifficulty] || "";
     }
@@ -196,14 +215,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     e: common_vendor.o(($event) => $options.selectDifficulty("medium")),
     f: $data.selectedDifficulty === "hard" ? 1 : "",
     g: common_vendor.o(($event) => $options.selectDifficulty("hard")),
-    h: common_vendor.o((...args) => $options.startGame && $options.startGame(...args)),
-    i: !$data.selectedDifficulty
+    h: $data.selectedDifficulty === "ultimate" ? 1 : "",
+    i: common_vendor.o(($event) => $options.selectDifficulty("ultimate")),
+    j: $data.selectedDifficulty === "extreme" ? 1 : "",
+    k: common_vendor.o(($event) => $options.selectDifficulty("extreme")),
+    l: common_vendor.o((...args) => $options.startGame && $options.startGame(...args)),
+    m: !$data.selectedDifficulty
   } : common_vendor.e({
-    j: common_vendor.t($data.moves),
-    k: common_vendor.t($options.formatTime($data.time)),
-    l: common_vendor.t($data.matchedPairs),
-    m: common_vendor.t($data.totalPairs),
-    n: common_vendor.f($data.cards, (card, index, i0) => {
+    n: common_vendor.t($data.moves),
+    o: common_vendor.t($options.formatTime($data.time)),
+    p: common_vendor.t($data.matchedPairs),
+    q: common_vendor.t($data.totalPairs),
+    r: common_vendor.f($data.cards, (card, index, i0) => {
       return {
         a: card.image,
         b: index,
@@ -212,16 +235,16 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         e: common_vendor.o(($event) => $options.flipCard(index), index)
       };
     }),
-    o: common_vendor.n("grid-" + $data.currentGrid),
-    p: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args)),
-    q: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args)),
-    r: $data.showWinModal
+    s: common_vendor.n("grid-" + $data.currentGrid),
+    t: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args)),
+    v: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args)),
+    w: $data.showWinModal
   }, $data.showWinModal ? {
-    s: common_vendor.t($options.getDifficultyName()),
-    t: common_vendor.t($options.formatTime($data.time)),
-    v: common_vendor.t($data.moves),
-    w: common_vendor.t($options.getRating()),
-    x: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args))
+    x: common_vendor.t($options.getDifficultyName()),
+    y: common_vendor.t($options.formatTime($data.time)),
+    z: common_vendor.t($data.moves),
+    A: common_vendor.t($options.getRating()),
+    B: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args))
   } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b398df43"]]);

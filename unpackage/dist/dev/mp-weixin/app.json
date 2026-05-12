@@ -11,7 +11,8 @@
     "pages/game/tarot",
     "pages/game/compatibility",
     "pages/game/match",
-    "pages/game/draw"
+    "pages/game/draw",
+    "pages/game/huarongdao"
   ],
   "window": {
     "navigationBarTextStyle": "black",

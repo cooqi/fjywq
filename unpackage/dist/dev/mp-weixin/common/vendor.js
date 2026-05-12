@@ -7324,7 +7324,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "172.43.2.247,192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_848hDV";
+  const id = "mp-weixin_ONlG_n";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8349,6 +8349,13 @@ const pages = [
     path: "pages/game/draw",
     style: {
       navigationBarTitleText: "创意画板",
+      enablePullDownRefresh: false
+    }
+  },
+  {
+    path: "pages/game/huarongdao",
+    style: {
+      navigationBarTitleText: "华容道",
       enablePullDownRefresh: false
     }
   }

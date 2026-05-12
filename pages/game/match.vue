@@ -40,6 +40,34 @@
           <text class="difficulty-desc">30张卡片 · 15对</text>
           <text class="difficulty-grid">5×6 网格</text>
         </view>
+        
+        <view 
+          class="difficulty-card difficulty-card-ultimate" 
+          :class="{ 'selected': selectedDifficulty === 'ultimate' }"
+          @click="selectDifficulty('ultimate')"
+        >
+          <view class="difficulty-icon">🌍</view>
+          <view class="difficulty-info">
+            <text class="difficulty-name">极难</text>
+            <text class="difficulty-badge">挑战</text>
+          </view>
+          <text class="difficulty-desc">42张卡片 · 21对</text>
+          <text class="difficulty-grid">6×7 网格</text>
+        </view>
+        
+        <view 
+          class="difficulty-card difficulty-card-extreme" 
+          :class="{ 'selected': selectedDifficulty === 'extreme' }"
+          @click="selectDifficulty('extreme')"
+        >
+          <view class="difficulty-icon">🔥</view>
+          <view class="difficulty-info">
+            <text class="difficulty-name">极限</text>
+            <text class="difficulty-badge extreme-badge">地狱</text>
+          </view>
+          <text class="difficulty-desc">60张卡片 · 30对</text>
+          <text class="difficulty-grid">6×10 网格</text>
+        </view>
       </view>
       
       <button class="start-btn" @click="startGame" :disabled="!selectedDifficulty">
@@ -143,9 +171,11 @@ export default {
       difficultyConfig: {
         easy: { pairs: 7, grid: '4x4', columns: 4 },
         medium: { pairs: 10, grid: '4x5', columns: 4 },
-        hard: { pairs: 15, grid: '5x6', columns: 5 }
+        hard: { pairs: 15, grid: '5x6', columns: 5 },
+        ultimate: { pairs: 21, grid: '6x7', columns: 6 },
+        extreme: { pairs: 30, grid: '6x10', columns: 6 }
       },
-      // 配对图片的网络URL（至少需要15张）
+      // 配对图片的网络URL（至少需要30张）
       imageUrls: [
         'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy1.jpg',
         'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy2.jpg',
@@ -161,7 +191,22 @@ export default {
         'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy12.jpg',
         'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy13.jpg',
         'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy14.jpg',
-        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy15.jpg'
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy15.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy16.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy17.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy18.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy19.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy20.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy21.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy22.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy23.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy24.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy25.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy26.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy27.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy28.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy29.jpg',
+        'https://env-00jy66xyyok3.normal.cloudstatic.cn/游戏/qy30.jpg'
       ]
     }
   },
@@ -331,7 +376,9 @@ export default {
       const names = {
         easy: '简单',
         medium: '中等',
-        hard: '困难'
+        hard: '困难',
+        ultimate: '地域',
+        extreme: '极限'
       }
       return names[this.selectedDifficulty] || ''
     }
@@ -404,6 +451,50 @@ export default {
   border-color: #f093fb;
   background: #ffffff;
   box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+}
+
+/* 地域难度特殊样式 */
+.difficulty-card-ultimate {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 147, 251, 0.1) 100%);
+  border: 2px solid rgba(240, 147, 251, 0.3);
+}
+
+.difficulty-card-ultimate.selected {
+  border-color: #f5576c;
+  background: linear-gradient(135deg, #ffffff 0%, #fce7f3 100%);
+  box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+}
+
+/* 极限难度特殊样式 */
+.difficulty-card-extreme {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 107, 107, 0.15) 100%);
+  border: 2px solid rgba(255, 107, 107, 0.4);
+}
+
+.difficulty-card-extreme.selected {
+  border-color: #ff4757;
+  background: linear-gradient(135deg, #ffffff 0%, #ffe0e0 100%);
+  box-shadow: 0 8px 30px rgba(255, 71, 87, 0.5);
+}
+
+.extreme-badge {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+}
+
+.difficulty-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.difficulty-badge {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #ffffff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: bold;
 }
 
 .difficulty-icon {
@@ -518,6 +609,16 @@ export default {
 /* 困难模式 5x6 */
 .game-board.grid-5x6 {
   grid-template-columns: repeat(5, 1fr);
+}
+
+/* 地域模式 6x7 */
+.game-board.grid-6x7 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+/* 极限模式 6x10 */
+.game-board.grid-6x10 {
+  grid-template-columns: repeat(6, 1fr);
 }
 
 .card {

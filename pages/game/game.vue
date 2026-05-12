@@ -43,6 +43,16 @@
         <view class="arrow">›</view>
       </view>
 
+      <!-- 华容道 -->
+      <view class="game-card" @click="goToGame('huarongdao')">
+        <view class="game-icon huarongdao-icon">🧩</view>
+        <view class="game-info">
+          <text class="game-name">青宇大逃亡</text>
+          <text class="game-desc">经典益智，帮助青宇逃脱黑子的围剿</text>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+
       <!-- 创意画板 -->
       <!-- <view class="game-card" @click="goToGame('draw')">
         <view class="game-icon draw-icon">🎨</view>
@@ -79,7 +89,8 @@ export default {
         'tarot': '/pages/game/tarot',
         'compatibility': '/pages/game/compatibility',
         'match': '/pages/game/match',
-        'draw': '/pages/game/draw'
+        'draw': '/pages/game/draw',
+        'huarongdao': '/pages/game/huarongdao'
       }
       
       if (routes[gameType]) {
@@ -166,6 +177,10 @@ export default {
 
 .draw-icon {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.huarongdao-icon {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
 .game-info {

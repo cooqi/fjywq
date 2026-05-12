@@ -14,6 +14,7 @@ if (!Math) {
   "./pages/game/compatibility.js";
   "./pages/game/match.js";
   "./pages/game/draw.js";
+  "./pages/game/huarongdao.js";
 }
 const _sfc_main = {
   onLaunch: async function() {
