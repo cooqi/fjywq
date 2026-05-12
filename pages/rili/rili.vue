@@ -1,5 +1,6 @@
 <template>
-	<view class="calendar">
+	<view class="page-container">
+		<view class="calendar">
 		  <EmbedCalendar
 		    :show-top-section="true"
 		    :greeting-text="customGreeting"
@@ -41,6 +42,11 @@
 		
 		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
 		
+		<!-- 截图水印 -->
+		<view class="screenshot-watermark" v-if="showScreenshotWatermark">
+		  <text class="watermark-text-large">{{ watermarkText }}</text>
+		</view>
+	</view>
 	</view>
 </template>
 

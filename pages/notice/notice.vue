@@ -213,7 +213,7 @@
 
 	.content {
 		border-bottom:1px solid #ccc;
-		padding: 30px 0 10px;
+		padding-bottom:10px ;
 	}
 	.bz{
 		color: #aaa1ce;

@@ -5,7 +5,11 @@ import Vue from 'vue'
 import './uni.promisify.adaptor'
 Vue.config.productionTip = false
 import share from './common/js/share.js'
-Vue.mixin(share) 
+Vue.mixin(share)
+
+// 引入全局水印混入
+import watermarkMixin from './common/js/watermark.js'
+Vue.mixin(watermarkMixin) 
 
 App.mpType = 'app'
 

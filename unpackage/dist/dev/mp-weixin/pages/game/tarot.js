@@ -56,7 +56,7 @@ const _sfc_main = {
           throw new Error(res.result.msg || "获取塔罗牌数据失败");
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/game/tarot.vue:132", "加载塔罗牌数据异常:", error);
+        common_vendor.index.__f__("error", "at pages/game/tarot.vue:137", "加载塔罗牌数据异常:", error);
         common_vendor.index.showToast({
           title: error.message || "加载失败，请重试",
           icon: "none",
@@ -118,10 +118,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["保存图片"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/game/tarot.vue:207", "选择了第" + (data.tapIndex + 1) + "个按钮");
+            common_vendor.index.__f__("log", "at pages/game/tarot.vue:212", "选择了第" + (data.tapIndex + 1) + "个按钮");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/game/tarot.vue:210", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/game/tarot.vue:215", err.errMsg);
           }
         }
       });
@@ -165,7 +165,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     q: common_vendor.t($data.drawnCards[0].isReversed ? $data.drawnCards[0].meaning_reversed || $data.drawnCards[0].meaning : $data.drawnCards[0].meaning_upright || $data.drawnCards[0].meaning),
     r: common_vendor.t($data.drawnCards[0].isReversed ? $data.drawnCards[0].interpretation_reversed || $data.drawnCards[0].interpretation_upright || $data.drawnCards[0].interpretation : $data.drawnCards[0].interpretation_upright || $data.drawnCards[0].interpretation),
     s: common_vendor.o((...args) => $options.resetGame && $options.resetGame(...args))
-  }) : {});
+  }) : {}, {
+    t: _ctx.showScreenshotWatermark
+  }, _ctx.showScreenshotWatermark ? {
+    v: common_vendor.t(_ctx.watermarkText)
+  } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-35557016"]]);
 _sfc_main.__runtimeHooks = 6;
