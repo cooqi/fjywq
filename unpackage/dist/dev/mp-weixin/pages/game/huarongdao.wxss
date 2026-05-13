@@ -184,16 +184,16 @@
   z-index: 20;
 }
 .block-caocao.data-v-9127180b {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  border: 2px solid #FF8C00;
+  background: linear-gradient(135deg, #9817ee 0%, #1cddeb 100%);
+  border: 2px solid #5209c9;
 }
 .block-general_v.data-v-9127180b {
   background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   border: 2px solid #388E3C;
 }
 .block-general_h.data-v-9127180b {
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-  border: 2px solid #1565C0;
+  background: linear-gradient(135deg, #f8f661 0%, #d3b013 100%);
+  border: 2px solid #c0af15;
 }
 .block-soldier.data-v-9127180b {
   background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);

@@ -77,10 +77,18 @@ const _sfc_main = {
     },
     // 返回菜单
     backToMenu() {
-      this.clearTimer();
-      this.showWinModal = false;
-      this.gameStarted = false;
-      this.selectedLevel = "";
+      common_vendor.index.showModal({
+        title: "提示",
+        content: "确定要返回菜单吗？当前进度将丢失",
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer();
+            this.showWinModal = false;
+            this.gameStarted = false;
+            this.selectedLevel = "";
+          }
+        }
+      });
     },
     initGame() {
       this.blocks = this.generateRandomLayout(this.selectedLevel);
@@ -234,9 +242,17 @@ const _sfc_main = {
       }, 300);
     },
     restartGame() {
-      this.clearTimer();
-      this.showWinModal = false;
-      this.initGame();
+      common_vendor.index.showModal({
+        title: "提示",
+        content: "确定要重新开始吗？当前进度将丢失",
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer();
+            this.showWinModal = false;
+            this.initGame();
+          }
+        }
+      });
     },
     startTimer() {
       this.clearTimer();

@@ -247,10 +247,18 @@ export default {
     
     // 返回菜单
     backToMenu() {
-      this.clearTimer()
-      this.showWinModal = false
-      this.gameStarted = false
-      this.selectedLevel = ''
+      uni.showModal({
+        title: '提示',
+        content: '确定要返回菜单吗？当前进度将丢失',
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer()
+            this.showWinModal = false
+            this.gameStarted = false
+            this.selectedLevel = ''
+          }
+        }
+      })
     },
     
     initGame() {
@@ -429,9 +437,17 @@ export default {
     },
     
     restartGame() {
-      this.clearTimer()
-      this.showWinModal = false
-      this.initGame()
+      uni.showModal({
+        title: '提示',
+        content: '确定要重新开始吗？当前进度将丢失',
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer()
+            this.showWinModal = false
+            this.initGame()
+          }
+        }
+      })
     },
     
     startTimer() {
@@ -686,8 +702,8 @@ export default {
 }
 
 .block-caocao {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  border: 2px solid #FF8C00;
+  background: linear-gradient(135deg, #9817ee 0%, #1cddeb 100%);
+  border: 2px solid #5209c9;
 }
 
 .block-general_v {
@@ -696,8 +712,8 @@ export default {
 }
 
 .block-general_h {
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-  border: 2px solid #1565C0;
+  background: linear-gradient(135deg, #f8f661 0%, #d3b013 100%);
+  border: 2px solid #c0af15;
 }
 
 .block-soldier {

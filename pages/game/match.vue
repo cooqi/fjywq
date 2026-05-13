@@ -247,10 +247,18 @@ export default {
     
     // 返回菜单
     backToMenu() {
-      this.clearTimer()
-      this.showWinModal = false
-      this.gameStarted = false
-      this.selectedDifficulty = ''
+      uni.showModal({
+        title: '提示',
+        content: '确定要返回菜单吗？当前进度将丢失',
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer()
+            this.showWinModal = false
+            this.gameStarted = false
+            this.selectedDifficulty = ''
+          }
+        }
+      })
     },
     
     initGame() {
@@ -340,9 +348,17 @@ export default {
     },
     
     restartGame() {
-      this.clearTimer()
-      this.showWinModal = false
-      this.initGame()
+      uni.showModal({
+        title: '提示',
+        content: '确定要重新开始吗？当前进度将丢失',
+        success: (res) => {
+          if (res.confirm) {
+            this.clearTimer()
+            this.showWinModal = false
+            this.initGame()
+          }
+        }
+      })
     },
     
     startTimer() {
