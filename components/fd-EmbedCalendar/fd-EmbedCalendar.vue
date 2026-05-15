@@ -52,14 +52,14 @@
 		<!-- 日历网格 -->
 		<view class="calendar-grid" :class="{ 'week-view': !monthOpen }">
 			<view class="grid-container" :style="{ transform: `translateY(${positionTop}rpx)` }">
-				<view v-for="(item, index) in dates" :key="index" class="date-item" :class="{ 'other-month': !item.lm }"
+				<view v-for="(item, index) in dates" :key="index" class="date-item" :class="{ 'other-month': !item.lm, 'empty-date': item.isEmpty }"
 					@click="selectOne(item, $event)">
 					<view class="date-circle" :class="{
               selected: choose == `${item.year}-${item.month + 1}-${item.date}`,
               today: isToday(item.year, item.month, item.date) && item.lm,
               'special-date':
                 isSigned(item.year, item.month + 1, item.date) && item.lm,
-              disabled: !item.lm,
+              disabled: !item.lm || item.isEmpty,
             }">
 						{{ item.date }}
 					</view>
@@ -188,11 +188,10 @@
 			},
 		},
 		methods: {
-			// 获取当前月份天数
+			// 获取当前月份天数（只显示本月日期）
 			monthDay(y, m) {
 				let firstDayOfMonth = new Date(y, m, 1).getDay(); // 当月第一天星期几
 				let lastDateOfMonth = new Date(y, m + 1, 0).getDate(); // 当月最后一天
-				let lastDayOfLastMonth = new Date(y, m, 0).getDate(); // 上一月的最后一天
 				let dates = []; // 所有渲染日历
 				let weekstart = this.weekstart == 7 ? 0 : this.weekstart; // 方便进行日期计算，默认星期从0开始
 				let startDay = (() => {
@@ -205,32 +204,48 @@
 						return 7 - weekstart + firstDayOfMonth;
 					}
 				})();
-				let endDay = 7 - ((startDay + lastDateOfMonth) % 7); // 结束还有几天是下个月的
-				for (let i = 1; i <= startDay; i++) {
+				
+				// 添加空白占位符（上个月的日期位置）
+				for (let i = 0; i < startDay; i++) {
 					dates.push({
-						date: lastDayOfLastMonth - startDay + i,
-						day: weekstart + i - 1 || 7,
-						month: m - 1 >= 0 ? m - 1 : 12,
-						year: m - 1 >= 0 ? y : y - 1,
+						date: '',
+						day: weekstart + i,
+						month: m,
+						year: y,
+						lm: false, // 标记为非本月日期
+						isEmpty: true // 标记为空日期
 					});
 				}
+				
+				// 添加本月日期
 				for (let j = 1; j <= lastDateOfMonth; j++) {
 					dates.push({
 						date: j,
-						day: (j % 7) + firstDayOfMonth - 1 || 7,
+						day: ((startDay + j - 1) % 7) + weekstart || 7,
 						month: m,
 						year: y,
 						lm: true,
+						isEmpty: false
 					});
 				}
-				for (let k = 1; k <= endDay; k++) {
-					dates.push({
-						date: k,
-						day: (lastDateOfMonth + startDay + weekstart + k - 1) % 7 || 7,
-						month: m + 1 <= 11 ? m + 1 : 0,
-						year: m + 1 <= 11 ? y : y + 1,
-					});
+				
+				// 计算需要补充的空白占位符，使总数量为7的倍数（保持完整行）
+				let totalDays = dates.length;
+				let remainder = totalDays % 7;
+				if (remainder !== 0) {
+					let endDay = 7 - remainder;
+					for (let k = 0; k < endDay; k++) {
+						dates.push({
+							date: '',
+							day: ((startDay + lastDateOfMonth + k) % 7) + weekstart || 7,
+							month: m,
+							year: y,
+							lm: false,
+							isEmpty: true
+						});
+					}
 				}
+				
 				return dates;
 			},
 			// 已经签到处理
@@ -346,6 +361,11 @@
 			},
 			// 点击回调
 			selectOne(i, event) {
+				// 如果是空日期，不处理
+				if (i.isEmpty) {
+					return;
+				}
+				
 				let date = `${i.year}-${i.month + 1}-${i.date}`;
 				let selectD = new Date(date);
 
@@ -799,6 +819,12 @@
 					position: relative;
 					padding: 4rpx;
 
+					&.empty-date {
+						.date-circle {
+							visibility: hidden;
+						}
+					}
+									
 					&.other-month {
 						.date-circle {
 							color: #d1d5db;

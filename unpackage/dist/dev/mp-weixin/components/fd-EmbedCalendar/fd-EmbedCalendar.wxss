@@ -202,6 +202,9 @@
   position: relative;
   padding: 4rpx;
 }
+.sign-calendar .calendar-grid .grid-container .date-item.empty-date .date-circle.data-v-72eca62a {
+  visibility: hidden;
+}
 .sign-calendar .calendar-grid .grid-container .date-item.other-month .date-circle.data-v-72eca62a {
   color: #d1d5db;
 }

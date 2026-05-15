@@ -107,11 +107,10 @@ const _sfc_main = {
     }
   },
   methods: {
-    // 获取当前月份天数
+    // 获取当前月份天数（只显示本月日期）
     monthDay(y, m) {
       let firstDayOfMonth = new Date(y, m, 1).getDay();
       let lastDateOfMonth = new Date(y, m + 1, 0).getDate();
-      let lastDayOfLastMonth = new Date(y, m, 0).getDate();
       let dates = [];
       let weekstart = this.weekstart == 7 ? 0 : this.weekstart;
       let startDay = (() => {
@@ -123,31 +122,42 @@ const _sfc_main = {
           return 7 - weekstart + firstDayOfMonth;
         }
       })();
-      let endDay = 7 - (startDay + lastDateOfMonth) % 7;
-      for (let i = 1; i <= startDay; i++) {
+      for (let i = 0; i < startDay; i++) {
         dates.push({
-          date: lastDayOfLastMonth - startDay + i,
-          day: weekstart + i - 1 || 7,
-          month: m - 1 >= 0 ? m - 1 : 12,
-          year: m - 1 >= 0 ? y : y - 1
+          date: "",
+          day: weekstart + i,
+          month: m,
+          year: y,
+          lm: false,
+          // 标记为非本月日期
+          isEmpty: true
+          // 标记为空日期
         });
       }
       for (let j = 1; j <= lastDateOfMonth; j++) {
         dates.push({
           date: j,
-          day: j % 7 + firstDayOfMonth - 1 || 7,
+          day: (startDay + j - 1) % 7 + weekstart || 7,
           month: m,
           year: y,
-          lm: true
+          lm: true,
+          isEmpty: false
         });
       }
-      for (let k = 1; k <= endDay; k++) {
-        dates.push({
-          date: k,
-          day: (lastDateOfMonth + startDay + weekstart + k - 1) % 7 || 7,
-          month: m + 1 <= 11 ? m + 1 : 0,
-          year: m + 1 <= 11 ? y : y + 1
-        });
+      let totalDays = dates.length;
+      let remainder = totalDays % 7;
+      if (remainder !== 0) {
+        let endDay = 7 - remainder;
+        for (let k = 0; k < endDay; k++) {
+          dates.push({
+            date: "",
+            day: (startDay + lastDateOfMonth + k) % 7 + weekstart || 7,
+            month: m,
+            year: y,
+            lm: false,
+            isEmpty: true
+          });
+        }
       }
       return dates;
     },
@@ -155,7 +165,7 @@ const _sfc_main = {
     isSigned(y, m, d) {
       let flag = false;
       if (!this.signedDates || !Array.isArray(this.signedDates)) {
-        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:240", "签到数组为空或不是数组:", this.signedDates);
+        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:255", "签到数组为空或不是数组:", this.signedDates);
         return flag;
       }
       const dateStr = `${m}-${d}`;
@@ -237,6 +247,9 @@ const _sfc_main = {
     },
     // 点击回调
     selectOne(i, event) {
+      if (i.isEmpty) {
+        return;
+      }
       let date = `${i.year}-${i.month + 1}-${i.date}`;
       let selectD = new Date(date);
       this.selectedDate = {
@@ -417,7 +430,7 @@ const _sfc_main = {
     },
     // 图片加载错误处理
     onImageError(e) {
-      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:590", "头像加载失败:", e);
+      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:610", "头像加载失败:", e);
     }
   }
 };
@@ -454,10 +467,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         b: $data.choose == `${item.year}-${item.month + 1}-${item.date}` ? 1 : "",
         c: $options.isToday(item.year, item.month, item.date) && item.lm ? 1 : "",
         d: $options.isSigned(item.year, item.month + 1, item.date) && item.lm ? 1 : "",
-        e: !item.lm ? 1 : "",
+        e: !item.lm || item.isEmpty ? 1 : "",
         f: index,
         g: !item.lm ? 1 : "",
-        h: common_vendor.o(($event) => $options.selectOne(item, $event), index)
+        h: item.isEmpty ? 1 : "",
+        i: common_vendor.o(($event) => $options.selectOne(item, $event), index)
       };
     }),
     p: `translateY(${$data.positionTop}rpx)`,
