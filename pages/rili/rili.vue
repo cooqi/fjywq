@@ -146,13 +146,12 @@
 				//年月切换
 				yearMonthChange(val){
 					let month=val.split('-')[1]	
-					let year=val.split('-')[0]
 					this.dayInfo=[]
 					this.dayAboutInfo=[]
 					this.current=0
 					this.time=''
 					this.dayText=''
-					this.getList(month,year)
+					this.getList(month)
 					this.useCommon()
 				},
 				MonthChange(val){

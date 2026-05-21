@@ -139,13 +139,12 @@ const _sfc_main = {
     //年月切换
     yearMonthChange(val) {
       let month = val.split("-")[1];
-      let year = val.split("-")[0];
       this.dayInfo = [];
       this.dayAboutInfo = [];
       this.current = 0;
       this.time = "";
       this.dayText = "";
-      this.getList(month, year);
+      this.getList(month);
       this.useCommon();
     },
     MonthChange(val) {
@@ -192,7 +191,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:204", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:203", err);
       });
     },
     onClickItem(e) {
@@ -251,7 +250,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:274", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:273", err);
       });
     },
     toRedisPage() {
