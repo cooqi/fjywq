@@ -138,6 +138,17 @@ const _sfc_main = {
     },
     //年月切换
     yearMonthChange(val) {
+      let month = val.split("-")[1];
+      let year = val.split("-")[0];
+      this.dayInfo = [];
+      this.dayAboutInfo = [];
+      this.current = 0;
+      this.time = "";
+      this.dayText = "";
+      this.getList(month, year);
+      this.useCommon();
+    },
+    MonthChange(val) {
       this.dayInfo = [];
       this.dayAboutInfo = [];
       this.current = 0;
@@ -146,8 +157,9 @@ const _sfc_main = {
       this.getList(val.month);
       this.useCommon();
     },
-    getList(month) {
+    getList(month, year) {
       let m = month;
+      let y = year;
       let currentMonth = (/* @__PURE__ */ new Date()).getMonth() + 1;
       if (!month) {
         m = currentMonth;
@@ -158,7 +170,8 @@ const _sfc_main = {
       common_vendor.tr.callFunction({
         name: "rili-get",
         data: {
-          month: m
+          month: m,
+          year: y
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -179,7 +192,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:190", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:204", err);
       });
     },
     onClickItem(e) {
@@ -238,7 +251,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:260", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:274", err);
       });
     },
     toRedisPage() {
@@ -262,7 +275,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     a: common_vendor.o($options.handleDateClick),
     b: common_vendor.o($options.handleTodayPlanClick),
     c: common_vendor.o($options.yearMonthChange),
-    d: common_vendor.o($options.yearMonthChange),
+    d: common_vendor.o($options.MonthChange),
     e: common_vendor.p({
       ["show-top-section"]: true,
       ["greeting-text"]: $data.customGreeting,

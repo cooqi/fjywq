@@ -10,7 +10,7 @@
 			@on-click="handleDateClick"
 			@today-plan-click="handleTodayPlanClick"
 			@year-month-change="yearMonthChange"
-			@month-change="yearMonthChange"
+			@month-change="MonthChange"
 		  />
 	  </view>
 	<view class="content">
@@ -131,6 +131,7 @@
 			    handleMonthChange(monthInfo) {
 			     // console.log('月份变化:', monthInfo);
 			      // monthInfo 包含：year, month
+				 
 			    },
 			
 			    // 今日计划点击事件
@@ -144,6 +145,17 @@
 			    },
 				//年月切换
 				yearMonthChange(val){
+					let month=val.split('-')[1]	
+					let year=val.split('-')[0]
+					this.dayInfo=[]
+					this.dayAboutInfo=[]
+					this.current=0
+					this.time=''
+					this.dayText=''
+					this.getList(month,year)
+					this.useCommon()
+				},
+				MonthChange(val){
 					this.dayInfo=[]
 					this.dayAboutInfo=[]
 					this.current=0
@@ -153,8 +165,9 @@
 					this.useCommon()
 				},
 			
-			getList(month) {
+			getList(month, year) {
 				let m=month
+				let y=year
 				let currentMonth=new Date().getMonth() + 1
 				if(!month){
 					m=currentMonth;
@@ -165,7 +178,8 @@
 				uniCloud.callFunction({
 					name: 'rili-get',
 					data:{
-						month:m
+						month:m,
+						year:y
 					}
 				}).then((res) => {
 					uni.hideLoading()
