@@ -44,7 +44,7 @@ const _sfc_main = {
     async loadTarotCards() {
       try {
         common_vendor.index.showLoading({ title: "加载中..." });
-        const res = await common_vendor.tr.callFunction({
+        const res = await common_vendor._r.callFunction({
           name: "tarot-config",
           data: {}
         });
@@ -158,13 +158,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {
     l: common_vendor.t($data.drawnCards[0].reversed_emoji || $data.drawnCards[0].emoji)
   }), {
-    m: common_vendor.o((...args) => $options.previewCardImage && $options.previewCardImage(...args)),
+    m: common_vendor.o((...args) => $options.previewCardImage && $options.previewCardImage(...args), "9d"),
     n: common_vendor.t($data.drawnCards[0].name),
     o: common_vendor.t($data.drawnCards[0].isReversed ? "逆位" : "正位"),
     p: $data.drawnCards[0].isReversed ? 1 : "",
     q: common_vendor.t($data.drawnCards[0].isReversed ? $data.drawnCards[0].meaning_reversed || $data.drawnCards[0].meaning : $data.drawnCards[0].meaning_upright || $data.drawnCards[0].meaning),
     r: common_vendor.t($data.drawnCards[0].isReversed ? $data.drawnCards[0].interpretation_reversed || $data.drawnCards[0].interpretation_upright || $data.drawnCards[0].interpretation : $data.drawnCards[0].interpretation_upright || $data.drawnCards[0].interpretation),
-    s: common_vendor.o((...args) => $options.resetGame && $options.resetGame(...args))
+    s: common_vendor.o((...args) => $options.resetGame && $options.resetGame(...args), "01")
   }) : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-35557016"]]);

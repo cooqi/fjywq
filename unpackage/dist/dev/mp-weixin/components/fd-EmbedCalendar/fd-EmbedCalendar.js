@@ -444,17 +444,17 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $props.showTopSection ? {
     b: common_vendor.t($props.greetingText),
     c: $props.bgcolorGreeting,
-    d: common_vendor.o((...args) => $options.onTodayPlanClick && $options.onTodayPlanClick(...args))
+    d: common_vendor.o((...args) => $options.onTodayPlanClick && $options.onTodayPlanClick(...args), "4b")
   } : {}, {
     e: common_vendor.t($data.y),
     f: common_vendor.t($data.m + 1),
-    g: common_vendor.o((...args) => $options.changeYM && $options.changeYM(...args)),
-    h: common_vendor.o(($event) => $options.turning("prev")),
+    g: common_vendor.o((...args) => $options.changeYM && $options.changeYM(...args), "11"),
+    h: common_vendor.o(($event) => $options.turning("prev"), "54"),
     i: $data.monthOpen ? 1 : "",
-    j: common_vendor.o((...args) => $options.switchToMonth && $options.switchToMonth(...args)),
+    j: common_vendor.o((...args) => $options.switchToMonth && $options.switchToMonth(...args), "fa"),
     k: !$data.monthOpen ? 1 : "",
-    l: common_vendor.o((...args) => $options.switchToWeek && $options.switchToWeek(...args)),
-    m: common_vendor.o(($event) => $options.turning("next")),
+    l: common_vendor.o((...args) => $options.switchToWeek && $options.switchToWeek(...args), "2f"),
+    m: common_vendor.o(($event) => $options.turning("next"), "f6"),
     n: common_vendor.f($options.weekDay, (item, index, i0) => {
       return {
         a: common_vendor.t(item),
@@ -477,7 +477,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     p: `translateY(${$data.positionTop}rpx)`,
     q: !$data.monthOpen ? 1 : "",
     r: common_vendor.sr("date-time", "72eca62a-0"),
-    s: common_vendor.o($options.dateTimeChange),
+    s: common_vendor.o($options.dateTimeChange, "4b"),
     t: common_vendor.p({
       datestype: "year-month",
       datestring: $data.dateString

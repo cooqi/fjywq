@@ -177,14 +177,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     b: $data.brushSize,
-    c: common_vendor.o((...args) => $options.onBrushSizeChange && $options.onBrushSizeChange(...args)),
+    c: common_vendor.o((...args) => $options.onBrushSizeChange && $options.onBrushSizeChange(...args), "2e"),
     d: common_vendor.t($data.brushSize),
-    e: common_vendor.o((...args) => $options.onTouchStart && $options.onTouchStart(...args)),
-    f: common_vendor.o((...args) => $options.onTouchMove && $options.onTouchMove(...args)),
-    g: common_vendor.o((...args) => $options.onTouchEnd && $options.onTouchEnd(...args)),
-    h: common_vendor.o((...args) => $options.clearCanvas && $options.clearCanvas(...args)),
-    i: common_vendor.o((...args) => $options.undo && $options.undo(...args)),
-    j: common_vendor.o((...args) => $options.saveImage && $options.saveImage(...args))
+    e: common_vendor.o((...args) => $options.onTouchStart && $options.onTouchStart(...args), "bd"),
+    f: common_vendor.o((...args) => $options.onTouchMove && $options.onTouchMove(...args), "ae"),
+    g: common_vendor.o((...args) => $options.onTouchEnd && $options.onTouchEnd(...args), "5a"),
+    h: common_vendor.o((...args) => $options.clearCanvas && $options.clearCanvas(...args), "40"),
+    i: common_vendor.o((...args) => $options.undo && $options.undo(...args), "90"),
+    j: common_vendor.o((...args) => $options.saveImage && $options.saveImage(...args), "41")
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-93056f99"]]);

@@ -13,11 +13,12 @@ const _sfc_main = {
   },
   onLoad() {
     this.getList();
-    try {
-      const userInfo = common_vendor.index.getStorageSync("userInfo");
-      this.userInfo = JSON.parse(userInfo);
+    const userInfo = common_vendor.index.getStorageSync("userInfo");
+    this.userInfo = JSON.parse(userInfo);
+    if (this.userInfo._id) {
       this.getUserMeetList(this.userInfo._id);
-    } catch (e) {
+    } else {
+      this.getUserInfo();
     }
   },
   onShareAppMessage: function() {
@@ -78,7 +79,7 @@ const _sfc_main = {
         provider: "weixin",
         success: (res) => {
           if (res.code) {
-            common_vendor.tr.callFunction({
+            common_vendor._r.callFunction({
               name: "user",
               data: {
                 action: "code2Session",
@@ -86,16 +87,16 @@ const _sfc_main = {
                 user_info: _this.userInfo
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:123", "云函数返回的值：：：：", res2.result);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:124", "云函数返回的值：：：：", res2.result);
                 common_vendor.index.hideLoading();
                 if (res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
-                  _this.getUserTodoList(res2.result.result.result._id);
+                  _this.getUserMeetList(res2.result.result.result._id);
                 }
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:131", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:132", "云函数调用失败", err);
               }
             });
           }
@@ -106,7 +107,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "meet"
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -120,7 +121,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/meet/meet.vue:156", err);
+        common_vendor.index.__f__("error", "at pages/meet/meet.vue:157", err);
       });
     },
     updateList(data) {
@@ -134,7 +135,7 @@ const _sfc_main = {
     },
     getUserMeetList(userid) {
       common_vendor.index.showLoading({ title: "加载中" });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "user-meet",
         data: {
           userID: userid,
@@ -148,15 +149,15 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:183", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:184", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/meet/meet.vue:188", e);
+      common_vendor.index.__f__("log", "at pages/meet/meet.vue:189", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "user-meet",
         data: {
           userID: this.userInfo._id,
@@ -169,7 +170,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:206", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:207", "云函数调用失败", err);
         }
       });
     },
@@ -181,7 +182,7 @@ const _sfc_main = {
         success: function(res) {
           if (res.confirm) {
             common_vendor.index.showLoading({ title: "加载中", mask: true });
-            common_vendor.tr.callFunction({
+            common_vendor._r.callFunction({
               name: "user-meet",
               data: {
                 id: item._id,
@@ -194,11 +195,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:230", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:231", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/meet/meet.vue:234", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/meet/meet.vue:235", "用户点击取消");
           }
         }
       });
@@ -223,9 +224,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: !$data.userInfo._id
   }, !$data.userInfo._id ? {
-    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args))
+    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "46")
   } : {
-    c: common_vendor.o((...args) => $options.choose && $options.choose(...args)),
+    c: common_vendor.o((...args) => $options.choose && $options.choose(...args), "e9"),
     d: common_vendor.t($options.tips),
     e: common_vendor.f($data.meetList, (item, index, i0) => {
       return {

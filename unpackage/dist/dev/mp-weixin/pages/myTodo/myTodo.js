@@ -10,12 +10,13 @@ const _sfc_main = {
     };
   },
   onLoad() {
-    try {
-      const userInfo = common_vendor.index.getStorageSync("userInfo");
-      common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:34", "userInfo", userInfo);
-      this.userInfo = JSON.parse(userInfo);
+    const userInfo = common_vendor.index.getStorageSync("userInfo");
+    common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:32", "userInfo", userInfo);
+    this.userInfo = JSON.parse(userInfo);
+    if (this.userInfo._id) {
       this.getUserTodoList(this.userInfo._id);
-    } catch (e) {
+    } else {
+      this.getUserInfo();
     }
   },
   onPullDownRefresh() {
@@ -59,7 +60,7 @@ const _sfc_main = {
         success: (res) => {
           common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:74", "login", res);
           if (res.code) {
-            common_vendor.tr.callFunction({
+            common_vendor._r.callFunction({
               name: "user",
               data: {
                 action: "code2Session",
@@ -92,7 +93,7 @@ const _sfc_main = {
     },
     getUserTodoList(id) {
       common_vendor.index.showLoading({ title: "加载中" });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "user-todo",
         data: {
           userID: id,
@@ -119,7 +120,7 @@ const _sfc_main = {
       let data = JSON.parse(JSON.stringify(res));
       delete data._id;
       data.isComplete = "1";
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "user-todo",
         data: {
           id: val,
@@ -145,7 +146,7 @@ const _sfc_main = {
         success: function(res) {
           if (res.confirm) {
             common_vendor.index.showLoading({ title: "加载中", mask: true });
-            common_vendor.tr.callFunction({
+            common_vendor._r.callFunction({
               name: "user-todo",
               data: {
                 id: item.value,
@@ -186,7 +187,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: !$data.userInfo._id
   }, !$data.userInfo._id ? {
-    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args))
+    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "06")
   } : {}, {
     c: common_vendor.f($data.todoList, (item, index, i0) => {
       return {

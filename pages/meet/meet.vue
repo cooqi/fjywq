@@ -48,13 +48,14 @@
 		},
 		onLoad() {
 			this.getList()
-			try {
-				const userInfo = uni.getStorageSync('userInfo');
+			const userInfo = uni.getStorageSync('userInfo');
 				this.userInfo=JSON.parse(userInfo)
-				this.getUserMeetList(this.userInfo._id)
-			} catch (e) {
-				// error
-			}
+				if(this.userInfo._id){
+					this.getUserMeetList(this.userInfo._id)
+				}else{
+					this.getUserInfo()
+				}
+		
 			
 		},
 		onShareAppMessage: function () {
@@ -124,7 +125,7 @@
 			                        uni.hideLoading();
 									if(res.result.result.result._id) {
 			                            uni.setStorageSync('userInfo', JSON.stringify(res.result.result.result))
-			                            _this.getUserTodoList(res.result.result.result._id)
+			                            _this.getUserMeetList(res.result.result.result._id)
 			                        }
 			                    },fail: (err) => {
 			                        uni.hideLoading();

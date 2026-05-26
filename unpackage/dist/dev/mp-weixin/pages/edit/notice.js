@@ -51,7 +51,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "add",
@@ -77,7 +77,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "del",
@@ -103,7 +103,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "update",
@@ -137,7 +137,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "view",
@@ -160,7 +160,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "get",
@@ -202,9 +202,9 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.getList && $options.getList(...args)),
+    a: common_vendor.o((...args) => $options.getList && $options.getList(...args), "5c"),
     b: $data.search.title,
-    c: common_vendor.o(($event) => $data.search.title = $event.detail.value),
+    c: common_vendor.o(($event) => $data.search.title = $event.detail.value, "f5"),
     d: common_vendor.f($data.list, (item, i, i0) => {
       return {
         a: common_vendor.t(item.title),
@@ -213,46 +213,46 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     e: $data.formData.title,
-    f: common_vendor.o(($event) => $data.formData.title = $event.detail.value),
+    f: common_vendor.o(($event) => $data.formData.title = $event.detail.value, "7f"),
     g: $data.formData.content,
-    h: common_vendor.o(($event) => $data.formData.content = $event.detail.value),
+    h: common_vendor.o(($event) => $data.formData.content = $event.detail.value, "3b"),
     i: $data.formData.top,
-    j: common_vendor.o(($event) => $data.formData.top = $event.detail.value),
-    k: common_vendor.o(($event) => $data.formData.hide = $event),
+    j: common_vendor.o(($event) => $data.formData.top = $event.detail.value, "6c"),
+    k: common_vendor.o(($event) => $data.formData.hide = $event, "c1"),
     l: common_vendor.p({
       localdata: $data.sf,
       modelValue: $data.formData.hide
     }),
-    m: common_vendor.o(($event) => $data.formData.is_today_important = $event),
+    m: common_vendor.o(($event) => $data.formData.is_today_important = $event, "4d"),
     n: common_vendor.p({
       localdata: $data.sf,
       modelValue: $data.formData.is_today_important
     }),
-    o: common_vendor.o(($event) => $data.formData.classType = $event),
+    o: common_vendor.o(($event) => $data.formData.classType = $event, "4e"),
     p: common_vendor.p({
       localdata: $data.range2,
       modelValue: $data.formData.classType
     }),
-    q: common_vendor.o(($event) => $data.formData.type = $event),
+    q: common_vendor.o(($event) => $data.formData.type = $event, "d3"),
     r: common_vendor.p({
       localdata: $data.range,
       modelValue: $data.formData.type
     }),
     s: $data.formData.imgs,
-    t: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value),
+    t: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "f5"),
     v: $data.formData.url,
-    w: common_vendor.o(($event) => $data.formData.url = $event.detail.value),
+    w: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "00"),
     x: $data.formData.bz,
-    y: common_vendor.o(($event) => $data.formData.bz = $event.detail.value),
+    y: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "14"),
     z: $data.formData._id
   }, $data.formData._id ? {
-    A: common_vendor.o(($event) => $options.submit("update"))
+    A: common_vendor.o(($event) => $options.submit("update"), "91")
   } : {}, {
     B: $data.formData._id
   }, $data.formData._id ? {
-    C: common_vendor.o(($event) => $options.remove($data.formData._id))
+    C: common_vendor.o(($event) => $options.remove($data.formData._id), "f9")
   } : {
-    D: common_vendor.o(($event) => $options.submit("add"))
+    D: common_vendor.o(($event) => $options.submit("add"), "e9")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

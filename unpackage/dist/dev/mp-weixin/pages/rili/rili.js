@@ -166,7 +166,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "rili-get",
         data: {
           month: m,
@@ -236,7 +236,7 @@ const _sfc_main = {
       }
     },
     useCommon() {
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "welcome",
         data: {
           type: "get"
@@ -271,10 +271,10 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o($options.handleDateClick),
-    b: common_vendor.o($options.handleTodayPlanClick),
-    c: common_vendor.o($options.yearMonthChange),
-    d: common_vendor.o($options.MonthChange),
+    a: common_vendor.o($options.handleDateClick, "71"),
+    b: common_vendor.o($options.handleTodayPlanClick, "e1"),
+    c: common_vendor.o($options.yearMonthChange, "20"),
+    d: common_vendor.o($options.MonthChange, "ac"),
     e: common_vendor.p({
       ["show-top-section"]: true,
       ["greeting-text"]: $data.customGreeting,
@@ -283,7 +283,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       open: true,
       bgcolorGreeting: $data.bgcolorGreeting
     }),
-    f: common_vendor.o($options.onClickItem),
+    f: common_vendor.o($options.onClickItem, "9a"),
     g: common_vendor.p({
       current: $data.current,
       values: $data.items,
@@ -331,7 +331,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    r: common_vendor.o((...args) => $options.edit && $options.edit(...args))
+    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "2d")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

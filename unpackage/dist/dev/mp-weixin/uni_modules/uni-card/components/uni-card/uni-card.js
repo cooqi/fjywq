@@ -65,7 +65,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: $props.cover
   }, $props.cover ? {
-    b: common_vendor.o(($event) => $options.onClick("cover")),
+    b: common_vendor.o(($event) => $options.onClick("cover"), "fa"),
     c: $props.cover
   } : {}, {
     d: $props.title || $props.extra
@@ -79,13 +79,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $props.title && $props.subTitle ? {
     i: common_vendor.t($props.subTitle)
   } : {}, {
-    j: common_vendor.o(($event) => $options.onClick("title")),
+    j: common_vendor.o(($event) => $options.onClick("title"), "5b"),
     k: common_vendor.t($props.extra),
-    l: common_vendor.o(($event) => $options.onClick("extra"))
+    l: common_vendor.o(($event) => $options.onClick("extra"), "47")
   }) : {}, {
     m: $props.padding,
-    n: common_vendor.o(($event) => $options.onClick("content")),
-    o: common_vendor.o(($event) => $options.onClick("actions")),
+    n: common_vendor.o(($event) => $options.onClick("content"), "af"),
+    o: common_vendor.o(($event) => $options.onClick("actions"), "5a"),
     p: $props.isFull ? 1 : "",
     q: $props.isShadow ? 1 : "",
     r: $props.border ? 1 : "",

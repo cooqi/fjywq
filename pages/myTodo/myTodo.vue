@@ -28,15 +28,15 @@
 			}
 		},
 		onLoad() {
-			
-			try {
-				const userInfo = uni.getStorageSync('userInfo');
+			const userInfo = uni.getStorageSync('userInfo');
 				console.log('userInfo',userInfo)
 				this.userInfo=JSON.parse(userInfo)
-				this.getUserTodoList(this.userInfo._id)
-			} catch (e) {
-				// error
-			}
+				if(this.userInfo._id){
+					this.getUserTodoList(this.userInfo._id)
+				}else{
+					this.getUserInfo()
+				}
+		
 		},
 		onPullDownRefresh() {
 			this.getUserTodoList(this.userInfo._id)

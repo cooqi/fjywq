@@ -295,12 +295,12 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     a: !$data.gameStarted
   }, !$data.gameStarted ? {
     b: $data.selectedLevel === "easy" ? 1 : "",
-    c: common_vendor.o(($event) => $options.selectLevel("easy")),
+    c: common_vendor.o(($event) => $options.selectLevel("easy"), "4c"),
     d: $data.selectedLevel === "medium" ? 1 : "",
-    e: common_vendor.o(($event) => $options.selectLevel("medium")),
+    e: common_vendor.o(($event) => $options.selectLevel("medium"), "47"),
     f: $data.selectedLevel === "hard" ? 1 : "",
-    g: common_vendor.o(($event) => $options.selectLevel("hard")),
-    h: common_vendor.o((...args) => $options.startGame && $options.startGame(...args)),
+    g: common_vendor.o(($event) => $options.selectLevel("hard"), "ef"),
+    h: common_vendor.o((...args) => $options.startGame && $options.startGame(...args), "96"),
     i: !$data.selectedLevel
   } : common_vendor.e({
     j: common_vendor.t($data.moves),
@@ -334,28 +334,28 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $data.selectedBlock !== -1 ? common_vendor.e({
     o: $options.canMoveDirection("up")
   }, $options.canMoveDirection("up") ? {
-    p: common_vendor.o(($event) => $options.moveSelectedBlock("up"))
+    p: common_vendor.o(($event) => $options.moveSelectedBlock("up"), "79")
   } : {}, {
     q: $options.canMoveDirection("down")
   }, $options.canMoveDirection("down") ? {
-    r: common_vendor.o(($event) => $options.moveSelectedBlock("down"))
+    r: common_vendor.o(($event) => $options.moveSelectedBlock("down"), "f6")
   } : {}, {
     s: $options.canMoveDirection("left")
   }, $options.canMoveDirection("left") ? {
-    t: common_vendor.o(($event) => $options.moveSelectedBlock("left"))
+    t: common_vendor.o(($event) => $options.moveSelectedBlock("left"), "75")
   } : {}, {
     v: $options.canMoveDirection("right")
   }, $options.canMoveDirection("right") ? {
-    w: common_vendor.o(($event) => $options.moveSelectedBlock("right"))
+    w: common_vendor.o(($event) => $options.moveSelectedBlock("right"), "cc")
   } : {}) : {}, {
-    x: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args)),
-    y: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args)),
+    x: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args), "99"),
+    y: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args), "c7"),
     z: $data.showWinModal
   }, $data.showWinModal ? {
     A: common_vendor.t($options.getLevelName()),
     B: common_vendor.t($options.formatTime($data.time)),
     C: common_vendor.t($data.moves),
-    D: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args))
+    D: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args), "93")
   } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-9127180b"]]);

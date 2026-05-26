@@ -81,7 +81,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     i: $props.showUnderLine === true || $props.showUnderLine === "true" ? 1 : "",
     j: $props.color,
     k: $props.fontSize + "px",
-    l: common_vendor.o((...args) => $options.openURL && $options.openURL(...args))
+    l: common_vendor.o((...args) => $options.openURL && $options.openURL(...args), "d9")
   });
 }
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

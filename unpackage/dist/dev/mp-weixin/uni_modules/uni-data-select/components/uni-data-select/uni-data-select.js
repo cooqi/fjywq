@@ -2,7 +2,7 @@
 const common_vendor = require("../../../../common/vendor.js");
 const _sfc_main = {
   name: "uni-data-select",
-  mixins: [common_vendor.tr.mixinDatacom || {}],
+  mixins: [common_vendor._r.mixinDatacom || {}],
   emits: [
     "open",
     "close",
@@ -434,7 +434,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       color: "#c0c4cc",
       size: "24"
     }),
-    n: common_vendor.o((...args) => $options.clearVal && $options.clearVal(...args))
+    n: common_vendor.o((...args) => $options.clearVal && $options.clearVal(...args), "f8")
   } : !$props.hideRight ? {
     p: common_vendor.p({
       type: $data.showSelector ? "top" : "bottom",
@@ -443,11 +443,11 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     })
   } : {}, {
     o: !$props.hideRight,
-    q: common_vendor.o((...args) => $options.toggleSelector && $options.toggleSelector(...args)),
+    q: common_vendor.o((...args) => $options.toggleSelector && $options.toggleSelector(...args), "11"),
     r: $options.shouldWrap ? 1 : "",
     s: $data.showSelector
   }, $data.showSelector ? {
-    t: common_vendor.o((...args) => $options.toggleSelector && $options.toggleSelector(...args))
+    t: common_vendor.o((...args) => $options.toggleSelector && $options.toggleSelector(...args), "ef")
   } : {}, {
     v: $data.showSelector
   }, $data.showSelector ? common_vendor.e({
@@ -499,7 +499,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         f: index
       };
     }),
-    H: common_vendor.o((...args) => $options.checkBoxChange && $options.checkBoxChange(...args))
+    H: common_vendor.o((...args) => $options.checkBoxChange && $options.checkBoxChange(...args), "69")
   } : {}), {
     I: common_vendor.s($options.getOffsetByPlacement)
   }) : {}, {

@@ -226,16 +226,16 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     a: !$data.gameStarted
   }, !$data.gameStarted ? {
     b: $data.selectedDifficulty === "easy" ? 1 : "",
-    c: common_vendor.o(($event) => $options.selectDifficulty("easy")),
+    c: common_vendor.o(($event) => $options.selectDifficulty("easy"), "ee"),
     d: $data.selectedDifficulty === "medium" ? 1 : "",
-    e: common_vendor.o(($event) => $options.selectDifficulty("medium")),
+    e: common_vendor.o(($event) => $options.selectDifficulty("medium"), "10"),
     f: $data.selectedDifficulty === "hard" ? 1 : "",
-    g: common_vendor.o(($event) => $options.selectDifficulty("hard")),
+    g: common_vendor.o(($event) => $options.selectDifficulty("hard"), "2f"),
     h: $data.selectedDifficulty === "ultimate" ? 1 : "",
-    i: common_vendor.o(($event) => $options.selectDifficulty("ultimate")),
+    i: common_vendor.o(($event) => $options.selectDifficulty("ultimate"), "e0"),
     j: $data.selectedDifficulty === "extreme" ? 1 : "",
-    k: common_vendor.o(($event) => $options.selectDifficulty("extreme")),
-    l: common_vendor.o((...args) => $options.startGame && $options.startGame(...args)),
+    k: common_vendor.o(($event) => $options.selectDifficulty("extreme"), "70"),
+    l: common_vendor.o((...args) => $options.startGame && $options.startGame(...args), "e7"),
     m: !$data.selectedDifficulty
   } : common_vendor.e({
     n: common_vendor.t($data.moves),
@@ -252,15 +252,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     s: common_vendor.n("grid-" + $data.currentGrid),
-    t: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args)),
-    v: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args)),
+    t: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args), "9d"),
+    v: common_vendor.o((...args) => $options.restartGame && $options.restartGame(...args), "83"),
     w: $data.showWinModal
   }, $data.showWinModal ? {
     x: common_vendor.t($options.getDifficultyName()),
     y: common_vendor.t($options.formatTime($data.time)),
     z: common_vendor.t($data.moves),
     A: common_vendor.t($options.getRating()),
-    B: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args))
+    B: common_vendor.o((...args) => $options.backToMenu && $options.backToMenu(...args), "ee")
   } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-b398df43"]]);

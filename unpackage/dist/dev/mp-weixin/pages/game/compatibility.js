@@ -64,7 +64,7 @@ const _sfc_main = {
     async loadConfigData() {
       try {
         common_vendor.index.showLoading({ title: "加载中..." });
-        const res = await common_vendor.tr.callFunction({
+        const res = await common_vendor._r.callFunction({
           name: "compatibility-config",
           data: {}
         });
@@ -247,7 +247,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     a: common_vendor.t($data.currentMonth),
     b: common_vendor.t($data.isExpanded ? "收起" : "展开"),
     c: common_vendor.t($data.isExpanded ? "∧" : "∨"),
-    d: common_vendor.o((...args) => $options.toggleCalendar && $options.toggleCalendar(...args)),
+    d: common_vendor.o((...args) => $options.toggleCalendar && $options.toggleCalendar(...args), "bc"),
     e: common_vendor.f($data.weekDays, (day, index, i0) => {
       return {
         a: common_vendor.t(day),
@@ -290,7 +290,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     p: common_vendor.t($data.momentText),
     q: common_vendor.t($data.fortuneScore),
     r: common_vendor.t($data.fortuneDesc),
-    s: common_vendor.o((...args) => $options.retakeTest && $options.retakeTest(...args))
+    s: common_vendor.o((...args) => $options.retakeTest && $options.retakeTest(...args), "b0")
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-cd824c5a"]]);

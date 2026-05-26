@@ -55,7 +55,7 @@ const _sfc_main = {
         title: "处理中..."
       });
       this.loading = true;
-      common_vendor.tr.callFunction({
+      common_vendor._r.callFunction({
         name: "notice",
         data: {
           type: "get",
@@ -95,7 +95,7 @@ const _sfc_main = {
           return;
         }
         let userInfo = JSON.parse(user);
-        common_vendor.tr.callFunction({
+        common_vendor._r.callFunction({
           name: "user-todo",
           data: {
             type: "add",
@@ -170,7 +170,7 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o($options.onClickItem),
+    a: common_vendor.o($options.onClickItem, "ab"),
     b: common_vendor.p({
       current: $data.current,
       values: $data.items
@@ -185,7 +185,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       }, item.imgs ? {
         d: common_vendor.f(item.imgs.split(";"), (img, index, i1) => {
           return {
-            a: common_vendor.o(($event) => $options.preImg(item.imgs, index)),
+            a: common_vendor.o(($event) => $options.preImg(item.imgs, index), "e0"),
             b: img
           };
         })
@@ -221,7 +221,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, !$data.list.length && !$data.loading ? {} : {}, {
     e: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    f: common_vendor.o(($event) => $options.edit())
+    f: common_vendor.o(($event) => $options.edit(), "56")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

@@ -2,7 +2,7 @@
 const common_vendor = require("../../../../common/vendor.js");
 const _sfc_main = {
   name: "uniDataChecklist",
-  mixins: [common_vendor.tr.mixinDatacom || {}],
+  mixins: [common_vendor._r.mixinDatacom || {}],
   emits: ["input", "update:modelValue", "change"],
   props: {
     mode: {
@@ -393,7 +393,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     i: $props.mode === "list" && $props.icon === "left" ? 1 : "",
     j: common_vendor.n("is--" + $props.mode),
     k: $props.mode === "list" || $props.wrap ? 1 : "",
-    l: common_vendor.o((...args) => $options.chagne && $options.chagne(...args))
+    l: common_vendor.o((...args) => $options.chagne && $options.chagne(...args), "e2")
   } : {
     m: common_vendor.f($data.dataList, (item, index, i0) => {
       return common_vendor.e({
@@ -422,7 +422,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     q: common_vendor.n("is--" + $props.mode),
     r: $props.mode === "list" ? 1 : "",
     s: $props.wrap ? 1 : "",
-    t: common_vendor.o((...args) => $options.chagne && $options.chagne(...args))
+    t: common_vendor.o((...args) => $options.chagne && $options.chagne(...args), "40")
   }), {
     v: $data.isTop + "px"
   });

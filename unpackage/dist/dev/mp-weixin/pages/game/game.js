@@ -35,11 +35,11 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return {
-    a: common_vendor.o(($event) => $options.goToGame("shengbei")),
-    b: common_vendor.o(($event) => $options.goToGame("tarot")),
-    c: common_vendor.o(($event) => $options.goToGame("compatibility")),
-    d: common_vendor.o(($event) => $options.goToGame("match")),
-    e: common_vendor.o(($event) => $options.goToGame("huarongdao"))
+    a: common_vendor.o(($event) => $options.goToGame("shengbei"), "de"),
+    b: common_vendor.o(($event) => $options.goToGame("tarot"), "00"),
+    c: common_vendor.o(($event) => $options.goToGame("compatibility"), "01"),
+    d: common_vendor.o(($event) => $options.goToGame("match"), "7b"),
+    e: common_vendor.o(($event) => $options.goToGame("huarongdao"), "64")
   };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-84820fe1"]]);
