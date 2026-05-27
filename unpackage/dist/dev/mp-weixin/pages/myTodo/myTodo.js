@@ -11,7 +11,7 @@ const _sfc_main = {
   },
   onLoad() {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
-    common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:32", "userInfo", userInfo);
+    common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:35", "userInfo", userInfo);
     this.userInfo = JSON.parse(userInfo);
     if (this.userInfo._id) {
       this.getUserTodoList(this.userInfo._id);
@@ -40,7 +40,7 @@ const _sfc_main = {
         desc: "用于完善会员资料",
         success: (result) => {
           _this.userInfo = result.userInfo;
-          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:60", _this.userInfo);
+          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:63", _this.userInfo);
           _this.wxLogin();
         },
         fail: () => {
@@ -58,7 +58,7 @@ const _sfc_main = {
       common_vendor.index.login({
         provider: "weixin",
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:74", "login", res);
+          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:77", "login", res);
           if (res.code) {
             common_vendor._r.callFunction({
               name: "user",
@@ -68,7 +68,7 @@ const _sfc_main = {
                 user_info: _this.userInfo
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:84", "云函数返回的值：：：：", res2.result);
+                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:87", "云函数返回的值：：：：", res2.result);
                 common_vendor.index.hideLoading();
                 if (res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
@@ -77,7 +77,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:92", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:95", "云函数调用失败", err);
               }
             });
           }
@@ -107,16 +107,16 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:122", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:125", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:127", e);
+      common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:130", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
       let res = this.originTodoList.find((item) => item._id === val);
-      common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:132", "res", res, e);
+      common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:135", "res", res, e);
       let data = JSON.parse(JSON.stringify(res));
       delete data._id;
       data.isComplete = "1";
@@ -134,7 +134,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:150", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:153", "云函数调用失败", err);
         }
       });
     },
@@ -159,11 +159,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:174", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:177", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:178", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/myTodo/myTodo.vue:181", "用户点击取消");
           }
         }
       });
@@ -187,7 +187,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: !$data.userInfo._id
   }, !$data.userInfo._id ? {
-    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "06")
+    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "8d")
   } : {}, {
     c: common_vendor.f($data.todoList, (item, index, i0) => {
       return {

@@ -25,11 +25,12 @@
 /* 文章场景相关 */
 .sign-calendar.data-v-72eca62a {
   width: 100%;
-  background-color: #f8f9fb;
+  background: linear-gradient(135deg, #e8f4f8 0%, #f5f7fa 50%, #faf5ff 100%);
   border-radius: 24rpx;
-  padding: 40rpx 30rpx;
+  padding: 30rpx;
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 }
 .sign-calendar .top-section.data-v-72eca62a {
   margin-bottom: 30rpx;
@@ -57,22 +58,20 @@
 }
 .sign-calendar .top-section .greeting-area .speech-bubble.data-v-72eca62a {
   position: relative;
-  background-color: white;
-  border-radius: 0 50rpx 50rpx 0;
-  padding: 14rpx 32rpx;
-  padding-left: 40rpx;
-  max-width: 80%;
-  border: #e5e5e5 3rpx solid;
-  left: -30rpx;
-  z-index: 2;
-  background: #c3ffff;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20rpx;
+  padding: 16rpx 28rpx;
+  max-width: 75%;
+  -webkit-backdrop-filter: blur(10rpx);
+          backdrop-filter: blur(10rpx);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 .sign-calendar .top-section .greeting-area .speech-bubble .greeting-text.data-v-72eca62a {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #374151;
   display: block;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5;
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -85,17 +84,19 @@
   flex-shrink: 0;
 }
 .sign-calendar .top-section .greeting-area .plan-section .plan-indicator.data-v-72eca62a {
-  width: 88rpx;
-  height: 88rpx;
-  background: #f4e8fd;
+  width: 76rpx;
+  height: 76rpx;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 700;
+  color: #fff;
   position: relative;
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 12rpx rgba(139, 92, 246, 0.3);
 }
 .sign-calendar .arrow-btn.data-v-72eca62a {
   width: 60rpx;
@@ -137,10 +138,10 @@
   justify-content: center;
 }
 .sign-calendar .header .year-month-section .year-month .title.data-v-72eca62a {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: #1a1a1a;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
 }
 .sign-calendar .header .year-month-section .view-toggle.data-v-72eca62a {
   display: flex;
@@ -149,21 +150,22 @@
   align-items: center;
 }
 .sign-calendar .header .year-month-section .view-toggle .toggle-item.data-v-72eca62a {
-  width: 74rpx;
-  height: 74rpx;
-  line-height: 80rpx;
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
   text-align: center;
   border-radius: 50%;
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 500;
   color: #666;
   transition: all 0.3s ease;
   cursor: pointer;
-  background-color: #eff1f5;
+  background-color: rgba(255, 255, 255, 0.6);
 }
 .sign-calendar .header .year-month-section .view-toggle .toggle-item.active.data-v-72eca62a {
-  background-color: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
   color: white;
+  box-shadow: 0 4rpx 12rpx rgba(139, 92, 246, 0.3);
 }
 .sign-calendar .week-header.data-v-72eca62a {
   display: flex;
@@ -180,9 +182,11 @@
 .sign-calendar .calendar-grid.data-v-72eca62a {
   position: relative;
   height: 480rpx;
-  /* 6行 x 80rpx */
   overflow: hidden;
   transition: height 0.3s ease;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 16rpx;
+  padding: 10rpx;
 }
 .sign-calendar .calendar-grid.week-view.data-v-72eca62a {
   height: 80rpx;
@@ -210,54 +214,51 @@
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.data-v-72eca62a {
   position: relative;
-  width: 52rpx;
-  height: 52rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 28rpx;
-  color: #3a4050;
+  font-size: 26rpx;
+  color: #2d3748;
   transition: all 0.2s ease;
   cursor: pointer;
-  background-color: rgba(216, 216, 216, 0.4);
+  background-color: transparent;
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle .date-text.data-v-72eca62a {
+  font-size: 26rpx;
+  font-weight: 500;
+}
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle .today-text.data-v-72eca62a {
+  font-size: 24rpx;
+  font-weight: 700;
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.data-v-72eca62a:hover {
-  background-color: rgba(139, 92, 246, 0.1);
+  background-color: rgba(139, 92, 246, 0.08);
+  transform: scale(1.05);
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.selected.data-v-72eca62a {
-  background-color: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
   color: white;
   font-weight: 600;
-  border: 3px solid rgba(139, 92, 246, 0.8);
   box-shadow: 0 6rpx 20rpx rgba(139, 92, 246, 0.4);
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.selected.today.data-v-72eca62a::after {
   line-height: 20px;
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.data-v-72eca62a {
-  background-color: #8b5cf6;
+  background: linear-gradient(135deg, #31eee0 0%, #a78bfa 100%);
   color: white;
   font-weight: 600;
   position: relative;
+  box-shadow: 0 4rpx 12rpx rgba(49, 238, 224, 0.3);
   /* 如果今天也是签到日期，需要显示绿色背景 */
 }
-.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.data-v-72eca62a::after {
-  content: "今";
-  position: absolute;
-  bottom: 0;
-  top: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
-  font-size: 30rpx;
-  line-height: 24px;
-  text-align: center;
+.sign-calendar .calendar-grid .grid-container .date-item .date-circle.today .date-text.data-v-72eca62a {
   color: white;
-  background: #c4b9f6;
-  border-radius: 100%;
-  z-index: 5;
+  font-weight: 700;
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.today.special-date.data-v-72eca62a {
   background-color: #10b981;
@@ -277,10 +278,10 @@
   /* 确保红点在最上层 */
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.special-date.data-v-72eca62a {
-  background-color: #10b981;
-  /* 绿色背景 */
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   color: white;
   font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
 }
 .sign-calendar .calendar-grid .grid-container .date-item .date-circle.special-date.data-v-72eca62a::before {
   content: "";

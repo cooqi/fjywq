@@ -1,4 +1,6 @@
 <template>
+	<view class="page-container">
+	
 
 	   <view class="content" v-if="!userInfo._id">
 	        <view class="flex padding justify-center">
@@ -13,6 +15,7 @@
 				</template>
 			</uni-data-checkbox>
 		</view>
+	</view>
 	</view>
 </template>
 
@@ -191,6 +194,11 @@
 </script>
 
 <style lang="scss">
+.page-container {
+	min-height: 100vh;
+	background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
+	padding: 1px
+}
 	.content {
 		padding-bottom: 30px;
 		.checklist-box{

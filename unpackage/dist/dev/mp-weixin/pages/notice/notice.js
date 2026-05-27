@@ -202,7 +202,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         j: common_vendor.p({
           type: "heart",
           size: "18",
-          color: "#999"
+          color: "pink"
         }),
         k: common_vendor.o(($event) => $options.addTask(item), item._id)
       } : {}, {

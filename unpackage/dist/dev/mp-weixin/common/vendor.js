@@ -7407,9 +7407,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "192.168.0.85,127.0.0.1";
+  const hosts = "10.129.1.118,192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_d1jJB8";
+  const id = "mp-weixin_1zSfbE";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8360,27 +8360,32 @@ const pages = [
     path: "pages/rili/rili",
     style: {
       navigationBarTitleText: "宇青99",
-      enablePullDownRefresh: false
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#8bf5ee"
     }
   },
   {
     path: "pages/notice/notice",
     style: {
       navigationBarTitleText: "宇青公告",
-      enablePullDownRefresh: true
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#c4aff3"
     }
   },
   {
     path: "pages/myTodo/myTodo",
     style: {
       navigationBarTitleText: "我的待办",
-      enablePullDownRefresh: true
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
     path: "pages/meet/meet",
     style: {
-      navigationBarTitleText: "点亮见面"
+      navigationBarTitleText: "点亮见面",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#f8cff1"
     }
   },
   {
@@ -8399,7 +8404,8 @@ const pages = [
     path: "pages/game/game",
     style: {
       navigationBarTitleText: "游戏中心",
-      enablePullDownRefresh: false
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#d9f6f8"
     }
   },
   {
@@ -8783,7 +8789,7 @@ class v {
 function I(e2) {
   return e2 && "string" == typeof e2 ? JSON.parse(e2) : e2;
 }
-const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I('{"address":["127.0.0.1","192.168.0.85"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","D:/programs/HBuilderX.4.85.2025110510/HBuilderX/plugins/unicloud/**/*.js"]}'), P = I('[{"provider":"alipay","spaceName":"fjywq","spaceId":"env-00jy66xyyok3","spaceAppId":"2021006132612208","accessKey":"Ccy83BSQ5lbkW3hW","secretKey":"311RGUj2JQuy0wlT","endpoint":"https://env-00jy66xyyok3.api-hz.cloudbasefunction.cn"}]') || [];
+const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I('{"address":["127.0.0.1","10.129.1.118","192.168.0.85"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","D:/programs/HBuilderX.4.85.2025110510/HBuilderX/plugins/unicloud/**/*.js"]}'), P = I('[{"provider":"alipay","spaceName":"fjywq","spaceId":"env-00jy66xyyok3","spaceAppId":"2021006132612208","accessKey":"Ccy83BSQ5lbkW3hW","secretKey":"311RGUj2JQuy0wlT","endpoint":"https://env-00jy66xyyok3.api-hz.cloudbasefunction.cn"}]') || [];
 let E = "";
 try {
   E = "__UNI__F7BEF5E";

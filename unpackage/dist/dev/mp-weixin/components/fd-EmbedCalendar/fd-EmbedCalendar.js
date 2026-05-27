@@ -92,7 +92,7 @@ const _sfc_main = {
       month: m,
       date: d
     };
-    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:172", "初始化完成，无选中状态");
+    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:174", "初始化完成，无选中状态");
     if (!this.monthOpen) {
       this.updateWeekPosition();
     }
@@ -165,7 +165,7 @@ const _sfc_main = {
     isSigned(y, m, d) {
       let flag = false;
       if (!this.signedDates || !Array.isArray(this.signedDates)) {
-        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:255", "签到数组为空或不是数组:", this.signedDates);
+        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:257", "签到数组为空或不是数组:", this.signedDates);
         return flag;
       }
       const dateStr = `${m}-${d}`;
@@ -430,7 +430,7 @@ const _sfc_main = {
     },
     // 图片加载错误处理
     onImageError(e) {
-      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:610", "头像加载失败:", e);
+      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:612", "头像加载失败:", e);
     }
   }
 };
@@ -462,22 +462,25 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     o: common_vendor.f($data.dates, (item, index, i0) => {
-      return {
-        a: common_vendor.t(item.date),
-        b: $data.choose == `${item.year}-${item.month + 1}-${item.date}` ? 1 : "",
-        c: $options.isToday(item.year, item.month, item.date) && item.lm ? 1 : "",
-        d: $options.isSigned(item.year, item.month + 1, item.date) && item.lm ? 1 : "",
-        e: !item.lm || item.isEmpty ? 1 : "",
-        f: index,
-        g: !item.lm ? 1 : "",
-        h: item.isEmpty ? 1 : "",
-        i: common_vendor.o(($event) => $options.selectOne(item, $event), index)
-      };
+      return common_vendor.e({
+        a: $options.isToday(item.year, item.month, item.date) && item.lm
+      }, $options.isToday(item.year, item.month, item.date) && item.lm ? {} : {
+        b: common_vendor.t(item.date)
+      }, {
+        c: $data.choose == `${item.year}-${item.month + 1}-${item.date}` ? 1 : "",
+        d: $options.isToday(item.year, item.month, item.date) && item.lm ? 1 : "",
+        e: $options.isSigned(item.year, item.month + 1, item.date) && item.lm ? 1 : "",
+        f: !item.lm || item.isEmpty ? 1 : "",
+        g: index,
+        h: !item.lm ? 1 : "",
+        i: item.isEmpty ? 1 : "",
+        j: common_vendor.o(($event) => $options.selectOne(item, $event), index)
+      });
     }),
     p: `translateY(${$data.positionTop}rpx)`,
     q: !$data.monthOpen ? 1 : "",
     r: common_vendor.sr("date-time", "72eca62a-0"),
-    s: common_vendor.o($options.dateTimeChange, "4b"),
+    s: common_vendor.o($options.dateTimeChange, "e5"),
     t: common_vendor.p({
       datestype: "year-month",
       datestring: $data.dateString

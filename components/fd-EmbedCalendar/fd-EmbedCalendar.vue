@@ -61,7 +61,9 @@
                 isSigned(item.year, item.month + 1, item.date) && item.lm,
               disabled: !item.lm || item.isEmpty,
             }">
-						{{ item.date }}
+						<!-- 今天显示"今"，其他日期显示数字 -->
+						<text v-if="isToday(item.year, item.month, item.date) && item.lm" class="date-text today-text">今</text>
+						<text v-else class="date-text">{{ item.date }}</text>
 					</view>
 				</view>
 			</view>
@@ -617,11 +619,12 @@
 <style lang="scss" scoped>
 	.sign-calendar {
 		width: 100%;
-		background-color: #f8f9fb;
+		background: linear-gradient(135deg, #e8f4f8 0%, #f5f7fa 50%, #faf5ff 100%);
 		border-radius: 24rpx;
-		padding: 40rpx 30rpx;
+		padding: 30rpx;
 		box-sizing: border-box;
 		font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 
 		.top-section {
 			margin-bottom: 30rpx;
@@ -651,23 +654,20 @@
 					
 				}
 				.speech-bubble {
-						position: relative;
-						background-color: white;
-						border-radius: 0 50rpx 50rpx 0;
-						padding: 14rpx 32rpx;
-						padding-left: 40rpx;
-						max-width: 80%;
-						border: #e5e5e5 3rpx solid;
-						left:-30rpx;
-						z-index: 2;
-						background: #c3ffff;
+					position: relative;
+					background-color: rgba(255, 255, 255, 0.9);
+					border-radius: 20rpx;
+					padding: 16rpx 28rpx;
+					max-width: 75%;
+					backdrop-filter: blur(10rpx);
+					box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 
 						.greeting-text {
-							font-size: 26rpx;
+							font-size: 24rpx;
 							color: #374151;
 							display: block;
 							font-weight: 500;
-							line-height: 1.4;
+							line-height: 1.5;
 							width: 100%;
 							white-space: nowrap;
 							overflow: hidden;
@@ -682,17 +682,19 @@
 					flex-shrink: 0;
 
 					.plan-indicator {
-						width: 88rpx;
-						height: 88rpx;
-						background: #f4e8fd;
+						width: 76rpx;
+						height: 76rpx;
+						background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 						border-radius: 50%;
 						display: flex;
 						align-items: center;
 						justify-content: center;
-						font-size: 30rpx;
+						font-size: 28rpx;
 						font-weight: 700;
+						color: #fff;
 						position: relative;
-						transition: all 0.4s ease;
+						transition: all 0.3s ease;
+						box-shadow: 0 4rpx 12rpx rgba(139, 92, 246, 0.3);
 					}
 				}
 			}
@@ -744,10 +746,10 @@
 					justify-content: center;
 
 					.title {
-						font-size: 32rpx;
+						font-size: 30rpx;
 						font-weight: 600;
 						color: #1a1a1a;
-						letter-spacing: 1rpx;
+						letter-spacing: 0.5rpx;
 					}
 				}
 
@@ -758,21 +760,22 @@
 					align-items: center;
 
 					.toggle-item {
-						width: 74rpx;
-						height: 74rpx;
-						line-height: 80rpx;
+						width: 64rpx;
+						height: 64rpx;
+						line-height: 64rpx;
 						text-align: center;
 						border-radius: 50%;
-						font-size: 32rpx;
+						font-size: 28rpx;
 						font-weight: 500;
 						color: #666;
 						transition: all 0.3s ease;
 						cursor: pointer;
-						background-color: #eff1f5;
+						background-color: rgba(255, 255, 255, 0.6);
 
 						&.active {
-							background-color: #8b5cf6;
+							background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 							color: white;
+							box-shadow: 0 4rpx 12rpx rgba(139, 92, 246, 0.3);
 						}
 					}
 				}
@@ -796,9 +799,11 @@
 		.calendar-grid {
 			position: relative;
 			height: 480rpx;
-			/* 6行 x 80rpx */
 			overflow: hidden;
 			transition: height 0.3s ease;
+			background: rgba(255, 255, 255, 0.5);
+			border-radius: 16rpx;
+			padding: 10rpx;
 
 			&.week-view {
 				height: 80rpx;
@@ -833,30 +838,39 @@
 
 					.date-circle {
 						position: relative;
-						width: 52rpx;
-						height: 52rpx;
+						width: 56rpx;
+						height: 56rpx;
 						border-radius: 50%;
 						display: flex;
 						justify-content: center;
 						align-items: center;
-						font-size: 28rpx;
-						color: #3a4050;
-						//font-weight: 500;
+						font-size: 26rpx;
+						color: #2d3748;
 						transition: all 0.2s ease;
 						cursor: pointer;
-						background-color: rgba(216, 216, 216, 0.4);
+						background-color: transparent;
+						
+						.date-text {
+							font-size: 26rpx;
+							font-weight: 500;
+						}
+						
+						.today-text {
+							font-size: 24rpx;
+							font-weight: 700;
+						}
 
 						&:hover {
-							background-color: rgba(139, 92, 246, 0.1);
+							background-color: rgba(139, 92, 246, 0.08);
+							transform: scale(1.05);
 						}
 
 						&.selected {
-							background-color: #8b5cf6;
+							background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 							color: white;
 							font-weight: 600;
-							border: 3px solid rgba(139, 92, 246, 0.8);
 							box-shadow: 0 6rpx 20rpx rgba(139, 92, 246, 0.4);
-							transform: scale(1.05);
+							transform: scale(1.1);
 							&.today{
 								&::after{
 									line-height: 20px;
@@ -865,28 +879,15 @@
 						}
 
 						&.today {
-							background-color: #8b5cf6;
+							background: linear-gradient(135deg, #31eee0 0%, #a78bfa 100%);
 							color: white;
 							font-weight: 600;
 							position: relative;
+							box-shadow: 0 4rpx 12rpx rgba(49, 238, 224, 0.3);
 
-							&::after {
-								content: "今"; //可以写字代替
-								position: absolute;
-								bottom: 0;
-								top:0;
-								left:0;
-								right:0;
-								margin: auto;
-								font-size: 30rpx;
-								line-height: 24px;
-								text-align: center;
+							.date-text {
 								color: white;
-								//写字注释一下
-								background: #c4b9f6;
-								border-radius: 100%;
-								
-								z-index: 5;
+								font-weight: 700;
 							}
 
 							/* 如果今天也是签到日期，需要显示绿色背景 */
@@ -911,10 +912,10 @@
 						}
 
 						&.special-date {
-							background-color: #10b981;
-							/* 绿色背景 */
+							background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
 							color: white;
 							font-weight: 600;
+							box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
 
 							&::before {
 								content: "";

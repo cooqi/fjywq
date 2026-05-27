@@ -1,17 +1,19 @@
 {
-  "pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+  "pages": [ 
     {
       "path": "pages/rili/rili",
       "style": {
         "navigationBarTitleText": "宇青99",
-        "enablePullDownRefresh": false
+        "enablePullDownRefresh": false,
+        "navigationBarBackgroundColor": "#8bf5ee"
       }
     },
     {
       "path": "pages/notice/notice",
       "style": {
         "navigationBarTitleText": "宇青公告",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": true,
+        "navigationBarBackgroundColor": "#c4aff3"
       }
     },
     
@@ -21,14 +23,17 @@
       "path": "pages/myTodo/myTodo",
       "style": {
         "navigationBarTitleText": "我的待办",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": true,
+        "navigationBarBackgroundColor": "#cff8f5"
       }
     },
     {
     	"path" : "pages/meet/meet",
     	"style" : 
     	{
-    		"navigationBarTitleText" : "点亮见面"
+    		"navigationBarTitleText" : "点亮见面",
+         "enablePullDownRefresh": true,
+    		"navigationBarBackgroundColor": "#f8cff1"
     	}
 	},
 	
@@ -48,7 +53,8 @@
 		"path": "pages/game/game",
 		"style": {
 			"navigationBarTitleText": "游戏中心",
-			"enablePullDownRefresh": false
+			"enablePullDownRefresh": false,
+      "navigationBarBackgroundColor": "#d9f6f8"
 		}
 	},
 	{

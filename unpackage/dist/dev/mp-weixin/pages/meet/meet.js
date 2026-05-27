@@ -46,7 +46,7 @@ const _sfc_main = {
       } else if (len === this.meetList.length) {
         str += "长姐威武，全勤太优秀了！";
       } else {
-        str += "你已经打败很多杯杯儿豹豹了，期待下一次见面！";
+        str += "你已经打败很多杯杯儿了，期待下一次见面！";
       }
       return str;
     }
@@ -224,9 +224,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: !$data.userInfo._id
   }, !$data.userInfo._id ? {
-    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "46")
+    b: common_vendor.o((...args) => $options.getUserInfo && $options.getUserInfo(...args), "af")
   } : {
-    c: common_vendor.o((...args) => $options.choose && $options.choose(...args), "e9"),
+    c: common_vendor.o((...args) => $options.choose && $options.choose(...args), "87"),
     d: common_vendor.t($options.tips),
     e: common_vendor.f($data.meetList, (item, index, i0) => {
       return {

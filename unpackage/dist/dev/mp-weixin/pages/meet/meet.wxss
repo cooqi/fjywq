@@ -23,24 +23,87 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
-.tips {
-  background: rgba(170, 161, 206, 0.2);
-  border: 2px solid #aaa1ce;
-  padding: 10px;
-  margin: 10px;
-  border-radius: 10px;
-  color: #aaa1ce;
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8cff1 0%, #b4ecd2 100%);
+  padding: 20rpx;
 }
-.notice {
-  color: #aaa1ce;
-  font-size: 13px;
-  text-align: center;
-  margin-top: 5px;
+button[type=primary] {
+  background: linear-gradient(135deg, #aaa1ce 0%, #9b8fbf 100%);
+  border: none;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8rpx 24rpx rgba(170, 161, 206, 0.4);
+  transition: all 0.3s ease;
+}
+button[type=primary]:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 12rpx rgba(170, 161, 206, 0.3);
+}
+.tips {
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10rpx);
+          backdrop-filter: blur(10rpx);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin: 20rpx 0;
+  color: #666;
+  font-size: 26rpx;
+  line-height: 1.6;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  border-left: 6rpx solid #aaa1ce;
 }
 .popup-content {
-  padding: 0 10px;
+  padding: 20rpx;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.notice {
+  color: #999;
+  font-size: 24rpx;
+  text-align: center;
+  padding: 24rpx 0;
+  background: linear-gradient(135deg, rgba(170, 161, 206, 0.05) 0%, rgba(170, 161, 206, 0.1) 100%);
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+}
+.uni-list-item {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10rpx);
+          backdrop-filter: blur(10rpx);
+  border-radius: 16rpx;
+  margin: 12rpx;
+  padding: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+.uni-list-item:active {
+  transform: scale(0.98);
+}
+.chat-custom-right {
+  display: flex;
+  align-items: center;
 }
 .del {
-  font-size: 13px;
-  color: orange;
+  font-size: 24rpx;
+  color: #ff6b6b;
+  font-weight: 500;
+  padding: 8rpx 16rpx;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 12rpx;
+  transition: all 0.3s ease;
+}
+.del:active {
+  background: rgba(255, 107, 107, 0.2);
+}
+.flex {
+  margin-top: 200rpx;
+}
+.cu-btn {
+  width: 280rpx;
+  border-radius: 40rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 0, 0, 0.3);
 }

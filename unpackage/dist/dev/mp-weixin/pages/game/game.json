@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "游戏中心",
   "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#d9f6f8",
   "usingComponents": {}
 }

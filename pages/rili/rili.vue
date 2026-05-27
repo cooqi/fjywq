@@ -1,4 +1,5 @@
 <template>
+	<view class="page-container">
 	<view class="calendar">
 		  <EmbedCalendar
 		    :show-top-section="true"
@@ -21,14 +22,14 @@
 		
 		<view v-if="current === 0" class="today">
 			<view class="date">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
-			<view v-for="item in dayInfo" :key="item._id" class="info">
+			<view v-for="item in dayInfo" :key="item._id" class="event-card today">
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
 			</view>
 			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员，但你不一定联系得上</view>
 		</view>
 		<view v-if="current === 1" class="about">
-			<view v-for="item in dayAboutInfo" :key="item._id" class="info">
+			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card ">
 				<view class="date" v-if="item.date">
 					<text v-for="(t,i) in setArr(item.date)" :key="i"><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
 					<text v-show="item.distanceInfo.displayText" class="displayText">{{item.distanceInfo.displayText}}</text>
@@ -41,6 +42,8 @@
 		
 		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
 		
+	</view>
+
 	</view>
 
 </template>
@@ -283,68 +286,135 @@
 </script>
 
 <style lang="scss">
+.page-container {
+	min-height: 100vh;
+	background: linear-gradient(180deg, #8bf5ee 0%, #b075e7 100%);
+	padding: 1px
+}
+
+.calendar {
+	background:rgba(255, 255, 255, 0.2);
+	border-radius: 24rpx;
+	margin: 20rpx;
+	padding: 20rpx;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
 	.content {
-		padding: 20px;
-		background: #aaa1ce;
-		color: #fff;
+		padding: 24rpx;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 16rpx;
+		margin: 20rpx;
+		box-shadow: 0 0 18rpx 7rpx rgba(255, 255, 255, 0.3);
 		.title{
 			font-weight: 600;
-			color: #926eff;
+			font-size: 32rpx;
+			color: #fff;
 			position: relative;
+			margin: 5px 0;
 			&:before{
 				position: absolute;
 				content: '';
-				width:5px;
-				height: 5px;
+				width: 8rpx;
+				height: 8rpx;
 				border-radius: 100%;
-				background:#926eff ;
-				top:0;
-				bottom: 0;
-				margin: auto;
-				left: -7px;
+				background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+				top: 50%;
+				transform: translateY(-50%);
+				left: -16rpx;
 			}
 		}
+		.bz{
+			color: #333;
+		}
 		.date{
-			font-size: 20px;
+			font-size: 40rpx;
 			font-weight: bold;
+			color: #fff;
 			
 		}
 		.about{
 			.title{
 				
 				&:before{
-					background:transparent ;
+					background:transparent;
 				}
 			}
 			.date{
 				.t0{
-					color: #aaffff;
+					color: #31eee0;
 				}
 			}
 			
 		}
 	}
+	.event-card {
+			background:linear-gradient(135deg, rgba(188, 159, 255, 0.2) 0%, rgba(145, 228, 243, 0.2) 80% ,rgba(145, 228, 243, 0.4) 90%, 	rgba(145, 228, 243, 0.8) 98%, rgba(145, 228, 243, 1) 100%);
+
+		border-radius: 0  15px 15px 0;
+		padding: 24rpx;
+		margin: 16rpx 0;
+		box-shadow: 0 0 8rpx 5rpx rgba(0, 0, 0, 0.06);
+		border-left: 10rpx solid #8b5cf6;
+		&.today{
+			border-left: 10rpx solid #8bf5ee;
+		background:linear-gradient(135deg, rgba(159, 255, 255, 0.2) 0%, rgba(143, 51, 248, 0.2) 80% ,rgba(143, 51, 248, 0.4) 90%, rgba(143, 51, 248, 0.8) 98%, rgba(143, 51, 248, 1) 100%);
+
+		}
+		
+		&:last-child {
+			margin-bottom: 0;
+		}
+		
+		.event-title {
+			font-size: 30rpx;
+			font-weight: 600;
+			color: #bed3f7;
+			margin-bottom: 12rpx;
+		}
+		
+		.event-bz {
+			font-size: 26rpx;
+			color: #718096;
+			line-height: 1.6;
+		}
+	}
 	.displayText{
-		font-weight: 100;
-		margin-left: 20px;
-		font-size: 14px;
-		color: #aaffff;
+		font-weight: 400;
+		margin-left: 20rpx;
+		font-size: 30rpx;
+		color: #eff179;
 	}
 	.info{
-		margin: 10px 0;
-		border-bottom: 1px dashed #fff;
-		padding: 10px 0;
+		margin: 16rpx 0;
+		border-bottom: 1rpx dashed rgba(139, 92, 246, 0.2);
+		padding: 16rpx 0;
 		&:last-child{
 			border-bottom:none;
 		}
 	}
 	.edit{
 		position: fixed;
-		right: 5px;bottom: 30px;border-radius: 100%;width: 38px;height: 38px;background: #aaffff;color: #926eff;font-size: 12px;line-height: 38px;text-align: center;box-shadow: 0 0 13px 5px rgba(0,0,0,.1);
+		right: 40rpx;
+		bottom: 40rpx;
+		border-radius: 50%;
+		width: 80rpx;
+		height: 80rpx;
+		background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+		color: #fff;
+		font-size: 24rpx;
+		line-height: 80rpx;
+		text-align: center;
+		box-shadow: 0 8rpx 24rpx rgba(139, 92, 246, 0.3);
+		transition: all 0.3s ease;
+		
+		&:active {
+			transform: scale(0.95);
+		}
 	}
 	
 	.segmented{
-		margin-bottom: 15px;;
+		margin-bottom: 30rpx;
 	}
 
 	.watermark {

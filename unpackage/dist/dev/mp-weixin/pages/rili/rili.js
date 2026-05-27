@@ -191,7 +191,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:203", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:206", err);
       });
     },
     onClickItem(e) {
@@ -250,7 +250,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:273", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:276", err);
       });
     },
     toRedisPage() {
@@ -271,10 +271,10 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o($options.handleDateClick, "71"),
-    b: common_vendor.o($options.handleTodayPlanClick, "e1"),
-    c: common_vendor.o($options.yearMonthChange, "20"),
-    d: common_vendor.o($options.MonthChange, "ac"),
+    a: common_vendor.o($options.handleDateClick, "b4"),
+    b: common_vendor.o($options.handleTodayPlanClick, "d5"),
+    c: common_vendor.o($options.yearMonthChange, "f7"),
+    d: common_vendor.o($options.MonthChange, "73"),
     e: common_vendor.p({
       ["show-top-section"]: true,
       ["greeting-text"]: $data.customGreeting,
@@ -283,7 +283,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       open: true,
       bgcolorGreeting: $data.bgcolorGreeting
     }),
-    f: common_vendor.o($options.onClickItem, "9a"),
+    f: common_vendor.o($options.onClickItem, "d2"),
     g: common_vendor.p({
       current: $data.current,
       values: $data.items,
@@ -331,7 +331,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "2d")
+    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "ef")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

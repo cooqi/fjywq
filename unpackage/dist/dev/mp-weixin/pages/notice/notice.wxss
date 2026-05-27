@@ -25,6 +25,8 @@
 /* 文章场景相关 */
 .content-box {
   padding: 30px 0 10px;
+  background: linear-gradient(180deg, #c4aff3 0%, #cdf8f5 100%);
+  min-height: 100vh;
 }
 .card-actions {
   display: flex;
@@ -41,15 +43,16 @@
 }
 .card-actions-item-text {
   font-size: 12px;
-  color: #666;
+  color: #140929;
   margin-left: 5px;
 }
 .content {
   border-bottom: 1px solid #ccc;
   padding-bottom: 10px;
+  color: #010a09;
 }
 .bz {
-  color: #aaa1ce;
+  color: #f7b606;
   padding: 5px 0;
 }
 .title {
@@ -59,7 +62,7 @@
   font-size: 20px;
 }
 .tips {
-  color: #999999;
+  color: #fff;
   font-size: 14px;
   padding: 20px 30px;
 }
@@ -85,29 +88,55 @@
   height: 60px;
   margin: 10px;
 }
+.uni-card {
+  background: linear-gradient(135deg, #fff, #baf5f1, #d6ccfa) !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+}
+.uni-card__header-extra-text {
+  color: #fff !important;
+}
 .uni-card .uni-card__header .uni-card__header-content .uni-card__header-content-subtitle {
   width: 50px;
   text-align: center;
-  background: #aaa1ce;
-  color: #000 !important;
+  background: #a9a9d9;
+  color: #180e24 !important;
   border-radius: 2px;
   padding: 2px;
 }
 .today .uni-card .uni-card__header .uni-card__header-content .uni-card__header-content-subtitle {
-  background: #b9f0ff;
+  background: #31eee0;
+  color: #0e2424 !important;
 }
 .tabs {
   padding: 0 10px;
   position: fixed;
-  top: 0;
+  top: 5px;
   left: 0;
   width: 100%;
   z-index: 99;
-  background: #fff;
+}
+.segmented-control .segmented-control__text {
+  color: #3f2649 !important;
+}
+.segmented-control .segmented-control__item {
+  background: transparent;
+  border-color: #f7f7f7 !important;
+}
+.segmented-control .segmented-control__item--button--active {
+  background: linear-gradient(to top, #baf5f1, #d6ccfa) !important;
+}
+.segmented-control .segmented-control__item--button--first {
+  border-top-left-radius: 18px !important;
+  border-bottom-left-radius: 18px !important;
+}
+.segmented-control .segmented-control__item--button--last {
+  border-top-right-radius: 18px !important;
+  border-bottom-right-radius: 18px !important;
 }
 .tips {
   text-align: center;
-  color: #ddd;
+  color: #fff;
   padding: 20px;
 }
 .edit {

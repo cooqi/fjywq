@@ -1,5 +1,5 @@
 <template>
-	<view>
+	<view class="page-container">
 		<view class="content" v-if="!userInfo._id">
 		     <view class="flex padding justify-center">
 		         <button class="cu-btn round bg-red" @click="getUserInfo">立即登录</button>
@@ -85,7 +85,7 @@
 				  }else if(len===this.meetList.length){
 					  str+="长姐威武，全勤太优秀了！"
 				  }else{
-					  str+="你已经打败很多杯杯儿豹豹了，期待下一次见面！"
+					  str+="你已经打败很多杯杯儿了，期待下一次见面！"
 				  }
 				  return str
 			  }
@@ -243,18 +243,105 @@
 </script>
 
 <style lang="scss">
-.tips{
-	background: rgba(#aaa1ce, 0.2);
-	border:2px solid #aaa1ce;
-	padding: 10px;margin: 10px;border-radius: 10px;color: #aaa1ce;
+.page-container {
+	min-height: 100vh;
+	background: linear-gradient(135deg, #f8cff1 0%, #b4ecd2 100%);
+	padding: 20rpx;
 }
-.notice{
-	color: #aaa1ce;font-size: 13px;text-align: center;margin-top: 5px;
+
+// 选择按钮样式优化
+button[type="primary"] {
+	background: linear-gradient(135deg, #aaa1ce 0%, #9b8fbf 100%);
+	border: none;
+	border-radius: 24rpx;
+	padding: 24rpx;
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #fff;
+	box-shadow: 0 8rpx 24rpx rgba(170, 161, 206, 0.4);
+	transition: all 0.3s ease;
+	
+	&:active {
+		transform: scale(0.98);
+		box-shadow: 0 4rpx 12rpx rgba(170, 161, 206, 0.3);
+	}
 }
-.popup-content{
-	padding:0 10px;
+
+// 提示框样式优化
+.tips {
+	background: rgba(255, 255, 255, 0.9);
+	backdrop-filter: blur(10rpx);
+	border-radius: 16rpx;
+	padding: 24rpx;
+	margin: 20rpx 0;
+	color: #666;
+	font-size: 26rpx;
+	line-height: 1.6;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+	border-left: 6rpx solid #aaa1ce;
 }
-.del{
-	font-size: 13px;color: orange
+
+// 弹出层内容优化
+.popup-content {
+	padding: 20rpx;
+	max-height: 70vh;
+	overflow-y: auto;
+}
+
+// 注意事项样式优化
+.notice {
+	color: #999;
+	font-size: 24rpx;
+	text-align: center;
+	padding: 24rpx 0;
+	background: linear-gradient(135deg, rgba(170, 161, 206, 0.05) 0%, rgba(170, 161, 206, 0.1) 100%);
+	border-radius: 12rpx;
+	margin-top: 16rpx;
+}
+
+// 列表项优化
+.uni-list-item {
+	background: rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(10rpx);
+	border-radius: 16rpx;
+	margin: 12rpx;
+	padding: 20rpx;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+	transition: all 0.3s ease;
+	
+	&:active {
+		transform: scale(0.98);
+	}
+}
+
+// 删除按钮样式优化
+.chat-custom-right {
+	display: flex;
+	align-items: center;
+}
+
+.del {
+	font-size: 24rpx;
+	color: #ff6b6b;
+	font-weight: 500;
+	padding: 8rpx 16rpx;
+	background: rgba(255, 107, 107, 0.1);
+	border-radius: 12rpx;
+	transition: all 0.3s ease;
+	
+	&:active {
+		background: rgba(255, 107, 107, 0.2);
+	}
+}
+
+// 未登录状态优化
+.flex {
+	margin-top: 200rpx;
+}
+
+.cu-btn {
+	width: 280rpx;
+	border-radius: 40rpx;
+	box-shadow: 0 8rpx 24rpx rgba(255, 0, 0, 0.3);
 }
 </style>
