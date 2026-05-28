@@ -25,6 +25,9 @@
 			<view v-for="item in dayInfo" :key="item._id" class="event-card today">
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
+				<view class="imgs" v-if="item.imgurl">
+					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" class="img" :src="img" mode="aspectFill"></image>
+				</view>
 			</view>
 			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员，但你不一定联系得上</view>
 		</view>
@@ -36,6 +39,9 @@
 				</view>
 				<view class="title">{{item.title}}</view>
 				<view class="bz" v-html="item.bz"></view>
+				<view class="imgs" v-if="item.imgurl">
+					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" class="img" :src="img" mode="aspectFill"></image>
+				</view>
 			</view>
 			<view v-if="!dayAboutInfo.length">当前日期暂无宇青相关事件，如需补充，请联系管理员，虽然你不一定联系得上</view>
 		</view>
@@ -280,6 +286,23 @@
 				uni.navigateTo({
 					url:'/pages/cloudFunction/redis/redis'
 				})
+			},
+			preImg(imgs,i){
+				// 预览图片
+				const urls=imgs.split(';')||[]
+						uni.previewImage({
+							urls ,
+							current :i,
+							longPressActions: {
+								itemList: ['发送给朋友', '保存图片', '收藏'],
+								success: function(data) {
+									console.log('选中了第' + (data.tapIndex + 1) + '个按钮,第' + (data.index + 1) + '张图片');
+								},
+								fail: function(err) {
+									console.log(err.errMsg);
+								}
+							}
+						});
 			}
 		}
 	}
@@ -429,5 +452,13 @@
 		align-items: center;
 		font-size: 20px;
 		color: #999;
+	}
+	.imgs{
+		display: flex;
+		flex-wrap: wrap;
+		
+		.img{
+			width: 50px;height: 50px;margin: 10px;
+		}
 	}
 </style>

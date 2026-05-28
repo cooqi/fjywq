@@ -63,6 +63,16 @@
 					/>
 				</view>
 				
+				<view class="form-item">
+					<text class="form-label">图片路径</text>
+					<textarea 
+						class="form-textarea" 
+						name="imgurl" 
+						v-model="formData.imgurl" 
+						placeholder="请输入图片路径，多个用分号隔开"
+					/>
+				</view>
+				
 				<view class="form-actions" v-if="formData._id">
 					<button 
 						type="primary" 
@@ -135,7 +145,8 @@
 				formData:{
 					title:'',
 					bz:'',
-					date:''
+					date:'',
+					imgurl:''
 				},
 				search:{
 					date:''
@@ -301,6 +312,7 @@
 				this.formData.date=''
 				this.formData.title=''
 				this.formData.bz=''
+				this.formData.imgurl=''
 				
 			}
 		}

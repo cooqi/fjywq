@@ -191,7 +191,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:206", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:212", err);
       });
     },
     onClickItem(e) {
@@ -250,12 +250,28 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:276", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:282", err);
       });
     },
     toRedisPage() {
       common_vendor.index.navigateTo({
         url: "/pages/cloudFunction/redis/redis"
+      });
+    },
+    preImg(imgs, i) {
+      const urls = imgs.split(";") || [];
+      common_vendor.index.previewImage({
+        urls,
+        current: i,
+        longPressActions: {
+          itemList: ["发送给朋友", "保存图片", "收藏"],
+          success: function(data) {
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:299", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+          },
+          fail: function(err) {
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:302", err.errMsg);
+          }
+        }
       });
     }
   }
@@ -297,11 +313,20 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     k: common_vendor.t($data.dayText)
   } : {}, {
     l: common_vendor.f($data.dayInfo, (item, k0, i0) => {
-      return {
+      return common_vendor.e({
         a: common_vendor.t(item.title),
         b: item.bz,
-        c: item._id
-      };
+        c: item.imgurl
+      }, item.imgurl ? {
+        d: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+          return {
+            a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), "8c"),
+            b: img
+          };
+        })
+      } : {}, {
+        e: item._id
+      });
     }),
     m: !$data.dayInfo.length
   }, !$data.dayInfo.length ? {} : {}) : {}, {
@@ -324,14 +349,23 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       } : {}, {
         e: common_vendor.t(item.title),
         f: item.bz,
-        g: item._id
+        g: item.imgurl
+      }, item.imgurl ? {
+        h: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+          return {
+            a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), "95"),
+            b: img
+          };
+        })
+      } : {}, {
+        i: item._id
       });
     }),
     p: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "ef")
+    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "bc")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

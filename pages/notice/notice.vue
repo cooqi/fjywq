@@ -292,7 +292,7 @@
 			color: #3f2649!important;
 		}
 		.segmented-control__item {
-			background: transparent;
+			background: #c4aff3;
 			border-color:#f7f7f7!important;
 		}
 		.segmented-control__item--button--active{
