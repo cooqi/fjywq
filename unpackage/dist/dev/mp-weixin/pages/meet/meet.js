@@ -91,12 +91,13 @@ const _sfc_main = {
                 common_vendor.index.hideLoading();
                 if (res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
+                  _this.userInfo = res2.result.result.result;
                   _this.getUserMeetList(res2.result.result.result._id);
                 }
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:132", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:133", "云函数调用失败", err);
               }
             });
           }
@@ -121,7 +122,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/meet/meet.vue:157", err);
+        common_vendor.index.__f__("error", "at pages/meet/meet.vue:158", err);
       });
     },
     updateList(data) {
@@ -149,12 +150,12 @@ const _sfc_main = {
         fail: (err) => {
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:184", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:185", "云函数调用失败", err);
         }
       });
     },
     change(e) {
-      common_vendor.index.__f__("log", "at pages/meet/meet.vue:189", e);
+      common_vendor.index.__f__("log", "at pages/meet/meet.vue:190", e);
       let val = e.detail.value[0];
       common_vendor.index.showLoading({ title: "加载中", mask: true });
       common_vendor._r.callFunction({
@@ -170,7 +171,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("log", "at pages/meet/meet.vue:207", "云函数调用失败", err);
+          common_vendor.index.__f__("log", "at pages/meet/meet.vue:208", "云函数调用失败", err);
         }
       });
     },
@@ -195,11 +196,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/meet/meet.vue:231", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/meet/meet.vue:232", "云函数调用失败", err);
               }
             });
           } else if (res.cancel) {
-            common_vendor.index.__f__("log", "at pages/meet/meet.vue:235", "用户点击取消");
+            common_vendor.index.__f__("log", "at pages/meet/meet.vue:236", "用户点击取消");
           }
         }
       });

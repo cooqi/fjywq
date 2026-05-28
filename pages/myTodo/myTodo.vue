@@ -88,6 +88,7 @@
 			                        uni.hideLoading();
 									if(res.result.result.result._id) {
 			                            uni.setStorageSync('userInfo', JSON.stringify(res.result.result.result))
+										_this.userInfo=res.result.result.result
 			                            _this.getUserTodoList(res.result.result.result._id)
 			                        }
 			                    },fail: (err) => {
