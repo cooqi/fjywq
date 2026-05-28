@@ -39,7 +39,7 @@
 						class="form-input" 
 						name="date" 
 						v-model="formData.date" 
-						placeholder="请输入日期（如：2024-01-01）"
+						placeholder="请输入日期（如：2024-1-1）"
 					/>
 				</view>
 				

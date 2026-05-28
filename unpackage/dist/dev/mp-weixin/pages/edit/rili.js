@@ -190,22 +190,22 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     f: $data.formData.date,
     g: common_vendor.o(($event) => $data.formData.date = $event.detail.value, "12"),
     h: $data.formData.title,
-    i: common_vendor.o(($event) => $data.formData.title = $event.detail.value, "a9"),
+    i: common_vendor.o(($event) => $data.formData.title = $event.detail.value, "28"),
     j: $data.formData.bz,
-    k: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "00"),
+    k: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "a0"),
     l: $data.formData.imgurl,
-    m: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "8e"),
+    m: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "9c"),
     n: $data.formData._id
   }, $data.formData._id ? {
-    o: common_vendor.o(($event) => $options.submit("update"), "07"),
-    p: common_vendor.o(($event) => $options.remove($data.formData._id), "4f"),
-    q: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "65")
+    o: common_vendor.o(($event) => $options.submit("update"), "4e"),
+    p: common_vendor.o(($event) => $options.remove($data.formData._id), "d3"),
+    q: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "f8")
   } : {
-    r: common_vendor.o(($event) => $options.submit("add"), "26")
+    r: common_vendor.o(($event) => $options.submit("add"), "f8")
   }, {
     s: $data.customGreeting.title,
-    t: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "ec"),
-    v: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "d5")
+    t: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "93"),
+    v: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "df")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
