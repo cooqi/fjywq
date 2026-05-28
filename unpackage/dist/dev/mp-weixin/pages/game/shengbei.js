@@ -4,10 +4,10 @@ const _sfc_main = {
   data() {
     return {
       isThrowing: false,
-      currentCupImage: "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei4.png",
+      currentCupImage: "http://47.115.211.166:8032/img/game/shengbei4.png",
       resultText: "准备掷杯",
       resultClass: "",
-      holyTipImage: "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei1.png",
+      holyTipImage: "http://47.115.211.166:8032/img/game/shengbei1.png",
       stats: {
         smile: 0,
         holy: 0,
@@ -20,7 +20,7 @@ const _sfc_main = {
           type: "smile",
           text: "笑杯",
           message: "态度不明，可重新掷",
-          image: "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei4.png",
+          image: "http://47.115.211.166:8032/img/game/shengbei4.png",
           class: "result-smile",
           tipClass: "tip-smile",
           emoji: "😄"
@@ -30,8 +30,8 @@ const _sfc_main = {
           text: "圣杯",
           message: "OK，行事顺利",
           images: [
-            "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei1.png",
-            "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei13.png"
+            "http://47.115.211.166:8032/img/game/shengbei1.png",
+            "http://47.115.211.166:8032/img/game/shengbei13.png"
           ],
           class: "result-holy",
           tipClass: "tip-holy",
@@ -41,7 +41,7 @@ const _sfc_main = {
           type: "cry",
           text: "哭杯",
           message: "No No，行事不顺",
-          image: "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei12.png",
+          image: "http://47.115.211.166:8032/img/game/shengbei12.png",
           class: "result-cry",
           tipClass: "tip-cry",
           emoji: "😢"
@@ -50,7 +50,7 @@ const _sfc_main = {
           type: "silly",
           text: "傻杯",
           message: "WTF，重开吧",
-          image: "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei5.png",
+          image: "http://47.115.211.166:8032/img/game/shengbei5.png",
           class: "result-silly",
           tipClass: "tip-silly",
           emoji: "🤪"
@@ -93,10 +93,10 @@ const _sfc_main = {
     },
     resetGame() {
       this.stats = { smile: 0, holy: 0, cry: 0, silly: 0 };
-      this.currentCupImage = "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei_smile.png";
+      this.currentCupImage = "http://47.115.211.166:8032/img/game/shengbei4.png";
       this.resultText = "准备掷杯";
       this.resultClass = "";
-      this.holyTipImage = "https://env-00jy66xyyok3.normal.cloudstatic.cn/%E6%B8%B8%E6%88%8F/shengbei_holy1.png";
+      this.holyTipImage = "http://47.115.211.166:8032/img/game/shengbei1.png";
     }
   }
 };
