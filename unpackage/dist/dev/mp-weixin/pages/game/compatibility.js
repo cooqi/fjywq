@@ -73,12 +73,15 @@ const _sfc_main = {
           this.yiTags = data.yi_tags || [];
           this.jiTags = data.ji_tags || [];
           this.configData = data;
-          this.generateContent();
+          const hasCache = this.loadFromCache();
+          if (!hasCache) {
+            this.generateContent();
+          }
         } else {
           throw new Error(res.result.msg || "获取配置数据失败");
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:225", "加载配置数据异常:", error);
+        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:229", "加载配置数据异常:", error);
         common_vendor.index.hideLoading();
         common_vendor.index.showToast({
           title: error.message || "加载失败，请重试",
@@ -154,14 +157,17 @@ const _sfc_main = {
     },
     generateContent() {
       const today = (/* @__PURE__ */ new Date()).toDateString();
-      const seed = (this.name1 || "YOU") + (this.name2 || "YQ") + today + this.rerollSeed;
+      const timestamp = Date.now();
+      const seed = (this.name1 || "YOU") + (this.name2 || "YQ") + today + this.rerollSeed + timestamp;
       let hash = 0;
       for (let i = 0; i < seed.length; i++) {
         const char = seed.charCodeAt(i);
         hash = (hash << 5) - hash + char;
         hash = hash & hash;
       }
-      this.compatibilityScore = Math.abs(hash % 41) + 60;
+      const hashValue = Math.abs(hash);
+      const mixedHash = hashValue * 2654435761 >>> 0;
+      this.compatibilityScore = mixedHash % 41 + 60;
       if (this.configData.descriptions && this.configData.descriptions.length > 0) {
         this.compatibilityText = this.getDescriptionByScore(this.compatibilityScore);
       }
@@ -182,6 +188,63 @@ const _sfc_main = {
       }
       if (this.configData.fortunes && this.configData.fortunes.length > 0) {
         this.fortuneDesc = this.getFortuneByScore(this.fortuneScore);
+      }
+      this.saveToCache();
+    },
+    // 获取缓存key
+    getCacheKey() {
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      return `compatibility_${this.name1 || "YOU"}_${this.name2 || "YQ"}_${today}`;
+    },
+    // 保存结果到缓存
+    saveToCache() {
+      try {
+        const cacheKey = this.getCacheKey();
+        const cacheData = {
+          compatibilityScore: this.compatibilityScore,
+          compatibilityText: this.compatibilityText,
+          randomYiTags: this.randomYiTags,
+          randomJiTags: this.randomJiTags,
+          auContent: this.auContent,
+          momentText: this.momentText,
+          fortuneScore: this.fortuneScore,
+          fortuneDesc: this.fortuneDesc,
+          timestamp: Date.now()
+        };
+        common_vendor.index.setStorageSync(cacheKey, JSON.stringify(cacheData));
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:397", "保存缓存失败:", e);
+      }
+    },
+    // 从缓存加载结果
+    loadFromCache() {
+      try {
+        const cacheKey = this.getCacheKey();
+        const cacheStr = common_vendor.index.getStorageSync(cacheKey);
+        if (cacheStr) {
+          const cacheData = JSON.parse(cacheStr);
+          this.compatibilityScore = cacheData.compatibilityScore;
+          this.compatibilityText = cacheData.compatibilityText;
+          this.randomYiTags = cacheData.randomYiTags;
+          this.randomJiTags = cacheData.randomJiTags;
+          this.auContent = cacheData.auContent;
+          this.momentText = cacheData.momentText;
+          this.fortuneScore = cacheData.fortuneScore;
+          this.fortuneDesc = cacheData.fortuneDesc;
+          return true;
+        }
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:419", "加载缓存失败:", e);
+      }
+      return false;
+    },
+    // 清除缓存
+    clearCache() {
+      try {
+        const cacheKey = this.getCacheKey();
+        common_vendor.index.removeStorageSync(cacheKey);
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/game/compatibility.vue:430", "清除缓存失败:", e);
       }
     },
     // 从数组中随机选择指定数量的元素
@@ -230,6 +293,7 @@ const _sfc_main = {
         content: "确定要重新测试吗？",
         success: (res) => {
           if (res.confirm) {
+            this.clearCache();
             this.rerollSeed++;
             this.generateContent();
             common_vendor.index.showToast({

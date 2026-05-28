@@ -102,31 +102,44 @@ const _sfc_main = {
     generateRandomLayout(level) {
       let blocks = JSON.parse(JSON.stringify(this.baseLevels[level]));
       const shuffleSteps = {
-        easy: 50,
-        medium: 100,
-        hard: 150
+        easy: 100,
+        medium: 300,
+        hard: 600
+        // 华容道状态空间大，600步才能保证充分打乱
       };
-      const steps = shuffleSteps[level] || 100;
+      const steps = shuffleSteps[level] || 300;
+      let lastMovedIndex = -1;
       for (let i = 0; i < steps; i++) {
-        const randomIndex = Math.floor(Math.random() * blocks.length);
+        let randomIndex = Math.floor(Math.random() * blocks.length);
+        if (blocks.length > 1 && randomIndex === lastMovedIndex) {
+          randomIndex = (randomIndex + 1) % blocks.length;
+        }
         const block = blocks[randomIndex];
         const directions = [
           { dx: 0, dy: -1 },
-          // 上
           { dx: 0, dy: 1 },
-          // 下
           { dx: -1, dy: 0 },
-          // 左
           { dx: 1, dy: 0 }
-          // 右
         ];
         directions.sort(() => Math.random() - 0.5);
+        let moved = false;
         for (const dir of directions) {
           if (this.canMoveForShuffle(blocks, block, dir.dx, dir.dy)) {
             block.x += dir.dx;
             block.y += dir.dy;
+            lastMovedIndex = randomIndex;
+            moved = true;
             break;
           }
+        }
+        if (!moved) {
+          lastMovedIndex = -1;
+        }
+      }
+      const caocao = blocks.find((b) => b.type === "caocao");
+      if (caocao && caocao.y === 3 && caocao.x === 1) {
+        if (this.canMoveForShuffle(blocks, caocao, 0, -1)) {
+          caocao.y -= 1;
         }
       }
       return blocks;
@@ -228,10 +241,10 @@ const _sfc_main = {
     isOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
       return !(x1 + w1 <= x2 || x2 + w2 <= x1 || y1 + h1 <= y2 || y2 + h2 <= y1);
     },
-    // 检查是否获胜（青宇到达底部出口）
+    // 检查是否获胜（宇青到达底部出口）
     checkWin() {
       const caocao = this.blocks.find((b) => b.type === "caocao");
-      if (caocao && caocao.y === 3) {
+      if (caocao && caocao.y === 3 && caocao.x === 1) {
         this.gameWin();
       }
     },
@@ -273,7 +286,7 @@ const _sfc_main = {
     },
     getBlockText(type) {
       const texts = {
-        caocao: "青宇",
+        caocao: "宇青",
         general_v: "杯杯儿",
         general_h: "闺女",
         soldier: "黑子"

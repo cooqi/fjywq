@@ -42,7 +42,7 @@ const _sfc_main = {
       if (len === 0) {
         str = "宝子你还未点亮任何见面场次，请添加，如果我们缺少你看得场次，请联系我们！";
       } else if (len > 0 && len < 3) {
-        str += "宝子，你已经见过青宇了，太让人嫉妒了";
+        str += "宝子，你已经见过宇青了，太让人嫉妒了";
       } else if (len === this.meetList.length) {
         str += "长姐威武，全勤太优秀了！";
       } else {

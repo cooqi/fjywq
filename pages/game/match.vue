@@ -3,7 +3,7 @@
     <!-- 难度选择界面 -->
     <view class="difficulty-selector" v-if="!gameStarted">
       <view class="selector-header">
-        <text class="selector-title">🎴 青宇对对碰</text>
+        <text class="selector-title">🎴 宇青对对碰</text>
         <text class="selector-subtitle">选择难度开始游戏</text>
       </view>
       

@@ -37,7 +37,7 @@
       <view class="game-card" @click="goToGame('match')">
         <view class="game-icon match-icon">🎴</view>
         <view class="game-info">
-          <text class="game-name">青宇对对碰</text>
+          <text class="game-name">宇青对对碰</text>
           <text class="game-desc">翻牌配对，考验记忆力</text>
         </view>
         <view class="arrow">›</view>
@@ -47,8 +47,8 @@
       <view class="game-card" @click="goToGame('huarongdao')">
         <view class="game-icon huarongdao-icon">🧩</view>
         <view class="game-info">
-          <text class="game-name">青宇大逃亡</text>
-          <text class="game-desc">经典益智，帮助青宇逃脱黑子的围剿</text>
+          <text class="game-name">宇青大逃亡</text>
+          <text class="game-desc">经典益智，帮助宇青逃脱黑子的围剿</text>
         </view>
         <view class="arrow">›</view>
       </view>

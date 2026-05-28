@@ -3,8 +3,8 @@
     <!-- 难度选择界面 -->
     <view class="difficulty-selector" v-if="!gameStarted">
       <view class="selector-header">
-        <text class="selector-title">🧩 青宇大逃亡</text>
-        <text class="selector-subtitle">经典益智游戏，帮助青宇逃脱</text>
+        <text class="selector-title">🧩 宇青大逃亡</text>
+        <text class="selector-subtitle">经典益智游戏，帮助宇青逃脱</text>
       </view>
       
       <view class="difficulty-options">
@@ -164,7 +164,7 @@
 
       <view class="rules">
         <text class="rules-title">游戏规则</text>
-        <text class="rules-content">点击棋子选中，再点击方向箭头移动。每次游戏都会生成不同的随机布局，目标是让最大的棋子（青宇）从底部出口逃脱！</text>
+        <text class="rules-content">点击棋子选中，再点击方向箭头移动。每次游戏都会生成不同的随机布局，目标是让最大的棋子（宇青）从底部出口逃脱！</text>
       </view>
     </view>
   </view>
@@ -274,47 +274,61 @@ export default {
     
     // 生成随机布局（通过随机移动打乱）
     generateRandomLayout(level) {
-      // 深拷贝基础布局
-      let blocks = JSON.parse(JSON.stringify(this.baseLevels[level]))
-      
-      // 根据难度确定打乱步数
-      const shuffleSteps = {
-        easy: 50,
-        medium: 100,
-        hard: 150
+    let blocks = JSON.parse(JSON.stringify(this.baseLevels[level]))
+    
+    // 大幅增加打乱步数，确保真正打乱
+    const shuffleSteps = {
+      easy: 100,
+      medium: 300,
+      hard: 600  // 华容道状态空间大，600步才能保证充分打乱
+    }
+    
+    const steps = shuffleSteps[level] || 300
+    let lastMovedIndex = -1 // 记录上一次移动的棋子，防止同一个棋子连续来回移动
+    
+    for (let i = 0; i < steps; i++) {
+      let randomIndex = Math.floor(Math.random() * blocks.length)
+      // 避免连续移动同一个棋子导致原路返回
+      if (blocks.length > 1 && randomIndex === lastMovedIndex) {
+        randomIndex = (randomIndex + 1) % blocks.length
       }
       
-      const steps = shuffleSteps[level] || 100
+      const block = blocks[randomIndex]
+      const directions = [
+        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
+      ]
       
-      // 随机移动棋子来打乱布局
-      for (let i = 0; i < steps; i++) {
-        // 随机选择一个棋子
-        const randomIndex = Math.floor(Math.random() * blocks.length)
-        const block = blocks[randomIndex]
-        
-        // 尝试四个方向
-        const directions = [
-          { dx: 0, dy: -1 }, // 上
-          { dx: 0, dy: 1 },  // 下
-          { dx: -1, dy: 0 }, // 左
-          { dx: 1, dy: 0 }   // 右
-        ]
-        
-        // 随机打乱方向顺序
-        directions.sort(() => Math.random() - 0.5)
-        
-        // 找到第一个可移动的方向并移动
-        for (const dir of directions) {
-          if (this.canMoveForShuffle(blocks, block, dir.dx, dir.dy)) {
-            block.x += dir.dx
-            block.y += dir.dy
-            break
-          }
+      directions.sort(() => Math.random() - 0.5)
+      
+      let moved = false
+      for (const dir of directions) {
+        if (this.canMoveForShuffle(blocks, block, dir.dx, dir.dy)) {
+          block.x += dir.dx
+          block.y += dir.dy
+          lastMovedIndex = randomIndex
+          moved = true
+          break
         }
       }
       
-      return blocks
-    },
+      // 如果当前棋子死活走不动，重置 lastMovedIndex 以免卡死
+      if (!moved) {
+        lastMovedIndex = -1 
+      }
+    }
+    
+    // 防止打乱后刚好停在胜利位置
+    const caocao = blocks.find(b => b.type === 'caocao')
+    if (caocao && caocao.y === 3 && caocao.x === 1) {
+      // 如果刚好赢了，把曹操往上挪一步（如果可行的话）
+      if (this.canMoveForShuffle(blocks, caocao, 0, -1)) {
+        caocao.y -= 1
+      }
+    }
+    
+    return blocks
+  },
     
     // 打乱时检查是否可以移动
     canMoveForShuffle(blocks, block, dx, dy) {
@@ -421,10 +435,11 @@ export default {
                y1 + h1 <= y2 || y2 + h2 <= y1)
     },
     
-    // 检查是否获胜（青宇到达底部出口）
+    // 检查是否获胜（宇青到达底部出口）
     checkWin() {
       const caocao = this.blocks.find(b => b.type === 'caocao')
-      if (caocao && caocao.y === 3) {
+       // 必须同时满足 y=3 (到达底部) 且 x=1 (对准中间出口)
+      if (caocao && caocao.y === 3&& caocao.x === 1) {
         this.gameWin()
       }
     },
@@ -472,7 +487,7 @@ export default {
     
     getBlockText(type) {
       const texts = {
-        caocao: '青宇',
+        caocao: '宇青',
         general_v: '杯杯儿',
         general_h: '闺女',
         soldier: '黑子'

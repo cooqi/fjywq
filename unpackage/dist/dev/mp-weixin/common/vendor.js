@@ -8432,7 +8432,7 @@ const pages = [
   {
     path: "pages/game/match",
     style: {
-      navigationBarTitleText: "青宇对对碰",
+      navigationBarTitleText: "宇青对对碰",
       enablePullDownRefresh: false
     }
   },
@@ -8446,7 +8446,7 @@ const pages = [
   {
     path: "pages/game/huarongdao",
     style: {
-      navigationBarTitleText: "青宇华容道",
+      navigationBarTitleText: "宇青华容道",
       enablePullDownRefresh: false
     }
   }

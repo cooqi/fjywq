@@ -215,8 +215,12 @@ export default {
           this.jiTags = data.ji_tags || []
           this.configData = data
           
-          // 生成内容
-          this.generateContent()
+          // 先尝试从缓存加载
+          const hasCache = this.loadFromCache()
+          if (!hasCache) {
+            // 没有缓存，生成新内容
+            this.generateContent()
+          }
         } else {
           // 抛出异常
           throw new Error(res.result.msg || '获取配置数据失败')
@@ -310,8 +314,9 @@ export default {
     
     generateContent() {
       const today = new Date().toDateString()
-      // 加入rerollSeed让每次重新测试都得到不同结果
-      const seed = (this.name1 || 'YOU') + (this.name2 || 'YQ') + today + this.rerollSeed
+      // 使用时间戳 + rerollSeed 确保每次测试结果不同
+      const timestamp = Date.now()
+      const seed = (this.name1 || 'YOU') + (this.name2 || 'YQ') + today + this.rerollSeed + timestamp
       
       let hash = 0
       for (let i = 0; i < seed.length; i++) {
@@ -320,8 +325,10 @@ export default {
         hash = hash & hash
       }
       
-      // 生成合拍度分数（60-100分）
-      this.compatibilityScore = Math.abs(hash % 41) + 60
+      // 生成合拍度分数（60-100分）- 使用改进的hash算法增加分散性
+      const hashValue = Math.abs(hash)
+      const mixedHash = ((hashValue * 2654435761) >>> 0) // 使用黄金比例乘法混合
+      this.compatibilityScore = (mixedHash % 41) + 60
       
       // 根据分数选择对应的描述
       if (this.configData.descriptions && this.configData.descriptions.length > 0) {
@@ -358,6 +365,69 @@ export default {
       // 根据财运分数获取对应的描述
       if (this.configData.fortunes && this.configData.fortunes.length > 0) {
         this.fortuneDesc = this.getFortuneByScore(this.fortuneScore)
+      }
+      
+      // 保存结果到缓存
+      this.saveToCache()
+    },
+    
+    // 获取缓存key
+    getCacheKey() {
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD格式
+      return `compatibility_${this.name1 || 'YOU'}_${this.name2 || 'YQ'}_${today}`
+    },
+    
+    // 保存结果到缓存
+    saveToCache() {
+      try {
+        const cacheKey = this.getCacheKey()
+        const cacheData = {
+          compatibilityScore: this.compatibilityScore,
+          compatibilityText: this.compatibilityText,
+          randomYiTags: this.randomYiTags,
+          randomJiTags: this.randomJiTags,
+          auContent: this.auContent,
+          momentText: this.momentText,
+          fortuneScore: this.fortuneScore,
+          fortuneDesc: this.fortuneDesc,
+          timestamp: Date.now()
+        }
+        uni.setStorageSync(cacheKey, JSON.stringify(cacheData))
+      } catch (e) {
+        console.error('保存缓存失败:', e)
+      }
+    },
+    
+    // 从缓存加载结果
+    loadFromCache() {
+      try {
+        const cacheKey = this.getCacheKey()
+        const cacheStr = uni.getStorageSync(cacheKey)
+        if (cacheStr) {
+          const cacheData = JSON.parse(cacheStr)
+          this.compatibilityScore = cacheData.compatibilityScore
+          this.compatibilityText = cacheData.compatibilityText
+          this.randomYiTags = cacheData.randomYiTags
+          this.randomJiTags = cacheData.randomJiTags
+          this.auContent = cacheData.auContent
+          this.momentText = cacheData.momentText
+          this.fortuneScore = cacheData.fortuneScore
+          this.fortuneDesc = cacheData.fortuneDesc
+          return true
+        }
+      } catch (e) {
+        console.error('加载缓存失败:', e)
+      }
+      return false
+    },
+    
+    // 清除缓存
+    clearCache() {
+      try {
+        const cacheKey = this.getCacheKey()
+        uni.removeStorageSync(cacheKey)
+      } catch (e) {
+        console.error('清除缓存失败:', e)
       }
     },
     
@@ -421,6 +491,9 @@ export default {
         content: '确定要重新测试吗？',
         success: (res) => {
           if (res.confirm) {
+            // 清除缓存
+            this.clearCache()
+            
             // 增加随机种子，让下次生成不同的结果
             this.rerollSeed++
             
