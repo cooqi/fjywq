@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "搜索日历事件",
+  "enablePullDownRefresh": true,
+  "navigationBarBackgroundColor": "#8bf5ee",
+  "usingComponents": {
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
+    "uni-datetime-picker": "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker"
+  }
+}

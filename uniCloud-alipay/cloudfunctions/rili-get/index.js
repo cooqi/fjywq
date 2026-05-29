@@ -52,8 +52,46 @@ exports.main = async (event, context) => {
             total: filteredData.length
           }
     }else if(search){
-        // 过滤出指定日期的数据
-        res=await collection.where(search).get()
+        // 搜索功能：支持关键词和日期搜索
+        let conditions = []
+        
+        // 如果有关键词，进行模糊搜索（title 或 bz）
+        if (search.keyword) {
+            const keyword = search.keyword.trim()
+            if (keyword) {
+                conditions.push(db.command.or([
+                    {
+                        title: new RegExp(keyword, 'i')
+                    },
+                    {
+                        bz: new RegExp(keyword, 'i')
+                    }
+                ]))
+            }
+        }
+        
+        // 如果有日期，添加日期条件
+        if (search.date) {
+            const dateStr = search.date.trim()
+            if (dateStr) {
+                conditions.push({
+                    date: dateStr
+                })
+            }
+        }
+        
+        // 执行查询
+        if (conditions.length > 0) {
+            // 如果只有一个条件，直接使用
+            if (conditions.length === 1) {
+                res = await collection.where(conditions[0]).orderBy("date", "desc").get()
+            } else {
+                // 多个条件使用 and 连接
+                res = await collection.where(db.command.and(conditions)).orderBy("date", "desc").get()
+            }
+        } else {
+            res = allRes
+        }
     }
     
     return res

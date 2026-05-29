@@ -5,8 +5,10 @@ if (!Math) {
   "./pages/rili/rili.js";
   "./pages/notice/notice.js";
   "./pages/myTodo/myTodo.js";
+  "./pages/myTodo/suggestion.js";
   "./pages/meet/meet.js";
   "./pages/edit/rili.js";
+  "./pages/rili/search.js";
   "./pages/edit/notice.js";
   "./pages/game/game.js";
   "./pages/game/shengbei.js";

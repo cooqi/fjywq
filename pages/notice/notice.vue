@@ -6,13 +6,20 @@
 		 </view>
 		<uni-card @click="edit(item._id)" :sub-title="item.top?'置顶':item.is_today_important==='1'?'今日关注':''" :class="[item.is_today_important==='1'?'today':'']" v-for="item in list" :key="item._id" :title="item.title"  :extra="item.type" >
 		
+			<!-- 倒计时显示 -->
+			<view v-if="item.is_countdown === '1' && item.is_countdown_date" class="countdown-box">
+				<view class="countdown-label">距离目标时间{{ item.is_countdown_date }}还有：</view>
+				<view class="countdown-time">{{ getCountdown(item.is_countdown_date) }}</view>
+			</view>
+		
 			<view class="content"  v-if="item.content">
 				<view class="uni-body" user-select v-html="item.content"></view>
 			</view>
 			<view class="imgs" v-if="item.imgs">
 				<image @click="preImg(item.imgs,index)" v-for="(img,index) in item.imgs.split(';')" class="img" :src="img" mode="aspectFill"></image>
 			</view>
-			<view class="uni-body bz" v-html="item.bz"></view>
+			<view class="uni-body bz" v-html="item.bz" v-if="item.bz"></view>
+			
 			<uni-link :href="item.url" :text="item.url"></uni-link>
 			<view slot="actions" class="card-actions" v-if="item.type==='task'">
 				<view class="card-actions-item" @click="addTask(item)">
@@ -40,7 +47,8 @@
 				loading:false,
 				userInfo:{
 					_id:''
-				}
+				},
+				timer: null // 定时器
 			}
 		},
 		onShareAppMessage: function () {
@@ -61,6 +69,14 @@
 				this.userInfo=JSON.parse(userInfo)
 			} catch (e) {
 				// error
+			}
+			// 启动定时器，每秒更新倒计时
+			this.startCountdownTimer()
+		  },
+		  onUnload() {
+		  	// 清除定时器
+		  	if (this.timer) {
+				clearInterval(this.timer)
 			}
 		  },
 		  onPullDownRefresh() {
@@ -185,6 +201,44 @@
 								}
 							}
 						});
+			},
+			// 计算倒计时
+			getCountdown(targetDate) {
+				if (!targetDate) return ''
+				
+				const now = new Date().getTime()
+				const target = new Date(targetDate).getTime()
+				const diff = target - now
+				
+				if (diff <= 0) {
+					return '已到达目标时间'
+				}
+				
+				const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+				const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+				const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+				const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+				
+				let result = ''
+				if (days > 0) {
+					result += `${days}天`
+				}
+				if (hours > 0 || days > 0) {
+					result += `${hours}小时`
+				}
+				if (minutes > 0 || hours > 0 || days > 0) {
+					result += `${minutes}分钟`
+				}
+				result += `${seconds}秒`
+				
+				return result
+			},
+			// 启动倒计时定时器
+			startCountdownTimer() {
+				this.timer = setInterval(() => {
+					// 强制更新视图
+					this.$forceUpdate()
+				}, 1000)
 			}
 		}
 	}
@@ -316,5 +370,26 @@
 	.edit{
 		position: fixed;
 		right: 5px;bottom: 30px;border-radius: 100%;width: 38px;height: 38px;background: #aaffff;color: #926eff;font-size: 12px;line-height: 38px;text-align: center;box-shadow: 0 0 13px 5px rgba(0,0,0,.1);
+	}
+	
+	.countdown-box {
+		background: linear-gradient(135deg, #fff5e6 0%, #ffe6f0 100%);
+		border-radius: 12rpx;
+		padding: 20rpx;
+		margin: 16rpx 0;
+		border-left: 6rpx solid #ff9800;
+		
+		.countdown-label {
+			font-size: 24rpx;
+			color: #666;
+			margin-bottom: 8rpx;
+		}
+		
+		.countdown-time {
+			font-size: 32rpx;
+			font-weight: bold;
+			color: #ff6b35;
+			font-family: 'Courier New', monospace;
+		}
 	}
 </style>

@@ -1,0 +1,41 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "content", "createTime"],
+  "permission": {
+    "read": false,
+    "create": true,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "userId": {
+      "bsonType": "string",
+      "title": "用户ID",
+      "description": "提交建议的用户ID",
+      "foreignKey": "uni-id-users._id"
+    },
+    "content": {
+      "bsonType": "string",
+      "title": "建议内容",
+      "description": "用户提交的具体内容",
+      "maxLength": 1000
+    },
+    "answer": {
+      "bsonType": "string",
+      "title": "管理员回复",
+      "description": "管理员的回复内容",
+      "nullable": true
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "title": "创建时间",
+      "description": "建议提交的时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    }
+  }
+}

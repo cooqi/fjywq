@@ -1,55 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
-function isExactYears(date1, date2) {
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
-  if (d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()) {
-    return Math.abs(d1.getFullYear() - d2.getFullYear());
-  }
-  if (d1.getMonth() === 1 && d1.getDate() === 29 && d2.getMonth() === 1 && d2.getDate() === 28) {
-    const yearDiff = Math.abs(d1.getFullYear() - d2.getFullYear());
-    return d1.getFullYear() % 4 === 0 || d2.getFullYear() % 4 === 0 ? yearDiff : 0;
-  }
-  return 0;
-}
-function calculateDateDistance(targetDateStr) {
-  const today = /* @__PURE__ */ new Date();
-  today.setHours(0, 0, 0, 0);
-  const targetDate = new Date(targetDateStr.replace(/-/g, "/"));
-  targetDate.setHours(0, 0, 0, 0);
-  const timeDiff = targetDate.getTime() - today.getTime();
-  const daysDiff = Math.round(timeDiff / (1e3 * 3600 * 24));
-  const absoluteDays = Math.abs(daysDiff);
-  const isFuture = daysDiff > 0;
-  const exactYears = isExactYears(today, targetDate);
-  let result = "";
-  if (isFuture && absoluteDays > 0) {
-    result = `倒计时${absoluteDays}天`;
-  } else {
-    if (exactYears > 0) {
-      result = `距离今天${exactYears}年`;
-    } else if (absoluteDays > 0) {
-      result = `距离今天${absoluteDays}天`;
-    }
-  }
-  return {
-    date: targetDateStr,
-    days: absoluteDays,
-    isFuture,
-    exactYears,
-    displayText: result
-  };
-}
-const processJQLResults = (issues) => {
-  return issues.map((issue) => {
-    const dateStr = issue.date;
-    const distanceInfo = calculateDateDistance(dateStr);
-    return {
-      ...issue,
-      distanceInfo
-    };
-  }).filter(Boolean);
-};
+const rili = require("../../rili.js");
 const EmbedCalendar = () => "../../components/fd-EmbedCalendar/fd-EmbedCalendar.js";
 const _sfc_main = {
   components: {
@@ -70,7 +21,8 @@ const _sfc_main = {
       current: 0,
       time: "",
       userInfo: "",
-      dayText: ""
+      dayText: "",
+      currentMonth: ""
     };
   },
   onLoad() {
@@ -82,6 +34,11 @@ const _sfc_main = {
       this.userInfo = JSON.parse(userInfo);
     } catch (e) {
     }
+  },
+  // 页面刷新方法
+  onPullDownRefresh() {
+    this.getList(this.currentMonth);
+    this.useCommon();
   },
   watch: {
     dayAboutInfo: {
@@ -163,6 +120,7 @@ const _sfc_main = {
       if (!month) {
         m = currentMonth;
       }
+      this.currentMonth = m;
       common_vendor.index.showLoading({
         title: "处理中..."
       });
@@ -191,7 +149,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:212", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:221", err);
       });
     },
     onClickItem(e) {
@@ -220,14 +178,14 @@ const _sfc_main = {
         const nn = this.formatDate(now);
         return month === m && day === d && tt != nn;
       });
-      this.dayAboutInfo = processJQLResults(data);
+      this.dayAboutInfo = rili.processJQLResults(data);
       let data2 = this.allRili.filter((item) => {
         const t = new Date(item.date.replace(/-/g, "/"));
         const tt = this.formatDate(t);
         const nn = this.formatDate(now);
         return tt === nn;
       });
-      this.dayInfo = processJQLResults(data2);
+      this.dayInfo = rili.processJQLResults(data2);
       this.dayText = ((_a = this.dayInfo[0]) == null ? void 0 : _a.distanceInfo.displayText) || "";
       if (!this.dayInfo.length && this.dayAboutInfo.length) {
         this.current = 1;
@@ -250,7 +208,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:282", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:291", err);
       });
     },
     toRedisPage() {
@@ -266,12 +224,17 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:299", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:308", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:302", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:311", err.errMsg);
           }
         }
+      });
+    },
+    toSearch() {
+      common_vendor.index.navigateTo({
+        url: "/pages/rili/search"
       });
     }
   }
@@ -279,11 +242,13 @@ const _sfc_main = {
 if (!Array) {
   const _component_EmbedCalendar = common_vendor.resolveComponent("EmbedCalendar");
   const _easycom_uni_segmented_control2 = common_vendor.resolveComponent("uni-segmented-control");
-  (_component_EmbedCalendar + _easycom_uni_segmented_control2)();
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  (_component_EmbedCalendar + _easycom_uni_segmented_control2 + _easycom_uni_icons2)();
 }
 const _easycom_uni_segmented_control = () => "../../uni_modules/uni-segmented-control/components/uni-segmented-control/uni-segmented-control.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_segmented_control();
+  (_easycom_uni_segmented_control + _easycom_uni_icons)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
@@ -368,7 +333,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
     r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "9d")
-  } : {});
+  } : {}, {
+    s: common_vendor.p({
+      type: "search",
+      size: "24",
+      color: "#fff"
+    }),
+    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "ed")
+  });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;

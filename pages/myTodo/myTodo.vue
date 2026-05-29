@@ -16,6 +16,11 @@
 			</uni-data-checkbox>
 		</view>
 	</view>
+	
+	<!-- 我有话说按钮 -->
+	<view v-if="userInfo._id" class="suggestion-btn" @click="goToSuggestion">
+		<text>我有话说</text>
+	</view>
 	</view>
 </template>
 
@@ -30,7 +35,7 @@
 				
 			}
 		},
-		onLoad() {
+		onShow() {
 			const userInfo = uni.getStorageSync('userInfo');
 				console.log('userInfo',userInfo)
 				this.userInfo=JSON.parse(userInfo)
@@ -41,6 +46,7 @@
 				}
 		
 		},
+		
 		onPullDownRefresh() {
 			this.getUserTodoList(this.userInfo._id)
 		},
@@ -189,6 +195,12 @@
 				uni.navigateTo({
 					url
 				});
+			},
+			// 跳转到建议页面
+			goToSuggestion() {
+				uni.navigateTo({
+					url: '/pages/myTodo/suggestion'
+				})
 			}
 		}
 	}
@@ -226,6 +238,24 @@
 
 	.btn-list button {
 		margin-top: 20px;
+	}
+	
+	.suggestion-btn {
+		position: fixed;
+		right: 20rpx;
+		bottom: 30rpx;
+		background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+		color: #fff;
+		padding: 20rpx 40rpx;
+		border-radius: 50rpx;
+		font-size: 28rpx;
+		box-shadow: 0 8rpx 24rpx rgba(139, 92, 246, 0.3);
+		transition: all 0.3s ease;
+		z-index: 99;
+		
+		&:active {
+			transform: scale(0.95);
+		}
 	}
 
 </style>

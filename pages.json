@@ -4,7 +4,7 @@
       "path": "pages/rili/rili",
       "style": {
         "navigationBarTitleText": "宇青99",
-        "enablePullDownRefresh": false,
+        "enablePullDownRefresh": true,
         "navigationBarBackgroundColor": "#8bf5ee"
       }
     },
@@ -28,6 +28,14 @@
       }
     },
     {
+      "path": "pages/myTodo/suggestion",
+      "style": {
+        "navigationBarTitleText": "我有话说",
+        "enablePullDownRefresh": true,
+        "navigationBarBackgroundColor": "#cff8f5"
+      }
+    },
+    {
     	"path" : "pages/meet/meet",
     	"style" : 
     	{
@@ -41,6 +49,14 @@
 		"path": "pages/edit/rili",
 		"style": {
 			"navigationBarTitleText": "编辑日历"
+		}
+	},
+	{
+		"path": "pages/rili/search",
+		"style": {
+			"navigationBarTitleText": "搜索日历事件",
+      "enablePullDownRefresh": true,
+    		"navigationBarBackgroundColor": "#8bf5ee"
 		}
 	},
 	{

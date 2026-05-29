@@ -40,6 +40,22 @@
 					    ></uni-data-select>
 				</view>
 				<view class="uni-form-item ">
+					<text class="title">是否倒计时</text>
+					
+					<uni-data-select
+					      v-model="formData.is_countdown"
+					      :localdata="sf"
+					    ></uni-data-select>
+				</view>
+				<view class="uni-form-item">
+					<text class="title">倒计时目标时间</text>
+					<uni-datetime-picker 
+						type="date" 
+						v-model="formData.is_countdown_date"
+						placeholder="请选择倒计时目标时间"
+					/>
+				</view>
+				<view class="uni-form-item ">
 					<text class="title">分类</text>
 					<uni-data-select
 					      v-model="formData.classType"
@@ -96,7 +112,9 @@
 					is_today_important:'',
 					classType:'',
 					imgs:'',
-					url:''
+					url:'',
+					is_countdown: '',
+					is_countdown_date: ''
 					
 				},
 				search:{
@@ -273,7 +291,11 @@
 					content:'',
 					hide:'',
 					is_today_important:'',
-					classType:''
+					classType:'',
+					imgs:'',
+					url:'',
+					is_countdown: '',
+					is_countdown_date: ''
 					
 				}
 			}

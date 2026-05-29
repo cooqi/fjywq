@@ -14,7 +14,9 @@ const _sfc_main = {
         is_today_important: "",
         classType: "",
         imgs: "",
-        url: ""
+        url: "",
+        is_countdown: "",
+        is_countdown_date: ""
       },
       search: {
         title: ""
@@ -38,7 +40,7 @@ const _sfc_main = {
   },
   onLoad(option) {
     let id = option.id;
-    common_vendor.index.__f__("log", "at pages/edit/notice.vue:124", option, id);
+    common_vendor.index.__f__("log", "at pages/edit/notice.vue:142", option, id);
     if (id) {
       this.getDetail(id);
     }
@@ -70,7 +72,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:156", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:174", err);
       });
     },
     remove(id) {
@@ -96,7 +98,7 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:183", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:201", err);
       });
     },
     update() {
@@ -121,7 +123,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:209", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:227", err);
       });
     },
     submit(type) {
@@ -152,7 +154,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:240", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:258", err);
       });
     },
     getList() {
@@ -175,7 +177,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:264", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:282", err);
       });
     },
     reset() {
@@ -187,18 +189,24 @@ const _sfc_main = {
         content: "",
         hide: "",
         is_today_important: "",
-        classType: ""
+        classType: "",
+        imgs: "",
+        url: "",
+        is_countdown: "",
+        is_countdown_date: ""
       };
     }
   }
 };
 if (!Array) {
   const _easycom_uni_data_select2 = common_vendor.resolveComponent("uni-data-select");
-  _easycom_uni_data_select2();
+  const _easycom_uni_datetime_picker2 = common_vendor.resolveComponent("uni-datetime-picker");
+  (_easycom_uni_data_select2 + _easycom_uni_datetime_picker2)();
 }
 const _easycom_uni_data_select = () => "../../uni_modules/uni-data-select/components/uni-data-select/uni-data-select.js";
+const _easycom_uni_datetime_picker = () => "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker.js";
 if (!Math) {
-  _easycom_uni_data_select();
+  (_easycom_uni_data_select + _easycom_uni_datetime_picker)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
@@ -228,31 +236,42 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       localdata: $data.sf,
       modelValue: $data.formData.is_today_important
     }),
-    o: common_vendor.o(($event) => $data.formData.classType = $event, "4e"),
+    o: common_vendor.o(($event) => $data.formData.is_countdown = $event, "45"),
     p: common_vendor.p({
+      localdata: $data.sf,
+      modelValue: $data.formData.is_countdown
+    }),
+    q: common_vendor.o(($event) => $data.formData.is_countdown_date = $event, "4e"),
+    r: common_vendor.p({
+      type: "date",
+      placeholder: "请选择倒计时目标时间",
+      modelValue: $data.formData.is_countdown_date
+    }),
+    s: common_vendor.o(($event) => $data.formData.classType = $event, "54"),
+    t: common_vendor.p({
       localdata: $data.range2,
       modelValue: $data.formData.classType
     }),
-    q: common_vendor.o(($event) => $data.formData.type = $event, "d3"),
-    r: common_vendor.p({
+    v: common_vendor.o(($event) => $data.formData.type = $event, "79"),
+    w: common_vendor.p({
       localdata: $data.range,
       modelValue: $data.formData.type
     }),
-    s: $data.formData.imgs,
-    t: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "f5"),
-    v: $data.formData.url,
-    w: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "00"),
-    x: $data.formData.bz,
-    y: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "14"),
-    z: $data.formData._id
+    x: $data.formData.imgs,
+    y: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "2d"),
+    z: $data.formData.url,
+    A: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "2b"),
+    B: $data.formData.bz,
+    C: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "ca"),
+    D: $data.formData._id
   }, $data.formData._id ? {
-    A: common_vendor.o(($event) => $options.submit("update"), "91")
+    E: common_vendor.o(($event) => $options.submit("update"), "09")
   } : {}, {
-    B: $data.formData._id
+    F: $data.formData._id
   }, $data.formData._id ? {
-    C: common_vendor.o(($event) => $options.remove($data.formData._id), "f9")
+    G: common_vendor.o(($event) => $options.remove($data.formData._id), "47")
   } : {
-    D: common_vendor.o(($event) => $options.submit("add"), "e9")
+    H: common_vendor.o(($event) => $options.submit("add"), "6d")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

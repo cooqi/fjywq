@@ -7409,7 +7409,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_VLNMby";
+  const id = "mp-weixin_sH5YhA";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8360,7 +8360,7 @@ const pages = [
     path: "pages/rili/rili",
     style: {
       navigationBarTitleText: "宇青99",
-      enablePullDownRefresh: false,
+      enablePullDownRefresh: true,
       navigationBarBackgroundColor: "#8bf5ee"
     }
   },
@@ -8381,6 +8381,14 @@ const pages = [
     }
   },
   {
+    path: "pages/myTodo/suggestion",
+    style: {
+      navigationBarTitleText: "我有话说",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
     path: "pages/meet/meet",
     style: {
       navigationBarTitleText: "点亮见面",
@@ -8392,6 +8400,14 @@ const pages = [
     path: "pages/edit/rili",
     style: {
       navigationBarTitleText: "编辑日历"
+    }
+  },
+  {
+    path: "pages/rili/search",
+    style: {
+      navigationBarTitleText: "搜索日历事件",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#8bf5ee"
     }
   },
   {

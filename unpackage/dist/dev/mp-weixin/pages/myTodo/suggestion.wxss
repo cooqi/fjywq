@@ -1,0 +1,226 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+/* 通用区块样式 */
+.submit-section, .reply-section, .admin-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+.submit-section .section-title, .reply-section .section-title, .admin-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+.submit-section .section-title.admin-title, .reply-section .section-title.admin-title, .admin-section .section-title.admin-title {
+  color: #ef4444;
+}
+
+/* ================= 普通用户样式 ================= */
+.submit-section .form-box .suggestion-textarea {
+  width: 100%;
+  min-height: 240rpx;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #eee;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+.submit-section .form-box .word-count {
+  text-align: right;
+  font-size: 24rpx;
+  color: #999;
+  margin: 10rpx 0 20rpx;
+}
+.submit-section .form-box .submit-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  color: #fff;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 8rpx 20rpx rgba(139, 92, 246, 0.3);
+}
+.submit-section .form-box .submit-btn::after {
+  border: none;
+}
+.submit-section .form-box .submit-btn[disabled], .submit-section .form-box .submit-btn.is-disabled {
+  opacity: 0.5;
+  background: #d1d5db;
+  box-shadow: none;
+  color: #fff;
+}
+.reply-section .loading, .reply-section .empty-reply {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: #999;
+  font-size: 28rpx;
+  gap: 20rpx;
+}
+.reply-section .reply-list .reply-card {
+  background: linear-gradient(135deg, #fff9f0 0%, #fff0f5 100%);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border-left: 6rpx solid #ff9800;
+}
+.reply-section .reply-list .reply-card:last-child {
+  margin-bottom: 0;
+}
+.reply-section .reply-list .reply-card .reply-header {
+  margin-bottom: 16rpx;
+}
+.reply-section .reply-list .reply-card .reply-header .reply-time {
+  font-size: 24rpx;
+  color: #999;
+}
+.reply-section .reply-list .reply-card .reply-content .question-label, .reply-section .reply-list .reply-card .reply-content .answer-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+  font-weight: 600;
+}
+.reply-section .reply-list .reply-card .reply-content .question-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+  padding-left: 20rpx;
+  border-left: 4rpx solid #e0e0e0;
+}
+.reply-section .reply-list .reply-card .reply-content .answer-text {
+  display: block;
+  font-size: 28rpx;
+  color: #d84315;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 16rpx 20rpx;
+  border-radius: 8rpx;
+}
+
+/* ================= 管理员工作台样式 ================= */
+.admin-section .admin-list .admin-card {
+  background: #fff;
+  border: 2rpx solid #fee2e2;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 10rpx rgba(239, 68, 68, 0.05);
+}
+.admin-section .admin-list .admin-card:last-child {
+  margin-bottom: 0;
+}
+.admin-section .admin-list .admin-card .user-question {
+  margin-bottom: 24rpx;
+}
+.admin-section .admin-list .admin-card .user-question .q-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+.admin-section .admin-list .admin-card .user-question .q-header .q-time {
+  font-size: 24rpx;
+  color: #999;
+}
+.admin-section .admin-list .admin-card .user-question .q-content {
+  font-size: 30rpx;
+  color: #1f2937;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.admin-section .admin-list .admin-card .status-selector {
+  margin-bottom: 24rpx;
+}
+.admin-section .admin-list .admin-card .status-selector .selector-label {
+  font-size: 26rpx;
+  color: #6b7280;
+  margin-bottom: 12rpx;
+  display: block;
+}
+.admin-section .admin-list .admin-card .status-selector .status-tags {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+.admin-section .admin-list .admin-card .status-selector .status-tags .status-tag {
+  padding: 8rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  border: 2rpx solid;
+  transition: all 0.2s;
+}
+.admin-section .admin-list .admin-card .status-selector .status-tags .status-tag.active {
+  font-weight: bold;
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+.admin-section .admin-list .admin-card .reply-input-box {
+  margin-bottom: 24rpx;
+}
+.admin-section .admin-list .admin-card .reply-input-box .reply-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 16rpx;
+  background: #f9fafb;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+.admin-section .admin-list .admin-card .admin-submit-btn {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 6rpx 16rpx rgba(239, 68, 68, 0.3);
+}
+.admin-section .admin-list .admin-card .admin-submit-btn::after {
+  border: none;
+}

@@ -47,6 +47,9 @@
 		</view>
 		
 		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
+		<view class="search-btn" @click="toSearch">
+			<uni-icons type="search" size="24" color="#fff"></uni-icons>
+		</view>
 		
 	</view>
 
@@ -75,7 +78,8 @@
 				  current: 0,
 				time:'',
 				userInfo:'',
-				dayText:''
+				dayText:'',
+				currentMonth: '',
 			}
 		},
 		onLoad() {
@@ -89,7 +93,11 @@
 				// error
 			}
 		},
-	
+		// 页面刷新方法
+		onPullDownRefresh() {
+			this.getList(this.currentMonth)
+			this.useCommon()
+		},
 		watch:{
 			dayAboutInfo:{
 				handler(val){
@@ -180,6 +188,7 @@
 				if(!month){
 					m=currentMonth;
 				}
+				this.currentMonth=m
 				uni.showLoading({
 					title: '处理中...'
 				})
@@ -303,6 +312,11 @@
 								}
 							}
 						});
+			},
+			toSearch(){
+				uni.navigateTo({
+					url: '/pages/rili/search'
+				});
 			}
 		}
 	}
@@ -418,8 +432,8 @@
 	}
 	.edit{
 		position: fixed;
-		right: 40rpx;
-		bottom: 40rpx;
+		right: 10rpx;
+		bottom: 140rpx;
 		border-radius: 50%;
 		width: 80rpx;
 		height: 80rpx;
@@ -430,6 +444,29 @@
 		text-align: center;
 		box-shadow: 0 8rpx 24rpx rgba(139, 92, 246, 0.3);
 		transition: all 0.3s ease;
+		
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+	
+	.search-btn{
+		position: fixed;
+		right: 10rpx;
+		bottom: 40rpx;
+		border-radius: 50%;
+		width: 80rpx;
+		height: 80rpx;
+		background: linear-gradient(135deg, #8bf5ee 0%, #5dd9d1 100%);
+		color: #fff;
+		font-size: 24rpx;
+		line-height: 80rpx;
+		text-align: center;
+		box-shadow: 0 8rpx 24rpx rgba(139, 245, 238, 0.3);
+		transition: all 0.3s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		
 		&:active {
 			transform: scale(0.95);

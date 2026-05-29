@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "编辑公告",
   "usingComponents": {
-    "uni-data-select": "../../uni_modules/uni-data-select/components/uni-data-select/uni-data-select"
+    "uni-data-select": "../../uni_modules/uni-data-select/components/uni-data-select/uni-data-select",
+    "uni-datetime-picker": "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker"
   }
 }
