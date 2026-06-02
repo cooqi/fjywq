@@ -25,7 +25,7 @@
 /* 文章场景相关 */
 .page-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #8bf5ee 0%, #b075e7 100%);
+  background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
   padding: 20rpx;
 }
 .search-section {

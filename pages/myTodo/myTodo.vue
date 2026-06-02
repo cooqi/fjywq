@@ -18,9 +18,9 @@
 	</view>
 	
 	<!-- 我有话说按钮 -->
-	<view v-if="userInfo._id" class="suggestion-btn" @click="goToSuggestion">
+	<!-- <view v-if="userInfo._id" class="suggestion-btn" @click="goToSuggestion">
 		<text>我有话说</text>
-	</view>
+	</view> -->
 	</view>
 </template>
 

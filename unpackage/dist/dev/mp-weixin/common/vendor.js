@@ -7409,7 +7409,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_sH5YhA";
+  const id = "mp-weixin_uK7Gee";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8361,7 +8361,7 @@ const pages = [
     style: {
       navigationBarTitleText: "宇青99",
       enablePullDownRefresh: true,
-      navigationBarBackgroundColor: "#8bf5ee"
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
@@ -8369,7 +8369,7 @@ const pages = [
     style: {
       navigationBarTitleText: "宇青公告",
       enablePullDownRefresh: true,
-      navigationBarBackgroundColor: "#c4aff3"
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
@@ -8393,13 +8393,23 @@ const pages = [
     style: {
       navigationBarTitleText: "点亮见面",
       enablePullDownRefresh: true,
-      navigationBarBackgroundColor: "#f8cff1"
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/meet/singleMeet",
+    style: {
+      navigationBarTitleText: "单人见面",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
     path: "pages/edit/rili",
     style: {
-      navigationBarTitleText: "编辑日历"
+      navigationBarTitleText: "编辑日历",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
@@ -8407,13 +8417,15 @@ const pages = [
     style: {
       navigationBarTitleText: "搜索日历事件",
       enablePullDownRefresh: true,
-      navigationBarBackgroundColor: "#8bf5ee"
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
     path: "pages/edit/notice",
     style: {
-      navigationBarTitleText: "编辑公告"
+      navigationBarTitleText: "编辑公告",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
@@ -8421,14 +8433,15 @@ const pages = [
     style: {
       navigationBarTitleText: "游戏中心",
       enablePullDownRefresh: false,
-      navigationBarBackgroundColor: "#d9f6f8"
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
     path: "pages/game/shengbei",
     style: {
       navigationBarTitleText: "掷圣杯",
-      enablePullDownRefresh: false
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#cff8f5"
     }
   },
   {
@@ -8465,6 +8478,62 @@ const pages = [
       navigationBarTitleText: "宇青华容道",
       enablePullDownRefresh: false
     }
+  },
+  {
+    path: "pages/payRecord/record",
+    style: {
+      navigationBarTitleText: "消费记录",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/payRecord/edit",
+    style: {
+      navigationBarTitleText: "编辑消费",
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/profile/profile",
+    style: {
+      navigationBarTitleText: "个人中心",
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/profile/edit",
+    style: {
+      navigationBarTitleText: "编辑资料",
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/profile/about",
+    style: {
+      navigationBarTitleText: "关于我们",
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/concert/admin",
+    style: {
+      navigationBarTitleText: "演唱会/音乐节管理",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
+  },
+  {
+    path: "pages/footprint/footprint",
+    style: {
+      navigationBarTitleText: "足迹",
+      enablePullDownRefresh: true,
+      navigationBarBackgroundColor: "#cff8f5"
+    }
   }
 ];
 const tabBar = {
@@ -8486,16 +8555,10 @@ const tabBar = {
       text: "公告聚合"
     },
     {
-      pagePath: "pages/myTodo/myTodo",
+      pagePath: "pages/profile/profile",
       iconPath: "/static/tabbar/Baby.png",
       selectedIconPath: "static/tabbar/Baby1.png",
-      text: "我的todo"
-    },
-    {
-      pagePath: "pages/meet/meet",
-      iconPath: "/static/tabbar/hd.png",
-      selectedIconPath: "static/tabbar/hd1.png",
-      text: "点亮见面"
+      text: "我的"
     },
     {
       pagePath: "pages/game/game",

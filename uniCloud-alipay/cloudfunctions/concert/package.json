@@ -1,0 +1,11 @@
+{
+	"name": "concert",
+	"version": "1.0.0",
+	"description": "演唱会/音乐节管理云函数",
+	"main": "index.js",
+	"dependencies": {},
+	"cloudfunction-config": {
+		"memorySize": 256,
+		"timeout": 10
+	}
+}

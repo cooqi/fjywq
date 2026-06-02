@@ -246,7 +246,7 @@
 <style lang="scss">
 .page-container {
 	min-height: 100vh;
-	background: linear-gradient(135deg, #f8cff1 0%, #b4ecd2 100%);
+	background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
 	padding: 20rpx;
 }
 

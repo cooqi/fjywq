@@ -515,7 +515,7 @@ export default {
 <style scoped>
 .container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 30%, #ffffff 100%);
+  background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
   padding: 0 0 20px 0;
 }
 

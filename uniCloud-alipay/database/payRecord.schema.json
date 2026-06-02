@@ -1,0 +1,104 @@
+{
+	"bsonType": "object",
+	"required": ["userId", "payType", "payTime"],
+	"permission": {
+		"read": "doc.userId == auth.uid",
+		"create": "auth.uid != null",
+		"update": "doc.userId == auth.uid",
+		"delete": "doc.userId == auth.uid"
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"userId": {
+			"bsonType": "string",
+			"description": "用户ID",
+			"foreignKey": "uni-id-users._id"
+		},
+		"payTime": {
+			"bsonType": "string",
+			"description": "消费时间",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"payType": {
+			"bsonType": "string",
+			"description": "消费类型：音乐节、周边、专辑、商务、其他",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"payName": {
+			"bsonType": "string",
+			"description": "消费名称",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"payNum": {
+			"bsonType": "string",
+			"description": "数量",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"payPrice": {
+			"bsonType": "string",
+			"description": "门票费用",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"TransportationExpenses": {
+			"bsonType": "string",
+			"description": "交通往返费用",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"HotelExpenses": {
+			"bsonType": "string",
+			"description": "住宿费用",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"otherExpenses": {
+			"bsonType": "string",
+			"description": "其他费用：如加价购买或应援物；如填写，备注里要有明细说明",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"payAmount": {
+			"bsonType": "string",
+			"description": "消费总金额",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"bz": {
+			"bsonType": "string",
+			"description": "备注",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"adress": {
+			"bsonType": "string",
+			"description": "地址",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"creatTime": {
+			"bsonType": "string",
+			"description": "创建时间",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"upTime": {
+			"bsonType": "string",
+			"description": "更新时间",
+			"trim": "both",
+			"forceDefaultValue": ""
+		},
+		"imgs": {
+			"bsonType": "string",
+			"description": "附件",
+			"trim": "both",
+			"forceDefaultValue": ""
+		}
+	}
+}

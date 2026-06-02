@@ -83,12 +83,6 @@
             "urlCheck" : true,
             "minified" : true
         },
-		"oauth": {
-			"weixin": {
-				"appid": "wx7bcde2e9584e2dc0",
-				"appsecret": "020864f49417e8c7535d060db42028e3"
-			}
-		},
         "usingComponents" : true
     },
     "h5" : {

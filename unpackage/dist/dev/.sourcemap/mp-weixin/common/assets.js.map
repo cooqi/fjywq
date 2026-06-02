@@ -1,1 +1,1 @@
-{"version":3,"file":"assets.js","sources":["static/userImg/qy.jpg"],"sourcesContent":["export default \"__VITE_ASSET__e2e0c30a__\""],"names":[],"mappings":";AAAA,MAAe,KAAA;;"}
+{"version":3,"file":"assets.js","sources":["static/userImg/qy.jpg","static/userImg/baby.png"],"sourcesContent":["export default \"__VITE_ASSET__e2e0c30a__\"","export default \"__VITE_ASSET__946ce388__\""],"names":[],"mappings":";AAAA,MAAe,KAAA;ACAf,MAAe,aAAA;;;"}

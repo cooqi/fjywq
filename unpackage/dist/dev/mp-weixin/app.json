@@ -5,6 +5,7 @@
     "pages/myTodo/myTodo",
     "pages/myTodo/suggestion",
     "pages/meet/meet",
+    "pages/meet/singleMeet",
     "pages/edit/rili",
     "pages/rili/search",
     "pages/edit/notice",
@@ -14,7 +15,14 @@
     "pages/game/compatibility",
     "pages/game/match",
     "pages/game/draw",
-    "pages/game/huarongdao"
+    "pages/game/huarongdao",
+    "pages/payRecord/record",
+    "pages/payRecord/edit",
+    "pages/profile/profile",
+    "pages/profile/edit",
+    "pages/profile/about",
+    "pages/concert/admin",
+    "pages/footprint/footprint"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -41,16 +49,10 @@
         "text": "公告聚合"
       },
       {
-        "pagePath": "pages/myTodo/myTodo",
+        "pagePath": "pages/profile/profile",
         "iconPath": "/static/tabbar/Baby.png",
         "selectedIconPath": "static/tabbar/Baby1.png",
-        "text": "我的todo"
-      },
-      {
-        "pagePath": "pages/meet/meet",
-        "iconPath": "/static/tabbar/hd.png",
-        "selectedIconPath": "static/tabbar/hd1.png",
-        "text": "点亮见面"
+        "text": "我的"
       },
       {
         "pagePath": "pages/game/game",
@@ -59,12 +61,6 @@
         "text": "游戏"
       }
     ]
-  },
-  "oauth": {
-    "weixin": {
-      "appid": "wx7bcde2e9584e2dc0",
-      "appsecret": "020864f49417e8c7535d060db42028e3"
-    }
   },
   "usingComponents": {}
 }

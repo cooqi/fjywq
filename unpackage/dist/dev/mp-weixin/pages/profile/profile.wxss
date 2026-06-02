@@ -1,0 +1,228 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
+  padding: 1px;
+}
+.login-box {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+.login-box .login-content {
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 80rpx 60rpx;
+  text-align: center;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+.login-box .login-content .login-avatar {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+}
+.login-box .login-content .login-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+.login-box .login-content .login-desc {
+  font-size: 28rpx;
+  color: #999;
+  margin-bottom: 48rpx;
+}
+.login-box .login-content .login-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+  color: #fff;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  border: none;
+}
+.profile-box {
+  padding: 0 30rpx 40rpx;
+}
+.user-card {
+  background: linear-gradient(135deg, #d49ff8 0%, #a9fafa 100%);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin: 20rpx 0;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 8rpx 24rpx rgba(198, 40, 40, 0.3);
+}
+.user-card .user-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  margin-right: 32rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.5);
+}
+.user-card .user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.user-card .user-info .user-name {
+  color: #fff;
+}
+.user-card .user-info .user-nick-name {
+  font-size: 40rpx;
+  font-weight: bold;
+}
+.user-card .user-info .user-edit-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fddb40;
+  padding: 16rpx 32rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+}
+.archive-box {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin: 20rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+.archive-box .archive-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+.archive-box .archive-title .archive-title-bar {
+  width: 6rpx;
+  height: 32rpx;
+  background: #c62828;
+  border-radius: 3rpx;
+  margin-right: 12rpx;
+}
+.archive-box .archive-content .archive-item {
+  background: #fff8e1;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+.archive-box .archive-content .archive-item.full-width {
+  margin-bottom: 0;
+}
+.archive-box .archive-content .archive-item .archive-label {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+.archive-box .archive-content .archive-item .archive-label .archive-tip {
+  color: #999;
+  font-size: 22rpx;
+}
+.archive-box .archive-content .archive-item .archive-value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+.archive-box .archive-content .archive-item .archive-value.highlight {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #c62828;
+}
+.menu-box {
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin: 20rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+.menu-box .menu-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.menu-box .menu-item:last-child {
+  border-bottom: none;
+}
+.menu-box .menu-item:active {
+  background: #f5f5f5;
+}
+.menu-box .menu-item .menu-icon {
+  font-size: 40rpx;
+  margin-right: 24rpx;
+}
+.menu-box .menu-item .menu-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+}
+.menu-box .menu-item .menu-arrow {
+  font-size: 28rpx;
+  color: #999;
+}
+.info-box {
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin: 20rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+.info-box .info-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.info-box .info-item:last-child {
+  border-bottom: none;
+}
+.info-box .info-item:active {
+  background: #f5f5f5;
+}
+.info-box .info-item .info-icon {
+  font-size: 40rpx;
+  margin-right: 24rpx;
+}
+.info-box .info-item .info-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #666;
+}
+.info-box .info-item .info-arrow {
+  font-size: 28rpx;
+  color: #999;
+}
+.version {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  padding: 40rpx 0;
+}

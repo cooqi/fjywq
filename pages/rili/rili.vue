@@ -325,7 +325,7 @@
 <style lang="scss">
 .page-container {
 	min-height: 100vh;
-	background: linear-gradient(180deg, #8bf5ee 0%, #b075e7 100%);
+	background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
 	padding: 1px
 }
 
@@ -339,10 +339,10 @@
 
 	.content {
 		padding: 24rpx;
-		background: rgba(255, 255, 255, 0.1);
+		background: linear-gradient(135deg, #cff8f533 0%, #e6cffc36 100%);
 		border-radius: 16rpx;
 		margin: 20rpx;
-		box-shadow: 0 0 18rpx 7rpx rgba(255, 255, 255, 0.3);
+		box-shadow: 0 0 18rpx 7rpx rgba(0, 0, 0, 0.1);
 		.title{
 			font-weight: 600;
 			font-size: 32rpx;
@@ -386,7 +386,7 @@
 		}
 	}
 	.event-card {
-			background:linear-gradient(135deg, rgba(188, 159, 255, 0.2) 0%, rgba(145, 228, 243, 0.2) 80% ,rgba(145, 228, 243, 0.4) 90%, 	rgba(145, 228, 243, 0.8) 98%, rgba(145, 228, 243, 1) 100%);
+			background:linear-gradient(135deg, rgba(188, 159, 255, 0.3) 0%, rgba(145, 228, 243, 0.2) 80% ,rgba(145, 228, 243, 0.4) 90%, 	rgba(145, 228, 243, 0.8) 98%, rgba(145, 228, 243, .9) 100%);
 
 		border-radius: 0  15px 15px 0;
 		padding: 24rpx;
@@ -395,7 +395,7 @@
 		border-left: 10rpx solid #8b5cf6;
 		&.today{
 			border-left: 10rpx solid #8bf5ee;
-		background:linear-gradient(135deg, rgba(159, 255, 255, 0.2) 0%, rgba(143, 51, 248, 0.2) 80% ,rgba(143, 51, 248, 0.4) 90%, rgba(143, 51, 248, 0.8) 98%, rgba(143, 51, 248, 1) 100%);
+		background:linear-gradient(135deg, rgba(159, 255, 255, 0.3) 0%, rgba(143, 51, 248, 0.2) 80% ,rgba(143, 51, 248, 0.4) 90%, rgba(143, 51, 248, 0.8) 95%, rgba(143, 51, 248, .9) 100%);
 
 		}
 		

@@ -1,0 +1,142 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
+  padding: 20rpx 30rpx;
+}
+.login-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  font-size: 28rpx;
+  color: #999;
+}
+.content-box {
+  padding-bottom: 40rpx;
+}
+.stats-box {
+  display: flex;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+.stats-box .stat-item {
+  flex: 1;
+  text-align: center;
+}
+.stats-box .stat-item:not(:last-child) {
+  border-right: 1rpx solid #f0f0f0;
+}
+.stats-box .stat-item .stat-value {
+  font-size: 56rpx;
+  font-weight: bold;
+  color: #c62828;
+  margin-bottom: 12rpx;
+}
+.stats-box .stat-item .stat-label {
+  font-size: 26rpx;
+  color: #666;
+}
+.province-list .list-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+  padding-left: 12rpx;
+  border-left: 6rpx solid #c62828;
+}
+.province-list .province-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+.province-list .province-item:active {
+  background: #f5f5f5;
+}
+.province-list .province-item .province-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.province-list .province-item .province-info .province-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+.province-list .province-item .province-info .province-count {
+  font-size: 28rpx;
+  color: #c62828;
+  font-weight: 500;
+}
+.province-list .province-item .province-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.province-list .province-item .province-cities .city-tag {
+  background: #fff8e1;
+  color: #666;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+}
+.province-list .empty-box {
+  text-align: center;
+  padding: 100rpx 0;
+}
+.province-list .empty-box .empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 24rpx;
+}
+.province-list .empty-box .empty-text {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 12rpx;
+}
+.province-list .empty-box .empty-desc {
+  font-size: 24rpx;
+  color: #bbb;
+  display: block;
+}
+.loading-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 30rpx 50rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+}

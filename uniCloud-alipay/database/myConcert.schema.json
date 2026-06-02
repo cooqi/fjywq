@@ -1,0 +1,36 @@
+{
+	"bsonType": "object",
+	"required": ["userId", "ConcertId"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": false,
+		"delete": true
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"userId": {
+			"bsonType": "string",
+			"description": "用户ID",
+			"forceDefaultValue": ""
+		},
+		"ConcertId": {
+			"bsonType": "string",
+			"description": "演唱会ID",
+			"foreignKey": "Concert._id"
+		},
+		"meetType": {
+			"bsonType": "string",
+			"description": "见面类型：双人、单人"
+		},
+		"createTime": {
+			"bsonType": "timestamp",
+			"label": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		}
+	}
+}

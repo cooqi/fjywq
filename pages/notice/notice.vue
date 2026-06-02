@@ -247,7 +247,7 @@
 <style lang="scss">
 .content-box {
 	padding: 30px 0 10px;
-	background: linear-gradient(180deg, #c4aff3 0%, #cdf8f5 100%);
+	background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
 	min-height: 100vh;
 }
 	.card-actions {
@@ -316,7 +316,7 @@
 		}
 	}
 	.uni-card {
-		background: linear-gradient(135deg,#fff,#baf5f1,#d6ccfa )!important;
+		background: linear-gradient(135deg, #ffffff60 0%, #cff8f59f 30%, #e6cffc 100%)!important;
 		border:0!important;
 		border-radius: 18px!important;
 	}
@@ -350,7 +350,7 @@
 			border-color:#f7f7f7!important;
 		}
 		.segmented-control__item--button--active{
-			background: linear-gradient(to top,#baf5f1,#d6ccfa )!important;
+			background: linear-gradient(to bottom,#baf5f1,#d6ccfa )!important;
 		}
 		.segmented-control__item--button--first{
 			border-top-left-radius: 18px!important;

@@ -210,11 +210,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         }),
         f: item.value
       };
-    }),
-    d: $data.userInfo._id
-  }, $data.userInfo._id ? {
-    e: common_vendor.o((...args) => $options.goToSuggestion && $options.goToSuggestion(...args), "bc")
-  } : {});
+    })
+  });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 _sfc_main.__runtimeHooks = 6;

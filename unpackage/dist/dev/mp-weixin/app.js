@@ -7,6 +7,7 @@ if (!Math) {
   "./pages/myTodo/myTodo.js";
   "./pages/myTodo/suggestion.js";
   "./pages/meet/meet.js";
+  "./pages/meet/singleMeet.js";
   "./pages/edit/rili.js";
   "./pages/rili/search.js";
   "./pages/edit/notice.js";
@@ -17,6 +18,13 @@ if (!Math) {
   "./pages/game/match.js";
   "./pages/game/draw.js";
   "./pages/game/huarongdao.js";
+  "./pages/payRecord/record.js";
+  "./pages/payRecord/edit.js";
+  "./pages/profile/profile.js";
+  "./pages/profile/edit.js";
+  "./pages/profile/about.js";
+  "./pages/concert/admin.js";
+  "./pages/footprint/footprint.js";
 }
 const _sfc_main = {
   onLaunch: async function() {

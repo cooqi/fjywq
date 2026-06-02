@@ -1,7 +1,7 @@
 {
   "navigationBarTitleText": "宇青99",
   "enablePullDownRefresh": true,
-  "navigationBarBackgroundColor": "#8bf5ee",
+  "navigationBarBackgroundColor": "#cff8f5",
   "usingComponents": {
     "embed-calendar": "../../components/fd-EmbedCalendar/fd-EmbedCalendar",
     "uni-segmented-control": "../../uni_modules/uni-segmented-control/components/uni-segmented-control/uni-segmented-control",

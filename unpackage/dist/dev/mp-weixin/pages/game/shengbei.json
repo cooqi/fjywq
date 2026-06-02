@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "掷圣杯",
   "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#cff8f5",
   "usingComponents": {}
 }

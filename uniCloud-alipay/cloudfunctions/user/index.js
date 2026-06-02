@@ -72,11 +72,22 @@ exports.main = async (event, context) => {
 		  }  
 		  break;    
 	  case 'update':
-		  const res_update = await pro_user.doc(event._id).update({
+		  const updateData = {
 			  nickName: event.user_info.nickName,  
 			  avatarUrl: event.user_info.avatarUrl,  
 			  mp_wx_openid: event.open_id
-		  })  
+		  }
+		  // 如果有额外字段，也一起更新
+		  if (event.startTime !== undefined) {
+			  updateData.startTime = event.startTime
+		  }
+		  if (event.loveType !== undefined) {
+			  updateData.loveType = event.loveType
+		  }
+		  if (event.wxid !== undefined) {
+			  updateData.wxid = event.wxid
+		  }
+		  const res_update = await pro_user.doc(event._id).update(updateData)  
 		  const res_update_val = await uniCloud.callFunction({
 			  name: 'user',  
 			  data: { action: 'getUser', open_id: event.open_id}
