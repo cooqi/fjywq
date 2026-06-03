@@ -14,7 +14,7 @@
 		
 		<!-- 分类筛选 -->
 		<view class="filter-box">
-			<scroll-view scroll-x class="filter-scroll">
+			<scroll-view class="filter-scroll" scroll-x>
 				<view class="filter-item" 
 					:class="{active: currentType === item.value}" 
 					v-for="(item, index) in typeList" 
@@ -260,17 +260,18 @@
 	
 	.filter-scroll {
 		white-space: nowrap;
+		
 	}
 	
 	.filter-item {
 		display: inline-block;
-		padding: 16rpx 32rpx;
-		margin-right: 16rpx;
+		padding: 10rpx 24rpx;
+		
 		background: #fff;
 		border-radius: 32rpx;
-		font-size: 28rpx;
+		font-size: 24rpx;
 		color: #666;
-		
+		margin: 8rpx;
 		&.active {
 			background: linear-gradient(135deg, #6bfff3 0%, #a777d3 100%);
 			color: #fff;

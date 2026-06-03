@@ -60,6 +60,14 @@
   transform: translateY(-50%);
   left: -16rpx;
 }
+.content .title_2 {
+  color: #f349ac;
+}
+.content .lollipop-icon {
+  font-size: 32rpx;
+  margin-right: 8rpx;
+  vertical-align: middle;
+}
 .content .bz {
   color: #333;
 }

@@ -13,6 +13,8 @@ const _sfc_main = {
       //1 onlyFJY 2onlyWQ 3all
       signedDates: [],
       // 已签到日期
+      specialDateList: [],
+      // 特殊日期列表（包含type字段）
       allRili: [],
       dayInfo: [],
       dayAboutInfo: [],
@@ -143,13 +145,18 @@ const _sfc_main = {
           return d.join("-");
         });
         this.signedDates = [...new Set(arr)];
+        this.specialDateList = res.result.data.filter((item) => item.type == 2).map((item) => ({
+          date: item.date,
+          type: item.type
+        }));
+        common_vendor.index.__f__("log", "at pages/rili/rili.vue:231", "特殊日期列表:", this.specialDateList);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:221", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:238", err);
       });
     },
     onClickItem(e) {
@@ -208,7 +215,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:291", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:308", err);
       });
     },
     toRedisPage() {
@@ -224,10 +231,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:308", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:325", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:311", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:328", err.errMsg);
           }
         }
       });
@@ -252,19 +259,20 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o($options.handleDateClick, "b4"),
-    b: common_vendor.o($options.handleTodayPlanClick, "d5"),
-    c: common_vendor.o($options.yearMonthChange, "f7"),
-    d: common_vendor.o($options.MonthChange, "73"),
+    a: common_vendor.o($options.handleDateClick, "1a"),
+    b: common_vendor.o($options.handleTodayPlanClick, "1f"),
+    c: common_vendor.o($options.yearMonthChange, "ec"),
+    d: common_vendor.o($options.MonthChange, "2f"),
     e: common_vendor.p({
       ["show-top-section"]: true,
       ["greeting-text"]: $data.customGreeting,
       ["signed-dates"]: $data.signedDates,
+      ["special-date-list"]: $data.specialDateList,
       weekstart: 1,
       open: true,
       bgcolorGreeting: $data.bgcolorGreeting
     }),
-    f: common_vendor.o($options.onClickItem, "d2"),
+    f: common_vendor.o($options.onClickItem, "8b"),
     g: common_vendor.p({
       current: $data.current,
       values: $data.items,
@@ -279,11 +287,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}, {
     l: common_vendor.f($data.dayInfo, (item, k0, i0) => {
       return common_vendor.e({
-        a: common_vendor.t(item.title),
-        b: item.bz,
-        c: item.imgurl
+        a: item.type == 2
+      }, item.type == 2 ? {} : {}, {
+        b: common_vendor.t(item.title),
+        c: common_vendor.n("title_" + item.type),
+        d: item.bz,
+        e: item.imgurl
       }, item.imgurl ? {
-        d: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+        f: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
           return {
             a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), index),
             b: index,
@@ -291,7 +302,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           };
         })
       } : {}, {
-        e: item._id
+        g: item._id
       });
     }),
     m: !$data.dayInfo.length
@@ -313,11 +324,14 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         c: common_vendor.t(item.distanceInfo.displayText),
         d: item.distanceInfo.displayText
       } : {}, {
-        e: common_vendor.t(item.title),
-        f: item.bz,
-        g: item.imgurl
+        e: item.type == 2
+      }, item.type == 2 ? {} : {}, {
+        f: common_vendor.t(item.title),
+        g: common_vendor.n("title_" + item.type),
+        h: item.bz,
+        i: item.imgurl
       }, item.imgurl ? {
-        h: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+        j: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
           return {
             a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), index),
             b: index,
@@ -325,21 +339,21 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           };
         })
       } : {}, {
-        i: item._id
+        k: item._id
       });
     }),
     p: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
     q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
   }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
-    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "9d")
+    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "79")
   } : {}, {
     s: common_vendor.p({
       type: "search",
       size: "24",
       color: "#fff"
     }),
-    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "ed")
+    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "9e")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

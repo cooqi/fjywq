@@ -59,6 +59,7 @@
               today: isToday(item.year, item.month, item.date) && item.lm,
               'special-date':
                 isSigned(item.year, item.month + 1, item.date) && item.lm,
+              'type2-date': hasType2Data(item.year, item.month + 1, item.date) && item.lm,
               disabled: !item.lm || item.isEmpty,
             }">
 						<!-- 今天显示"今"，其他日期显示数字 -->
@@ -88,6 +89,11 @@
 			},
 			// 已经签到的日期
 			signedDates: {
+				type: Array,
+				default: () => [],
+			},
+			// 特殊日期数据（包含type字段）
+			specialDateList: {
 				type: Array,
 				default: () => [],
 			},
@@ -270,6 +276,23 @@
 				// console.log(`检查签到日期 ${dateStr}:`, flag, '签到数组:', this.signedDates);
 
 				return flag;
+			},
+			// 检查是否有type=2的数据
+			hasType2Data(y, m, d) {
+				if (!this.specialDateList || !Array.isArray(this.specialDateList)) {
+					return false;
+				}
+
+				const dateStr = `${y}-${m}-${d}`;
+				for (let i = 0; i < this.specialDateList.length; i++) {
+					const item = this.specialDateList[i];
+					// 检查日期是否匹配且type为2
+					if (item.date === dateStr && item.type == 2) {
+						return true;
+					}
+				}
+
+				return false;
 			},
 			isToday(y, m, d) {
 				let date = new Date();
@@ -912,8 +935,7 @@
 						}
 
 						&.special-date {
-							background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-							color: white;
+							border: 2rpx solid #10b981;
 							font-weight: 600;
 							box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
 
@@ -929,6 +951,23 @@
 								border: 2rpx solid white;
 								z-index: 10;
 								/* 确保红点在最上层 */
+							}
+						}
+
+						&.type2-date {
+							border: 2rpx solid #ff69b4;
+							font-weight: 600;
+							box-shadow: 0 4rpx 12rpx rgba(255, 105, 180, 0.4);
+
+							.date-text {
+								color: #92064c;
+								font-weight: 700;
+							}
+
+							&.selected {
+								background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+								box-shadow: 0 6rpx 20rpx rgba(255, 20, 147, 0.5);
+								transform: scale(1.1);
 							}
 						}
 

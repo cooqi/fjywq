@@ -5,6 +5,7 @@
 		    :show-top-section="true"
 		    :greeting-text="customGreeting"
 		    :signed-dates="signedDates"
+		    :special-date-list="specialDateList"
 		    :weekstart="1"
 		    :open="true"
 			:bgcolorGreeting="bgcolorGreeting"
@@ -23,7 +24,10 @@
 		<view v-if="current === 0" class="today">
 			<view class="date">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
 			<view v-for="item in dayInfo" :key="item._id" class="event-card today">
-				<view class="title">{{item.title}}</view>
+				<view :class="['title','title_'+item.type]">
+					<text v-if="item.type == 2" class="lollipop-icon">🍭</text>
+					{{item.title}}
+				</view>
 				<view class="bz" v-html="item.bz"></view>
 				<view class="imgs" v-if="item.imgurl">
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
@@ -37,7 +41,10 @@
 					<text v-for="(t,i) in setArr(item.date)" :key="i"><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
 					<text v-show="item.distanceInfo.displayText" class="displayText">{{item.distanceInfo.displayText}}</text>
 				</view>
-				<view class="title">{{item.title}}</view>
+				<view :class="['title','title_'+item.type]">
+					<text v-if="item.type == 2" class="lollipop-icon">🍭</text>
+					{{item.title}}
+				</view>
 				<view class="bz" v-html="item.bz"></view>
 				<view class="imgs" v-if="item.imgurl">
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
@@ -70,6 +77,7 @@
 				  customGreeting: '杯杯儿，今天也要加油哦！',
 				  //1 onlyFJY 2onlyWQ 3all
 				  signedDates: [], // 已签到日期
+				  specialDateList: [], // 特殊日期列表（包含type字段）
 				  allRili:[],
 				  dayInfo:[],
 				  dayAboutInfo:[],
@@ -212,6 +220,15 @@
 						return d.join('-')
 					})
 					this.signedDates= [...new Set(arr)];
+									
+					// 构建特殊日期列表（type=2的数据）
+					this.specialDateList = res.result.data
+						.filter(item => item.type == 2)
+						.map(item => ({
+							date: item.date,
+							type: item.type
+						}));
+					console.log('特殊日期列表:', this.specialDateList);
 				}).catch((err) => {
 					uni.hideLoading()
 					uni.showModal({
@@ -360,6 +377,15 @@
 				transform: translateY(-50%);
 				left: -16rpx;
 			}
+		}
+		.title_2{
+			color: #f349ac;
+		}
+		
+		.lollipop-icon {
+			font-size: 32rpx;
+			margin-right: 8rpx;
+			vertical-align: middle;
 		}
 		.bz{
 			color: #333;

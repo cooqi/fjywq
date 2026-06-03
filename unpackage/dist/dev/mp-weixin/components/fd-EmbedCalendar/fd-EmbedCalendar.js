@@ -17,6 +17,11 @@ const _sfc_main = {
       type: Array,
       default: () => []
     },
+    // 特殊日期数据（包含type字段）
+    specialDateList: {
+      type: Array,
+      default: () => []
+    },
     // 是否展开
     open: {
       type: Boolean,
@@ -92,7 +97,7 @@ const _sfc_main = {
       month: m,
       date: d
     };
-    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:174", "初始化完成，无选中状态");
+    common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:180", "初始化完成，无选中状态");
     if (!this.monthOpen) {
       this.updateWeekPosition();
     }
@@ -165,7 +170,7 @@ const _sfc_main = {
     isSigned(y, m, d) {
       let flag = false;
       if (!this.signedDates || !Array.isArray(this.signedDates)) {
-        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:257", "签到数组为空或不是数组:", this.signedDates);
+        common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:263", "签到数组为空或不是数组:", this.signedDates);
         return flag;
       }
       const dateStr = `${m}-${d}`;
@@ -176,6 +181,20 @@ const _sfc_main = {
         }
       }
       return flag;
+    },
+    // 检查是否有type=2的数据
+    hasType2Data(y, m, d) {
+      if (!this.specialDateList || !Array.isArray(this.specialDateList)) {
+        return false;
+      }
+      const dateStr = `${y}-${m}-${d}`;
+      for (let i = 0; i < this.specialDateList.length; i++) {
+        const item = this.specialDateList[i];
+        if (item.date === dateStr && item.type == 2) {
+          return true;
+        }
+      }
+      return false;
     },
     isToday(y, m, d) {
       let date = /* @__PURE__ */ new Date();
@@ -430,7 +449,7 @@ const _sfc_main = {
     },
     // 图片加载错误处理
     onImageError(e) {
-      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:612", "头像加载失败:", e);
+      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:635", "头像加载失败:", e);
     }
   }
 };
@@ -470,17 +489,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         c: $data.choose == `${item.year}-${item.month + 1}-${item.date}` ? 1 : "",
         d: $options.isToday(item.year, item.month, item.date) && item.lm ? 1 : "",
         e: $options.isSigned(item.year, item.month + 1, item.date) && item.lm ? 1 : "",
-        f: !item.lm || item.isEmpty ? 1 : "",
-        g: index,
-        h: !item.lm ? 1 : "",
-        i: item.isEmpty ? 1 : "",
-        j: common_vendor.o(($event) => $options.selectOne(item, $event), index)
+        f: $options.hasType2Data(item.year, item.month + 1, item.date) && item.lm ? 1 : "",
+        g: !item.lm || item.isEmpty ? 1 : "",
+        h: index,
+        i: !item.lm ? 1 : "",
+        j: item.isEmpty ? 1 : "",
+        k: common_vendor.o(($event) => $options.selectOne(item, $event), index)
       });
     }),
     p: `translateY(${$data.positionTop}rpx)`,
     q: !$data.monthOpen ? 1 : "",
     r: common_vendor.sr("date-time", "72eca62a-0"),
-    s: common_vendor.o($options.dateTimeChange, "e5"),
+    s: common_vendor.o($options.dateTimeChange, "42"),
     t: common_vendor.p({
       datestype: "year-month",
       datestring: $data.dateString

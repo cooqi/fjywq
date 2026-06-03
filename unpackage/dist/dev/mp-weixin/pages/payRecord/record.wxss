@@ -58,12 +58,12 @@
 }
 .filter-box .filter-item {
   display: inline-block;
-  padding: 16rpx 32rpx;
-  margin-right: 16rpx;
+  padding: 10rpx 24rpx;
   background: #fff;
   border-radius: 32rpx;
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #666;
+  margin: 8rpx;
 }
 .filter-box .filter-item.active {
   background: linear-gradient(135deg, #6bfff3 0%, #a777d3 100%);
