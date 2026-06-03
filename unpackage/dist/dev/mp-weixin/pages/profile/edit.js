@@ -66,16 +66,9 @@ const _sfc_main = {
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
-        if (res.result) {
-          const userInfo = common_vendor.index.getStorageSync("userInfo");
-          if (userInfo) {
-            const userObj = JSON.parse(userInfo);
-            userObj.nickName = this.formData.nickName;
-            userObj.startTime = this.formData.startTime;
-            userObj.loveType = this.formData.loveType || "宇青99";
-            userObj.wxid = this.formData.wxid;
-            common_vendor.index.setStorageSync("userInfo", JSON.stringify(userObj));
-          }
+        if (res.result && res.result._id) {
+          common_vendor.index.removeStorageSync("userInfo");
+          common_vendor.index.setStorageSync("userInfo", JSON.stringify(res.result));
           common_vendor.index.showModal({
             content: "保存成功",
             showCancel: false,

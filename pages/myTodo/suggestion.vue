@@ -7,7 +7,7 @@
 			<view class="submit-section">
 				<view class="section-title">
 					<uni-icons type="compose" size="20" color="#8b5cf6"></uni-icons>
-					<text>我有话说</text>
+					<text>我有话说（树洞 OR 建议）</text>
 				</view>
 				<view class="form-box">
 					<textarea 
@@ -129,6 +129,8 @@
 </template>
 
 <script>
+	import { hasSuggestionPermission } from '@/common/js/permission.js'
+	
 	export default {
 		data() {
 			return {
@@ -158,9 +160,9 @@
 					
 					this.userInfo = typeof userInfoStr === 'string' ? JSON.parse(userInfoStr) : userInfoStr
 					if (!this.userInfo._id) throw new Error('用户ID无效')
-					
-					// 判断是否为管理员
-					this.isAdmin = this.userInfo._id === '68b547748a5c782a2b48ac30'
+									
+					// 判断是否有管理员权限
+					this.isAdmin = hasSuggestionPermission(this.userInfo, 'reply')
 					this.getReplyList()
 				} catch (e) {
 					uni.showModal({
@@ -201,7 +203,11 @@
 				this.loading = true
 				uniCloud.callFunction({
 					name: 'suggestion',
-					data: { type: 'getAll', userId: this.userInfo._id }
+					data: { 
+						type: 'getAll', 
+						userId: this.userInfo._id,
+						userInfo: this.userInfo // 传递用户信息用于权限判断
+					}
 				}).then((res) => {
 					uni.stopPullDownRefresh()
 					if (res.result.code === 200) {
@@ -245,6 +251,7 @@
 					data: {
 						type: 'adminReply',
 						userId: this.userInfo._id, // 传入userId用于云函数权限校验
+						userInfo: this.userInfo, // 传递用户信息用于角色权限判断
 						id: item._id,
 						answer: item.replyText.trim(),
 						status: item.currentStatus

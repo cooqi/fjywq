@@ -62,6 +62,15 @@
 						placeholder="请输入备注"
 					/>
 				</view>
+				<view class="form-item">
+					<text class="form-label">类型</text>
+					<input 
+						class="form-input" 
+						name="title" 
+						v-model="formData.type" 
+						placeholder="1重要，2糖"
+					/>
+				</view>
 				
 				<view class="form-item">
 					<text class="form-label">图片路径</text>
@@ -85,6 +94,7 @@
 						type="primary" 
 						class="action-btn delete-btn" 
 						@click="remove(formData._id)"
+						v-if=" isCalendarPermission('del') "
 					>
 						删除
 					</button>
@@ -138,6 +148,7 @@
 </template>
 
 <script>
+import { hasCalendarPermission } from '@/common/js/permission.js'
 	export default{
 		data(){
 			return{
@@ -146,20 +157,26 @@
 					title:'',
 					bz:'',
 					date:'',
-					imgurl:''
+					imgurl:'',
+					type:''
 				},
 				search:{
 					date:''
 				},
 				customGreeting:{
 					title:''
-				}
+				},
+				userInfo:null
 			}
 		},
 		onLoad() {
-			
+			const userInfo = uni.getStorageSync('userInfo');
+				this.userInfo=JSON.parse(userInfo)
 		},
 		methods:{
+			isCalendarPermission(type) {
+				return hasCalendarPermission(this.userInfo, type)
+			},
 			editInfo(item){
 				this.formData= {...item};
 			},

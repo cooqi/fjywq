@@ -2,5 +2,7 @@
   "navigationBarTitleText": "个人中心",
   "enablePullDownRefresh": false,
   "navigationBarBackgroundColor": "#cff8f5",
-  "usingComponents": {}
+  "usingComponents": {
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
+  }
 }

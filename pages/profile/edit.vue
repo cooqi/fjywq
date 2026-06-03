@@ -131,17 +131,13 @@
 					}
 				}).then((res) => {
 					uni.hideLoading()
-					if (res.result) {
+					if (res.result && res.result._id) {
 						// 更新本地存储
-						const userInfo = uni.getStorageSync('userInfo')
-						if (userInfo) {
-							const userObj = JSON.parse(userInfo)
-							userObj.nickName = this.formData.nickName
-							userObj.startTime = this.formData.startTime
-							userObj.loveType = this.formData.loveType || '宇青99'
-							userObj.wxid = this.formData.wxid
-							uni.setStorageSync('userInfo', JSON.stringify(userObj))
-						}
+						//清除本地缓存
+						uni.removeStorageSync('userInfo')
+						
+						// 更新 profileData
+						uni.setStorageSync('userInfo', JSON.stringify(res.result))
 						
 						uni.showModal({
 							content: '保存成功',

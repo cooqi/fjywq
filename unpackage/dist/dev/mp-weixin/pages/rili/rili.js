@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const rili = require("../../rili.js");
+const common_js_permission = require("../../common/js/permission.js");
 const EmbedCalendar = () => "../../components/fd-EmbedCalendar/fd-EmbedCalendar.js";
 const _sfc_main = {
   components: {
@@ -24,8 +25,17 @@ const _sfc_main = {
       time: "",
       userInfo: "",
       dayText: "",
-      currentMonth: ""
+      currentMonth: "",
+      canEditCalendar: false
+      // 是否有日历编辑权限
     };
+  },
+  onShow() {
+    const userInfo = common_vendor.index.getStorageSync("userInfo");
+    this.userInfo = JSON.parse(userInfo);
+    common_vendor.index.setNavigationBarTitle({
+      title: this.userInfo.loveType || "宇青99"
+    });
   },
   onLoad() {
     this.time = this.formatDate(/* @__PURE__ */ new Date());
@@ -34,6 +44,7 @@ const _sfc_main = {
     try {
       const userInfo = common_vendor.index.getStorageSync("userInfo");
       this.userInfo = JSON.parse(userInfo);
+      this.canEditCalendar = common_js_permission.hasCalendarPermission(this.userInfo, "add") || common_js_permission.hasCalendarPermission(this.userInfo, "edit");
     } catch (e) {
     }
   },
@@ -149,14 +160,14 @@ const _sfc_main = {
           date: item.date,
           type: item.type
         }));
-        common_vendor.index.__f__("log", "at pages/rili/rili.vue:231", "特殊日期列表:", this.specialDateList);
+        common_vendor.index.__f__("log", "at pages/rili/rili.vue:242", "特殊日期列表:", this.specialDateList);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:238", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:249", err);
       });
     },
     onClickItem(e) {
@@ -215,7 +226,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:308", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:319", err);
       });
     },
     toRedisPage() {
@@ -231,10 +242,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:325", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:336", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:328", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:339", err.errMsg);
           }
         }
       });
@@ -344,8 +355,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     p: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
-    q: $data.userInfo._id === "68b547748a5c782a2b48ac30"
-  }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
+    q: $data.canEditCalendar
+  }, $data.canEditCalendar ? {
     r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "79")
   } : {}, {
     s: common_vendor.p({
@@ -353,7 +364,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       size: "24",
       color: "#fff"
     }),
-    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "9e")
+    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "5f")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

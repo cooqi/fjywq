@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_js_permission = require("../../common/js/permission.js");
 const _sfc_main = {
   data() {
     return {
@@ -30,7 +31,7 @@ const _sfc_main = {
         this.userInfo = typeof userInfoStr === "string" ? JSON.parse(userInfoStr) : userInfoStr;
         if (!this.userInfo._id)
           throw new Error("用户ID无效");
-        this.isAdmin = this.userInfo._id === "68b547748a5c782a2b48ac30";
+        this.isAdmin = common_js_permission.hasSuggestionPermission(this.userInfo, "reply");
         this.getReplyList();
       } catch (e) {
         common_vendor.index.showModal({
@@ -69,7 +70,12 @@ const _sfc_main = {
       this.loading = true;
       common_vendor._r.callFunction({
         name: "suggestion",
-        data: { type: "getAll", userId: this.userInfo._id }
+        data: {
+          type: "getAll",
+          userId: this.userInfo._id,
+          userInfo: this.userInfo
+          // 传递用户信息用于权限判断
+        }
       }).then((res) => {
         common_vendor.index.stopPullDownRefresh();
         if (res.result.code === 200) {
@@ -109,6 +115,8 @@ const _sfc_main = {
           type: "adminReply",
           userId: this.userInfo._id,
           // 传入userId用于云函数权限校验
+          userInfo: this.userInfo,
+          // 传递用户信息用于角色权限判断
           id: item._id,
           answer: item.replyText.trim(),
           status: item.currentStatus
@@ -153,10 +161,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       color: "#8b5cf6"
     }),
     c: $data.suggestionContent,
-    d: common_vendor.o(($event) => $data.suggestionContent = $event.detail.value, "b4"),
+    d: common_vendor.o(($event) => $data.suggestionContent = $event.detail.value, "96"),
     e: common_vendor.t($data.suggestionContent.length),
     f: !$data.suggestionContent.trim() ? 1 : "",
-    g: common_vendor.o((...args) => $options.submitSuggestion && $options.submitSuggestion(...args), "6d"),
+    g: common_vendor.o((...args) => $options.submitSuggestion && $options.submitSuggestion(...args), "cd"),
     h: !$data.suggestionContent.trim(),
     i: common_vendor.p({
       type: "chat",

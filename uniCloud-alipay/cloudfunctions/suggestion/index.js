@@ -3,11 +3,23 @@ const db = uniCloud.database()
 const dbCmd = db.command
 const collection = db.collection('suggestion')
 
-// 管理员唯一标识
-const ADMIN_ID = '68b547748a5c782a2b48ac30'
+// 角色常量
+const ROLES = {
+	SUPER_ADMIN: 's_admin',
+	ADMIN: 'admin',
+	USER: 'user'
+}
+
+/**
+ * 检查用户是否有管理员权限
+ */
+function isAdmin(userInfo) {
+	if (!userInfo || !userInfo.role) return false
+	return userInfo.role === ROLES.SUPER_ADMIN || userInfo.role === ROLES.ADMIN
+}
 
 exports.main = async (event, context) => {
-	const { type, userId, content, id, answer, status } = event
+	const { type, userId, content, id, answer, status, userInfo } = event
 	
 	// ================= 1. 提交建议 =================
 	if (type === 'add') {
@@ -33,7 +45,8 @@ exports.main = async (event, context) => {
 		try {
 			let query = collection
 			
-			if (userId === ADMIN_ID) {
+			// 使用角色判断权限
+			if (isAdmin(userInfo)) {
 				// 【管理员视角】：查只获取 status 为 'todo' 的数据（兼容历史无 status 字段的数据）
 				query = query.where({
 					status: dbCmd.eq('todo').or(dbCmd.exists(false))
@@ -56,7 +69,7 @@ exports.main = async (event, context) => {
 	// ================= 3. 管理员回复及修改状态 =================
 	else if (type === 'adminReply') {
 		// 严格校验管理员权限
-		if (userId !== ADMIN_ID) return { code: 403, message: '无权操作' }
+		if (!isAdmin(userInfo)) return { code: 403, message: '无权操作' }
 		if (!id || (!answer && status === 'Finish')) return { code: 400, message: '参数不完整' }
 		
 		try {

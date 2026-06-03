@@ -53,7 +53,7 @@
 			<view v-if="!dayAboutInfo.length">当前日期暂无宇青相关事件，如需补充，请联系管理员，虽然你不一定联系得上</view>
 		</view>
 		
-		<view class="edit" @click="edit" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">编辑</view>
+		<view class="edit" @click="edit" v-if="canEditCalendar">编辑</view>
 		<view class="search-btn" @click="toSearch">
 			<uni-icons type="search" size="24" color="#fff"></uni-icons>
 		</view>
@@ -67,6 +67,7 @@
 <script>
 	import EmbedCalendar from '../../components/fd-EmbedCalendar/fd-EmbedCalendar.vue'
 	import {processJQLResults} from './rili.js'
+	import { hasCalendarPermission } from '@/common/js/permission.js'
 	export default {
 		components: {
 		  EmbedCalendar
@@ -88,7 +89,15 @@
 				userInfo:'',
 				dayText:'',
 				currentMonth: '',
+				canEditCalendar: false, // 是否有日历编辑权限
 			}
+		},
+		onShow() {
+			const userInfo = uni.getStorageSync('userInfo');
+				this.userInfo=JSON.parse(userInfo)
+			uni.setNavigationBarTitle({
+				title: this.userInfo.loveType||'宇青99'
+			})
 		},
 		onLoad() {
 			this.time=this.formatDate(new Date())
@@ -97,6 +106,8 @@
 			try {
 				const userInfo = uni.getStorageSync('userInfo');
 				this.userInfo=JSON.parse(userInfo)
+				// 检查日历编辑权限
+				this.canEditCalendar = hasCalendarPermission(this.userInfo, 'add') || hasCalendarPermission(this.userInfo, 'edit')
 			} catch (e) {
 				// error
 			}

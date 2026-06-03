@@ -30,12 +30,13 @@
 		
 		</uni-card>
 		<view v-if="!list.length&&!loading" class="tips">暂无数据</view>
-		<view class="edit" @click="edit()" v-if="userInfo._id==='68b547748a5c782a2b48ac30'">+</view>
+		<view class="edit" @click="edit()" v-if="canEditNotice">+</view>
 		
 	</view>
 </template>
 
 <script>
+	import { hasCalendarPermission } from '@/common/js/permission.js'
 
 	export default {
 		data() {
@@ -48,6 +49,7 @@
 				userInfo:{
 					_id:''
 				},
+				canEditNotice: false, // 是否有通知编辑权限
 				timer: null // 定时器
 			}
 		},
@@ -67,6 +69,8 @@
 			try {
 				const userInfo = uni.getStorageSync('userInfo');
 				this.userInfo=JSON.parse(userInfo)
+				// 检查通知编辑权限（日历模块的权限）
+				this.canEditNotice = hasCalendarPermission(this.userInfo, 'add') || hasCalendarPermission(this.userInfo, 'edit')
 			} catch (e) {
 				// error
 			}
@@ -84,7 +88,7 @@
 		  },
 		methods: {
 			edit(id){
-				if(this.userInfo._id!=='68b547748a5c782a2b48ac30') return
+				if(!this.canEditNotice) return
 				id=id||''
 				uni.navigateTo({
 					url:`/pages/edit/notice?id=${id}`

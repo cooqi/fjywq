@@ -25,6 +25,12 @@
                 
 			</view>
 			
+			<!-- 刷新按钮 -->
+			<view class="refresh-btn" @click="refreshUserInfo">
+				<uni-icons type="refresh" size="20" color="#8b5cf6"></uni-icons>
+				<text>刷新用户信息</text>
+			</view>
+			
 			
 			
 			<!-- 功能菜单 -->
@@ -53,7 +59,7 @@
 			
 			<!-- 其他信息 -->
 			<view class="info-box">
-				<view class="info-item" @click="goToConcertAdmin"  v-if="userInfo._id==='68b547748a5c782a2b48ac30'">
+				<view class="info-item" @click="goToConcertAdmin"  v-if="canManageConcert">
 					<view class="info-text">演唱会/音乐节管理</view>
 				</view>
 				<view class="info-item" @click="showAbout">
@@ -68,6 +74,8 @@
 </template>
 
 <script>
+	import { hasConcertPermission } from '@/common/js/permission.js'
+	
 	export default {
 		data() {
 			return {
@@ -80,6 +88,7 @@
 				meetCount: 0,
 				firstMeetInfo: '',
 				todoCount: 0,
+				canManageConcert: false, // 是否有演唱会管理权限
 				// 编辑表单数据
 				editForm: {
 					nickName: '',
@@ -93,6 +102,8 @@
 			const userInfo = uni.getStorageSync('userInfo')
 			if (userInfo) {
 				this.userInfo = JSON.parse(userInfo)
+				// 检查演唱会管理权限
+				this.canManageConcert = hasConcertPermission(this.userInfo, 'manage')
 				if (this.userInfo._id) {
 					this.getUserStats()
 				} else {
@@ -247,6 +258,57 @@
 					uni.showModal({
 						content: `更新失败：${err.message}`,
 						showCancel: false
+					})
+				})
+			},
+			// 刷新用户信息
+			refreshUserInfo() {
+				uni.showLoading({ title: '刷新中...' })
+				
+				// 调用云函数获取最新用户信息
+				uniCloud.callFunction({
+					name: 'user',
+					data: {
+						action: 'getUser',
+						open_id: this.userInfo.mp_wx_openid
+					}
+				}).then((res) => {
+					uni.hideLoading()
+					if (res.result && res.result.mp_wx_openid) {
+						const userData = res.result
+						
+						// 更新本地 userInfo
+						this.userInfo = userData
+
+						//清除本地缓存
+						uni.removeStorageSync('userInfo')
+						
+						// 更新 profileData
+						uni.setStorageSync('userInfo', JSON.stringify(userData))
+								
+						
+						// 重新检查权限
+						this.canManageConcert = hasConcertPermission(this.userInfo, 'manage')
+						
+						// 重新获取统计数据
+						this.getUserStats()
+						
+						uni.showToast({
+							title: '刷新成功',
+							icon: 'success'
+						})
+					} else {
+						uni.showToast({
+							title: '获取用户信息失败',
+							icon: 'none'
+						})
+					}
+				}).catch((err) => {
+					uni.hideLoading()
+					console.error('刷新用户信息失败:', err)
+					uni.showToast({
+						title: '刷新失败',
+						icon: 'none'
 					})
 				})
 			},

@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_js_permission = require("../../common/js/permission.js");
 const _sfc_main = {
   data() {
     return {
@@ -11,6 +12,8 @@ const _sfc_main = {
       userInfo: {
         _id: ""
       },
+      canEditNotice: false,
+      // 是否有通知编辑权限
       timer: null
       // 定时器
     };
@@ -31,6 +34,7 @@ const _sfc_main = {
     try {
       const userInfo = common_vendor.index.getStorageSync("userInfo");
       this.userInfo = JSON.parse(userInfo);
+      this.canEditNotice = common_js_permission.hasCalendarPermission(this.userInfo, "add") || common_js_permission.hasCalendarPermission(this.userInfo, "edit");
     } catch (e) {
     }
     this.startCountdownTimer();
@@ -45,7 +49,7 @@ const _sfc_main = {
   },
   methods: {
     edit(id) {
-      if (this.userInfo._id !== "68b547748a5c782a2b48ac30")
+      if (!this.canEditNotice)
         return;
       id = id || "";
       common_vendor.index.navigateTo({
@@ -93,7 +97,7 @@ const _sfc_main = {
       });
       try {
         const user = common_vendor.index.getStorageSync("userInfo");
-        common_vendor.index.__f__("log", "at pages/notice/notice.vue:135", "user", user);
+        common_vendor.index.__f__("log", "at pages/notice/notice.vue:139", "user", user);
         if (!user) {
           common_vendor.index.hideLoading();
           common_vendor.index.showModal({
@@ -112,7 +116,7 @@ const _sfc_main = {
             taskID: item._id
           }
         }).then((res) => {
-          common_vendor.index.__f__("log", "at pages/notice/notice.vue:154", "res", res);
+          common_vendor.index.__f__("log", "at pages/notice/notice.vue:158", "res", res);
           common_vendor.index.hideLoading();
           if (res.result.code) {
             common_vendor.index.showModal({
@@ -131,7 +135,7 @@ const _sfc_main = {
             content: `添加数据失败，错误信息为：${err.message}`,
             showCancel: false
           });
-          common_vendor.index.__f__("error", "at pages/notice/notice.vue:174", err);
+          common_vendor.index.__f__("error", "at pages/notice/notice.vue:178", err);
         });
       } catch (e) {
         common_vendor.index.hideLoading();
@@ -152,10 +156,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:197", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:201", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/notice/notice.vue:200", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/notice/notice.vue:204", err.errMsg);
           }
         }
       });
@@ -268,8 +272,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     d: !$data.list.length && !$data.loading
   }, !$data.list.length && !$data.loading ? {} : {}, {
-    e: $data.userInfo._id === "68b547748a5c782a2b48ac30"
-  }, $data.userInfo._id === "68b547748a5c782a2b48ac30" ? {
+    e: $data.canEditNotice
+  }, $data.canEditNotice ? {
     f: common_vendor.o(($event) => $options.edit(), "5f")
   } : {});
 }

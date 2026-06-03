@@ -8383,7 +8383,7 @@ const pages = [
   {
     path: "pages/myTodo/suggestion",
     style: {
-      navigationBarTitleText: "我有话说",
+      navigationBarTitleText: "杯杯儿信箱",
       enablePullDownRefresh: true,
       navigationBarBackgroundColor: "#cff8f5"
     }
