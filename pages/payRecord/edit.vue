@@ -362,6 +362,10 @@
 								if (item.yhcTheme) {
 									displayName += ` - ${item.yhcTheme}`
 								}
+								
+								if (item.Session) {
+									displayName += ` - ${item.Session}`
+								}
 								if (item.time) {
 									displayName += ` (${item.time})`
 								}
