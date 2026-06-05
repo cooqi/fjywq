@@ -18,7 +18,7 @@
 					<view class="user-name">
                         <view class="user-nick-name" @click="editField('nickName')">{{userInfo.nickName || '杯杯儿'}}</view>
                         <view class="archive-value" @click="editField('loveType')">{{profileData.loveType || '未设置'}}</view>
-                        <view class="archive-value" @click="editField('joinTime')">入坑时间：{{profileData.joinTime || '未设置'}}</view>
+                        <view class="archive-value" @click="editField('joinTime')">入坑时间：{{profileData.joinTime || '未设置'}}{{joinDays > 0 ? `（${joinDays}天）` : ''}}</view>
                     </view>
 				</view>
                 
@@ -87,6 +87,7 @@
 				meetCount: 0,
 				firstMeetInfo: '',
 				todoCount: 0,
+				joinDays: 0, // 入坑天数
 				canManageConcert: false, // 是否有演唱会管理权限
 				// 编辑表单数据
 				editForm: {
@@ -179,9 +180,35 @@
 							this.profileData.joinTime = res.result.startTime || ''
 							this.profileData.loveType = res.result.loveType || '宇青99'
 							this.profileData.wxid = res.result.wxid || ''
+							
+							// 计算入坑天数
+							if (res.result.startTime) {
+								this.calculateJoinDays(res.result.startTime)
+							}
 						}
 					}
 				})
+			},
+			// 计算入坑天数
+			calculateJoinDays(startTime) {
+				if (!startTime) {
+					this.joinDays = 0
+					return
+				}
+				
+				try {
+					const startDate = new Date(startTime.replace(/-/g, '/'))
+					const now = new Date()
+					
+					// 计算天数差
+					const diffTime = now.getTime() - startDate.getTime()
+					const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+					
+					this.joinDays = diffDays >= 0 ? diffDays : 0
+				} catch (e) {
+					console.error('计算入坑天数失败:', e)
+					this.joinDays = 0
+				}
 			},
 			editProfile() {
 				this.showEditDialog()

@@ -18,7 +18,7 @@
         <view class="game-icon tarot-icon">🃏</view>
         <view class="game-info">
           <text class="game-name">今日卡牌</text>
-          <text class="game-desc">神秘塔宇宇青青的卡牌</text>
+          <text class="game-desc">宇宇青青的神秘卡牌</text>
         </view>
         <view class="arrow">›</view>
       </view>

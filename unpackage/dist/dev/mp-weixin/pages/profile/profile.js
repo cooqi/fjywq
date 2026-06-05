@@ -14,6 +14,8 @@ const _sfc_main = {
       meetCount: 0,
       firstMeetInfo: "",
       todoCount: 0,
+      joinDays: 0,
+      // 入坑天数
       canManageConcert: false,
       // 是否有演唱会管理权限
       // 编辑表单数据
@@ -81,7 +83,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/profile/profile.vue:157", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/profile/profile.vue:158", "云函数调用失败", err);
               }
             });
           }
@@ -89,7 +91,7 @@ const _sfc_main = {
       });
     },
     getUserStats() {
-      common_vendor.index.__f__("log", "at pages/profile/profile.vue:166", "当前用户ID:", this.userInfo._id);
+      common_vendor.index.__f__("log", "at pages/profile/profile.vue:167", "当前用户ID:", this.userInfo._id);
       common_vendor._r.callFunction({
         name: "user",
         data: {
@@ -101,9 +103,29 @@ const _sfc_main = {
             this.profileData.joinTime = res.result.startTime || "";
             this.profileData.loveType = res.result.loveType || "宇青99";
             this.profileData.wxid = res.result.wxid || "";
+            if (res.result.startTime) {
+              this.calculateJoinDays(res.result.startTime);
+            }
           }
         }
       });
+    },
+    // 计算入坑天数
+    calculateJoinDays(startTime) {
+      if (!startTime) {
+        this.joinDays = 0;
+        return;
+      }
+      try {
+        const startDate = new Date(startTime.replace(/-/g, "/"));
+        const now = /* @__PURE__ */ new Date();
+        const diffTime = now.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffTime / (1e3 * 60 * 60 * 24));
+        this.joinDays = diffDays >= 0 ? diffDays : 0;
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:209", "计算入坑天数失败:", e);
+        this.joinDays = 0;
+      }
     },
     editProfile() {
       this.showEditDialog();
@@ -250,7 +272,7 @@ const _sfc_main = {
         }
       }).catch((err) => {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/profile/profile.vue:350", "刷新用户信息失败:", err);
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:377", "刷新用户信息失败:", err);
         common_vendor.index.showToast({
           title: "刷新失败",
           icon: "none"
@@ -322,23 +344,24 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     f: common_vendor.t($data.profileData.loveType || "未设置"),
     g: common_vendor.o(($event) => $options.editField("loveType"), "79"),
     h: common_vendor.t($data.profileData.joinTime || "未设置"),
-    i: common_vendor.o(($event) => $options.editField("joinTime"), "cc"),
-    j: common_vendor.p({
+    i: common_vendor.t($data.joinDays > 0 ? `（${$data.joinDays}天）` : ""),
+    j: common_vendor.o(($event) => $options.editField("joinTime"), "cc"),
+    k: common_vendor.p({
       type: "refresh",
       size: "20",
       color: "#8b5cf6"
     }),
-    k: common_vendor.o((...args) => $options.refreshUserInfo && $options.refreshUserInfo(...args), "c5"),
-    l: common_vendor.o((...args) => $options.goToTodo && $options.goToTodo(...args), "8d"),
-    m: common_vendor.o((...args) => $options.showMeetTypeDialog && $options.showMeetTypeDialog(...args), "63"),
-    n: common_vendor.o((...args) => $options.goToPayRecord && $options.goToPayRecord(...args), "04"),
-    o: common_vendor.o((...args) => $options.goToFootprint && $options.goToFootprint(...args), "e4"),
-    p: common_vendor.o((...args) => $options.goToSuggestion && $options.goToSuggestion(...args), "44"),
-    q: $data.canManageConcert
+    l: common_vendor.o((...args) => $options.refreshUserInfo && $options.refreshUserInfo(...args), "a2"),
+    m: common_vendor.o((...args) => $options.goToTodo && $options.goToTodo(...args), "31"),
+    n: common_vendor.o((...args) => $options.showMeetTypeDialog && $options.showMeetTypeDialog(...args), "54"),
+    o: common_vendor.o((...args) => $options.goToPayRecord && $options.goToPayRecord(...args), "eb"),
+    p: common_vendor.o((...args) => $options.goToFootprint && $options.goToFootprint(...args), "ac"),
+    q: common_vendor.o((...args) => $options.goToSuggestion && $options.goToSuggestion(...args), "1c"),
+    r: $data.canManageConcert
   }, $data.canManageConcert ? {
-    r: common_vendor.o((...args) => $options.goToConcertAdmin && $options.goToConcertAdmin(...args), "45")
+    s: common_vendor.o((...args) => $options.goToConcertAdmin && $options.goToConcertAdmin(...args), "b6")
   } : {}, {
-    s: common_vendor.o((...args) => $options.showAbout && $options.showAbout(...args), "c2")
+    t: common_vendor.o((...args) => $options.showAbout && $options.showAbout(...args), "e0")
   }));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
