@@ -4,7 +4,7 @@
     <!-- 每日塔罗 - 扇形牌堆 -->
     <view class="fan-deck-container" v-if="!drawnCards.length">
       <view class="question-area">
-        <text class="question-text">"{{ dailyQuestion || '随机抽取一张开启今日塔罗...' }}"</text>
+        <text class="question-text">"{{ dailyQuestion || '随机抽取一张开启今日卡牌...' }}"</text>
       </view>
       
       <view class="fan-deck">

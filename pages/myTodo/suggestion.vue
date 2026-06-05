@@ -7,13 +7,13 @@
 			<view class="submit-section">
 				<view class="section-title">
 					<uni-icons type="compose" size="20" color="#8b5cf6"></uni-icons>
-					<text>我有话说（树洞 OR 建议）</text>
+					<text>我有话说</text>
 				</view>
 				<view class="form-box">
 					<textarea 
 						class="suggestion-textarea" 
 						v-model="suggestionContent" 
-						placeholder="请输入你想说的话..."
+						placeholder="请输入..."
 						:maxlength="1000"
 						auto-height
 					/>
@@ -24,27 +24,27 @@
 						@click="submitSuggestion" 
 						:disabled="!suggestionContent.trim()"
 					>
-						提交建议
+						提交
 					</button>
 				</view>
 			</view>
 			
 			<!-- 查看回复部分 (只显示已回复的) -->
-			<view class="reply-section">
+			<view class="reply-section"  v-if="replyList.length > 0">
 				<view class="section-title">
 					<uni-icons type="chat" size="20" color="#8b5cf6"></uni-icons>
 					<text>管理员回复</text>
 				</view>
 				
-				<view v-if="loading" class="loading"><text>加载中...</text></view>
 				
-				<view v-else-if="replyList.length > 0" class="reply-list">
+				
+				<view class="reply-list">
 					<view v-for="item in replyList" :key="item._id" class="reply-card">
 						<view class="reply-header">
 							<text class="reply-time">{{ formatTime(item.createTime) }}</text>
 						</view>
 						<view class="reply-content">
-							<view class="question-label">我的问题：</view>
+							<view class="question-label">我的：</view>
 							<view class="question-text">{{ item.content }}</view>
 							<view class="answer-label">管理员回复：</view>
 							<rich-text class="answer-text" :nodes="item.answer"></rich-text>
@@ -52,10 +52,7 @@
 					</view>
 				</view>
 				
-				<view v-else class="empty-reply">
-					<uni-icons type="chatboxes" size="40" color="#ccc"></uni-icons>
-					<text>暂无回复，管理员正在快马加鞭赶来~</text>
-				</view>
+				
 			</view>
 		</template>
 

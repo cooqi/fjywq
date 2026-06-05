@@ -58,7 +58,7 @@
         "pagePath": "pages/game/game",
         "iconPath": "/static/tabbar/game.png",
         "selectedIconPath": "static/tabbar/game1.png",
-        "text": "游戏"
+        "text": "休息"
       }
     ]
   },

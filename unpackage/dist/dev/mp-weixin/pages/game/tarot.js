@@ -132,7 +132,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
     a: !$data.drawnCards.length
   }, !$data.drawnCards.length ? {
-    b: common_vendor.t($data.dailyQuestion || "随机抽取一张开启今日塔罗..."),
+    b: common_vendor.t($data.dailyQuestion || "随机抽取一张开启今日卡牌..."),
     c: common_vendor.f($data.fanCards, (card, index, i0) => {
       return {
         a: index,

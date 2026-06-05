@@ -81,7 +81,7 @@
 	{
 		"path": "pages/game/game",
 		"style": {
-			"navigationBarTitleText": "游戏中心",
+			"navigationBarTitleText": "休息一下",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#cff8f5"
 		}
@@ -215,7 +215,7 @@
         "pagePath": "pages/game/game", 
         "iconPath": "/static/tabbar/game.png",
         "selectedIconPath": "static/tabbar/game1.png",
-        "text": "游戏"
+        "text": "休息"
       }
     ]
   },

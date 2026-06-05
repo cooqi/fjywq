@@ -667,7 +667,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     S: $data.formData.payNum
   }, {
     T: common_vendor.t($data.formData.payAmount),
-    U: common_vendor.o(($event) => $data.formData.payTime = $event, "d8"),
+    U: common_vendor.o(($event) => $data.formData.payTime = $event, "3b"),
     V: common_vendor.p({
       type: "date",
       placeholder: "请选择标时间",
@@ -676,10 +676,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     W: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
   }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? {
     X: $data.formData.adress,
-    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "4e")
+    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "df")
   } : {}, {
     Z: $data.formData.sdUrl,
-    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "a6"),
+    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "4b"),
     ab: common_vendor.f($data.imageList, (img, index, i0) => {
       return {
         a: img,
@@ -691,15 +691,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     ac: $data.imageList.length < 1
   }, $data.imageList.length < 1 ? {
     ad: common_vendor.t($data.imageList.length),
-    ae: common_vendor.o((...args) => $options.chooseImage && $options.chooseImage(...args), "75")
+    ae: common_vendor.o((...args) => $options.chooseImage && $options.chooseImage(...args), "92")
   } : {}, {
     af: $data.formData.bz,
-    ag: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "6c"),
+    ag: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "fc"),
     ah: common_vendor.t($data.isEdit ? "更新记录" : "保存记录"),
-    ai: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "84"),
+    ai: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "99"),
     aj: $data.isEdit
   }, $data.isEdit ? {
-    ak: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "4d")
+    ak: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "bb")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

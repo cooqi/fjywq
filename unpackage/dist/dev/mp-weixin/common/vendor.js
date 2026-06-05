@@ -7409,7 +7409,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.0.85,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_c5jfg8";
+  const id = "mp-weixin_umPaLW";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8431,7 +8431,7 @@ const pages = [
   {
     path: "pages/game/game",
     style: {
-      navigationBarTitleText: "游戏中心",
+      navigationBarTitleText: "休息一下",
       enablePullDownRefresh: false,
       navigationBarBackgroundColor: "#cff8f5"
     }
@@ -8564,7 +8564,7 @@ const tabBar = {
       pagePath: "pages/game/game",
       iconPath: "/static/tabbar/game.png",
       selectedIconPath: "static/tabbar/game1.png",
-      text: "游戏"
+      text: "休息"
     }
   ]
 };

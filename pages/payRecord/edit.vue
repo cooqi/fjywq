@@ -110,7 +110,7 @@
 						placeholder="0.00" />
 				</view>
 				<view class="amount-item">
-					<view class="amount-label">交通 <text class="optional">选填</text></view>
+					<view class="amount-label">交通费 <text class="optional">选填</text></view>
 					<input class="amount-input" 
 						type="digit"
 						v-model="formData.TransportationExpenses" 
@@ -118,7 +118,7 @@
 						@input="calculateTotal" />
 				</view>
 				<view class="amount-item">
-					<view class="amount-label">住宿 <text class="optional">选填</text></view>
+					<view class="amount-label">住宿费 <text class="optional">选填</text></view>
 					<input class="amount-input" 
 						type="digit"
 						v-model="formData.HotelExpenses" 
@@ -175,7 +175,7 @@
 		
 		<!-- 地址（音乐节/演唱会类型，从选择的场次自动填充） -->
 		<view class="section-box" v-if="formData.payType === '音乐节' || formData.payType === '演唱会'">
-			<view class="section-title">地址 <text class="optional">已自动填充</text></view>
+			<view class="section-title">演唱会/音乐节主办地址 <text class="optional">已自动填充</text></view>
 			<input class="input" 
 				v-model="formData.adress" 
 				placeholder="地址将从选择的场次自动填充" 
@@ -186,10 +186,10 @@
 		
 		<!-- 晒单地址 -->
 		<view class="section-box">
-			<view class="section-title">晒单地址 <text class="optional">选填</text></view>
+			<view class="section-title">晒单链接 <text class="optional">选填</text></view>
 			<textarea class="textarea" 
 				v-model="formData.sdUrl" 
-				placeholder="晒单地址：微博小红书抖音等链接地址"
+				placeholder="如果你有在其他平台发布一些晒单，可以复制链接记录在这里"
 				maxlength="200"></textarea>
 		</view>
 

@@ -16,11 +16,10 @@
 				<image class="user-avatar" src="/static/userImg/baby.png" mode="aspectFill"></image>
 				<view class="user-info">
 					<view class="user-name">
-                        <view class="user-nick-name">{{userInfo.nickName || '杯杯儿'}}</view>
-                        <view class="archive-value">{{profileData.loveType || '未设置'}}</view>
-                        <view class="archive-value">入坑时间：{{profileData.joinTime || '未设置'}}</view>
+                        <view class="user-nick-name" @click="editField('nickName')">{{userInfo.nickName || '杯杯儿'}}</view>
+                        <view class="archive-value" @click="editField('loveType')">{{profileData.loveType || '未设置'}}</view>
+                        <view class="archive-value" @click="editField('joinTime')">入坑时间：{{profileData.joinTime || '未设置'}}</view>
                     </view>
-					<view class="user-edit-btn" @click="showEditDialog">编辑</view>
 				</view>
                 
 			</view>
@@ -186,6 +185,49 @@
 			},
 			editProfile() {
 				this.showEditDialog()
+			},
+			// 编辑单个字段
+			editField(field) {
+				let title = ''
+				let currentValue = ''
+				let placeholder = ''
+				
+				switch(field) {
+					case 'nickName':
+						title = ''
+						currentValue = this.userInfo.nickName || ''
+						placeholder = '请输入昵称'
+						break
+					case 'loveType':
+						title = '你的属性'
+						currentValue = this.profileData.loveType || ''
+						placeholder = '请输入属性'
+						break
+					case 'joinTime':
+						title = '入坑时间'
+						currentValue = this.profileData.joinTime || ''
+						placeholder = '请输入入坑时间，如：2020-01-01'
+						break
+				}
+				
+				uni.showModal({
+					title: title,
+					editable: true,
+					placeholderText: placeholder,
+					content: currentValue,
+					success: (res) => {
+						if (res.confirm && res.content) {
+							const newValue = res.content.trim()
+							if (field === 'nickName') {
+								this.updateUserInfo(newValue, undefined, undefined, undefined)
+							} else if (field === 'loveType') {
+								this.updateUserInfo(undefined, undefined, newValue, undefined)
+							} else if (field === 'joinTime') {
+								this.updateUserInfo(undefined, newValue, undefined, undefined)
+							}
+						}
+					}
+				})
 			},
 			showEditDialog() {
 				// 初始化编辑表单
@@ -456,12 +498,29 @@
 		justify-content: space-between;
         .user-name{
 			color: #fff;
+			
+			.archive-value {
+				font-size: 28rpx;
+				color: #fff;
+				margin-top: 8rpx;
+				cursor: pointer;
+				transition: opacity 0.3s;
+				
+				&:active {
+					opacity: 0.7;
+				}
+			}
         }
 		
 		.user-nick-name {
 			font-size: 40rpx;
 			font-weight: bold;
+			cursor: pointer;
+			transition: opacity 0.3s;
 			
+			&:active {
+				opacity: 0.7;
+			}
 		}
 		
 		.user-edit-btn {

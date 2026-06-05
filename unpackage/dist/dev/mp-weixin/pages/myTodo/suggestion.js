@@ -161,19 +161,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       color: "#8b5cf6"
     }),
     c: $data.suggestionContent,
-    d: common_vendor.o(($event) => $data.suggestionContent = $event.detail.value, "96"),
+    d: common_vendor.o(($event) => $data.suggestionContent = $event.detail.value, "b4"),
     e: common_vendor.t($data.suggestionContent.length),
     f: !$data.suggestionContent.trim() ? 1 : "",
-    g: common_vendor.o((...args) => $options.submitSuggestion && $options.submitSuggestion(...args), "cd"),
+    g: common_vendor.o((...args) => $options.submitSuggestion && $options.submitSuggestion(...args), "71"),
     h: !$data.suggestionContent.trim(),
-    i: common_vendor.p({
+    i: $data.replyList.length > 0
+  }, $data.replyList.length > 0 ? {
+    j: common_vendor.p({
       type: "chat",
       size: "20",
       color: "#8b5cf6"
     }),
-    j: $data.loading
-  }, $data.loading ? {} : $data.replyList.length > 0 ? {
-    l: common_vendor.f($data.replyList, (item, k0, i0) => {
+    k: common_vendor.f($data.replyList, (item, k0, i0) => {
       return {
         a: common_vendor.t($options.formatTime(item.createTime)),
         b: common_vendor.t(item.content),
@@ -181,25 +181,17 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         d: item._id
       };
     })
-  } : {
-    m: common_vendor.p({
-      type: "chatboxes",
-      size: "40",
-      color: "#ccc"
-    })
-  }, {
-    k: $data.replyList.length > 0
-  }) : {}, {
-    n: $data.isAdmin
+  } : {}) : {}, {
+    l: $data.isAdmin
   }, $data.isAdmin ? common_vendor.e({
-    o: common_vendor.p({
+    m: common_vendor.p({
       type: "gear",
       size: "22",
       color: "#ef4444"
     }),
-    p: $data.loading
+    n: $data.loading
   }, $data.loading ? {} : $data.replyList.length > 0 ? {
-    r: common_vendor.f($data.replyList, (item, k0, i0) => {
+    p: common_vendor.f($data.replyList, (item, k0, i0) => {
       return {
         a: common_vendor.t($options.formatTime(item.createTime)),
         b: common_vendor.t(item.content),
@@ -221,13 +213,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     })
   } : {
-    s: common_vendor.p({
+    q: common_vendor.p({
       type: "checkbox",
       size: "40",
       color: "#10b981"
     })
   }, {
-    q: $data.replyList.length > 0
+    o: $data.replyList.length > 0
   }) : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

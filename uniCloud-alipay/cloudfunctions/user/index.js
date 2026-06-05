@@ -72,11 +72,20 @@ exports.main = async (event, context) => {
 		  }  
 		  break;    
 	  case 'update':
+		  // 先获取当前用户信息
+		  const currentUser = await pro_user.doc(event._id).get()
+		  const currentData = currentUser.data && currentUser.data[0] ? currentUser.data[0] : {}
+		  
 		  const updateData = {
-			  nickName: event.user_info.nickName,  
 			  avatarUrl: event.user_info.avatarUrl,  
 			  mp_wx_openid: event.open_id
 		  }
+		  
+		  // 只有当当前用户没有 nickName 时，才更新 nickName
+		  if ((!currentData.nickName||currentData.nickName=='微信用户') && event.user_info.nickName) {
+			  updateData.nickName = event.user_info.nickName
+		  }
+		  
 		  // 如果有额外字段，也一起更新
 		  if (event.startTime !== undefined) {
 			  updateData.startTime = event.startTime
@@ -86,6 +95,9 @@ exports.main = async (event, context) => {
 		  }
 		  if (event.wxid !== undefined) {
 			  updateData.wxid = event.wxid
+		  }
+		  if (event.role !== undefined) {
+			  updateData.role = event.role
 		  }
 		  const res_update = await pro_user.doc(event._id).update(updateData)  
 		  const res_update_val = await uniCloud.callFunction({

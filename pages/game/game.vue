@@ -8,7 +8,7 @@
         <view class="game-icon shengbei-icon">🏺</view>
         <view class="game-info">
           <text class="game-name">掷圣杯</text>
-          <text class="game-desc">传统占卜游戏，预测你的运势</text>
+          <text class="game-desc">看看宇宇青青的指示</text>
         </view>
         <view class="arrow">›</view>
       </view>
@@ -17,8 +17,8 @@
       <view class="game-card" @click="goToGame('tarot')">
         <view class="game-icon tarot-icon">🃏</view>
         <view class="game-info">
-          <text class="game-name">今日罗牌</text>
-          <text class="game-desc">神秘塔罗牌，揭示内心答案</text>
+          <text class="game-name">今日卡牌</text>
+          <text class="game-desc">神秘塔宇宇青青的卡牌</text>
         </view>
         <view class="arrow">›</view>
       </view>
