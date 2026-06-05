@@ -283,12 +283,22 @@
 					return false;
 				}
 
-				const dateStr = `${y}-${m}-${d}`;
+				// 提取当前日期的月日部分（格式：MM-DD）
+				const currentMonthDay = `${m}-${d}`;
+				
 				for (let i = 0; i < this.specialDateList.length; i++) {
 					const item = this.specialDateList[i];
-					// 检查日期是否匹配且type为2
-					if (item.date === dateStr && item.type == 2) {
-						return true;
+					// 检查type是否为2
+					if (item.type == 2 && item.date) {
+						// 从完整日期中提取月日部分（假设格式为 YYYY-MM-DD）
+						const parts = item.date.split('-');
+						if (parts.length === 3) {
+							const specialMonthDay = `${parts[1]}-${parts[2]}`;
+							// 比较月日是否匹配
+							if (currentMonthDay === specialMonthDay) {
+								return true;
+							}
+						}
 					}
 				}
 

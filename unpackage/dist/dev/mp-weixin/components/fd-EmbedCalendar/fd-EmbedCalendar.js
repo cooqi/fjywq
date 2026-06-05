@@ -187,11 +187,17 @@ const _sfc_main = {
       if (!this.specialDateList || !Array.isArray(this.specialDateList)) {
         return false;
       }
-      const dateStr = `${y}-${m}-${d}`;
+      const currentMonthDay = `${m}-${d}`;
       for (let i = 0; i < this.specialDateList.length; i++) {
         const item = this.specialDateList[i];
-        if (item.date === dateStr && item.type == 2) {
-          return true;
+        if (item.type == 2 && item.date) {
+          const parts = item.date.split("-");
+          if (parts.length === 3) {
+            const specialMonthDay = `${parts[1]}-${parts[2]}`;
+            if (currentMonthDay === specialMonthDay) {
+              return true;
+            }
+          }
         }
       }
       return false;
@@ -449,7 +455,7 @@ const _sfc_main = {
     },
     // 图片加载错误处理
     onImageError(e) {
-      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:635", "头像加载失败:", e);
+      common_vendor.index.__f__("log", "at components/fd-EmbedCalendar/fd-EmbedCalendar.vue:645", "头像加载失败:", e);
     }
   }
 };
