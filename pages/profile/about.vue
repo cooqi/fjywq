@@ -42,7 +42,18 @@
 			<view class="info-block">
 				<view class="block-title">数据统计规则</view>
 				<view class="block-content">
+					<text>「日历」上的粉色标记表示2025年及以后的糖点，是开发者亲自见证过的糖，大家放心食用；</text>
 					<text>「足迹」统计演出日期在今天及以前的已参加场次；</text>
+				</view>
+			</view>
+
+
+			<view class="info-block">
+				<view class="block-title">其他说明</view>
+				<view class="block-content">
+					<text>转载、截图、登录都视为认同和青青宇宇是相亲相爱一家人</text>
+					<text>如果想永久注销，请联系我们，我们会尽快处理。</text>
+					<text>转载请注明出处，保留所有著作权声明</text>
 				</view>
 			</view>
 		</view>
