@@ -27,7 +27,17 @@ exports.main = async (event, context) => {
 		const success = res_session.status === 200 && res_session.data && res_session.data.openid  
 			  if(!success) {
 				  return { status: -2, msg: '从微信获取登录信息失败'}
-			  }  
+			  }
+			
+			// 检查用户是否在黑名单中
+			const blackUserCollection1 = db.collection('black-user')
+			const blackCheck1 = await blackUserCollection1.where({
+				mp_wx_openid: res_session.data.openid
+			}).get()
+			
+			if (blackCheck1.data && blackCheck1.data.length > 0) {
+				return { status: -3, msg: '该用户已被禁止登录'}
+			}  
 			  const res_user = await pro_user.where({
 				  mp_wx_openid: res_session.data.openid
 			  }).get()
@@ -54,6 +64,16 @@ exports.main = async (event, context) => {
 			  }  
 		  break;    
 	  case 'register':
+		  // 检查用户是否在黑名单中
+		  const blackUserCollection2 = db.collection('black-user')
+		  const blackCheck2 = await blackUserCollection2.where({
+			  mp_wx_openid: event.open_id
+		  }).get()
+		  
+		  if (blackCheck2.data && blackCheck2.data.length > 0) {
+			  return { status: -3, msg: '该用户已被禁止注册'}
+		  }
+		  
 		  const res_reg = await pro_user.add({
 			  nickName: event.user_info.nickName,  
 			  avatarUrl: event.user_info.avatarUrl,  

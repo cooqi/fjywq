@@ -123,6 +123,7 @@
 						_this.wxLogin()
 					},
 					fail: () => {
+						
 						uni.hideLoading()
 						uni.showModal({
 							content: '获取用户信息失败',
@@ -147,15 +148,29 @@
 								},
 								success: (res) => {
 									uni.hideLoading()
-									if (res.result.result.result._id) {
+									// 检查是否被禁止登录
+									if (res.result.status === -3) {
+										uni.showModal({
+											content: res.result.msg || '该用户已被禁止登录',
+											showCancel: false
+										})
+										return
+									}
+									
+									if (res.result.result && res.result.result.result && res.result.result.result._id) {
 										uni.setStorageSync('userInfo', JSON.stringify(res.result.result.result))
 										_this.userInfo = res.result.result.result
 										_this.getUserStats()
 									}
+									
 								},
 								fail: (err) => {
 									uni.hideLoading()
 									console.log('云函数调用失败', err)
+									uni.showModal({
+										content: '登录失败，请重试',
+										showCancel: false
+									})
 								}
 							})
 						}

@@ -42,7 +42,7 @@
 			<view class="info-block">
 				<view class="block-title">数据统计规则</view>
 				<view class="block-content">
-					<text>「见面次数」统计演出日期在今天及以前的已参加场次；</text>
+					<text>「足迹」统计演出日期在今天及以前的已参加场次；</text>
 				</view>
 			</view>
 		</view>

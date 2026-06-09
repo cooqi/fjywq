@@ -134,15 +134,18 @@
 			   sf:[
 				   { value: '0', text: "否" },
 				   { value: '1', text: "是" },
-			   ]
+			   ],
+			   userInfo:{},
 			}
 		},
 		onLoad(option) {
 			let id=option.id
-			console.log(option,id)
+			
 			if(id){
 				this.getDetail(id)
 			}
+			const userInfo = uni.getStorageSync('userInfo');
+			this.userInfo=JSON.parse(userInfo)
 		},
 		methods:{
 			editInfo(item){
@@ -152,11 +155,12 @@
 				uni.showLoading({
 					title: '处理中...'
 				})
+				let params = {...this.formData,add_czr:this.userInfo._id}
 				uniCloud.callFunction({
 					name: 'notice-add',
 					data: {
 						type:'add',
-						params:this.formData
+						params
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -202,6 +206,7 @@
 				})
 			},
 			update() {
+				let params = {...this.formData,update_czr:this.userInfo._id}
 				uni.showLoading({
 					title: '处理中...'
 				})
@@ -209,7 +214,7 @@
 					name: 'notice-add',
 					data: {
 						type:'update',
-						params:this.formData
+						params
 					}
 				}).then((res) => {
 					uni.hideLoading()

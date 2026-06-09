@@ -69,11 +69,12 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
+      let params = { ...this.formData, add_czr: this.userInfo._id };
       common_vendor._r.callFunction({
         name: "rili-add",
         data: {
           type: "add",
-          params: this.formData
+          params
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -88,7 +89,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:240", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:241", err);
       });
     },
     remove(id) {
@@ -114,18 +115,19 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:267", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:268", err);
       });
     },
     update() {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
+      let params = { ...this.formData, update_czr: this.userInfo._id };
       common_vendor._r.callFunction({
         name: "rili-add",
         data: {
           type: "update",
-          params: this.formData
+          params
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -140,7 +142,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:294", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:296", err);
       });
     },
     submit(type) {
@@ -168,7 +170,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:324", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:326", err);
       });
     },
     clearForm() {

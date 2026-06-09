@@ -102,10 +102,40 @@ const _sfc_main = {
       return placeholderMap[this.formData.payType] || "请输入名称";
     },
     selectType(type) {
+      if (this.formData.payType !== type) {
+        this.clearFormData();
+      }
       this.formData.payType = type;
       if (type === "音乐节" || type === "演唱会") {
         this.loadConcertList();
       }
+    },
+    // 清空表单数据
+    clearFormData() {
+      this.formData = {
+        payTime: this.getCurrentDate(),
+        payType: this.formData.payType,
+        // 保留当前类型
+        payName: "",
+        payNum: "1",
+        payPrice: "",
+        TransportationExpenses: "",
+        HotelExpenses: "",
+        otherExpenses: "",
+        payAmount: "",
+        bz: "",
+        adress: "",
+        Province: "",
+        imgs: "",
+        sdUrl: "",
+        concertID: "",
+        isEntry: "",
+        SeatNumber: ""
+      };
+      this.imageList = [];
+      this.originalFileIDs = [];
+      this.concertIndex = -1;
+      this.selectedConcert = null;
     },
     // 加载演唱会/音乐节列表
     loadConcertList() {
@@ -149,7 +179,7 @@ const _sfc_main = {
               displayName
             };
           });
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:391", "演唱会列表:", this.concertList);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:422", "演唱会列表:", this.concertList);
         } else {
           common_vendor.index.showToast({
             title: res.result.message || "加载失败",
@@ -158,7 +188,7 @@ const _sfc_main = {
         }
       }).catch((err) => {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:400", "加载演唱会列表失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:431", "加载演唱会列表失败", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -182,7 +212,7 @@ const _sfc_main = {
         this.formData.payName = this.selectedConcert.displayName;
         this.formData.adress = this.selectedConcert.Province + this.selectedConcert.address || "";
         this.formData.concertID = this.selectedConcert._id || "";
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:429", "选中的演唱会:", this.selectedConcert);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:460", "选中的演唱会:", this.selectedConcert);
       }
     },
     calculateTotal() {
@@ -224,10 +254,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:472", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:503", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:475", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:506", err.errMsg);
           }
         }
       });
@@ -287,16 +317,16 @@ const _sfc_main = {
           if (data.imgs) {
             const fileIDs = data.imgs.split(";").filter((img) => img);
             this.originalFileIDs = fileIDs;
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:544", "需要转换的图片 fileIDs:", fileIDs);
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:575", "需要转换的图片 fileIDs:", fileIDs);
             try {
               const urlRes = await common_vendor._r.getTempFileURL({
                 fileList: fileIDs
               });
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:550", "获取临时URL成功:", urlRes);
+              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:581", "获取临时URL成功:", urlRes);
               this.imageList = urlRes.fileList.map((item) => item.tempFileURL);
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:554", "图片列表:", this.imageList);
+              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:585", "图片列表:", this.imageList);
             } catch (err) {
-              common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:556", "获取图片临时URL失败:", err);
+              common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:587", "获取图片临时URL失败:", err);
               this.imageList = fileIDs;
             }
           }
@@ -373,15 +403,15 @@ const _sfc_main = {
         this.imageList.forEach((imgPath, index) => {
           if ((imgPath.startsWith("http://") || imgPath.startsWith("https://")) && urlToFileIDMap[imgPath]) {
             keptFileIDs.push(urlToFileIDMap[imgPath]);
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:655", `保留第${index + 1}张已有图片的fileID:`, urlToFileIDMap[imgPath]);
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:686", `保留第${index + 1}张已有图片的fileID:`, urlToFileIDMap[imgPath]);
           } else {
             newImageFiles.push(imgPath);
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:659", `第${index + 1}张是新图片，需要上传`);
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:690", `第${index + 1}张是新图片，需要上传`);
           }
         });
       }
-      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:664", "保留的fileIDs:", keptFileIDs);
-      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:665", "需要上传的新图片数量:", newImageFiles.length);
+      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:695", "保留的fileIDs:", keptFileIDs);
+      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:696", "需要上传的新图片数量:", newImageFiles.length);
       if (newImageFiles.length > 0) {
         common_vendor.index.showLoading({
           title: "上传中..."
@@ -392,17 +422,17 @@ const _sfc_main = {
               filePath,
               cloudPath: `payRecord/${Date.now()}_${index}.jpg`
             }).then((res) => {
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:678", `新图片${index + 1}上传成功:`, res.fileID);
+              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:709", `新图片${index + 1}上传成功:`, res.fileID);
               return res.fileID;
             });
           });
           const newFileIDs = await Promise.all(uploadPromises);
           const allFileIDs = [...keptFileIDs, ...newFileIDs];
           this.formData.imgs = allFileIDs.join(";");
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:687", "最终所有图片fileIDs:", this.formData.imgs);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:718", "最终所有图片fileIDs:", this.formData.imgs);
         } catch (err) {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:690", "图片上传失败详情:", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:721", "图片上传失败详情:", err);
           common_vendor.index.showModal({
             content: `图片上传失败：${err.message || "未知错误"}`,
             showCancel: false
@@ -413,7 +443,7 @@ const _sfc_main = {
       } else {
         if (this.isEdit) {
           this.formData.imgs = keptFileIDs.join(";");
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:703", "没有新图片，保留的fileIDs:", this.formData.imgs);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:734", "没有新图片，保留的fileIDs:", this.formData.imgs);
         }
       }
       common_vendor.index.showLoading({
@@ -510,11 +540,11 @@ const _sfc_main = {
         common_vendor.index.getImageInfo({
           src: filePath,
           success: (info) => {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:806", "原始图片信息:", info);
+            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:837", "原始图片信息:", info);
             this.compressImageByCanvas(filePath, info).then(resolve);
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:812", "获取图片信息失败", err);
+            common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:843", "获取图片信息失败", err);
             resolve(filePath);
           }
         });
@@ -532,7 +562,7 @@ const _sfc_main = {
           width = Math.round(width * ratio);
           height = Math.round(height * ratio);
         }
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:834", `原始尺寸: ${info.width}x${info.height}, 压缩后: ${width}x${height}`);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:865", `原始尺寸: ${info.width}x${info.height}, 压缩后: ${width}x${height}`);
         const ctx = common_vendor.index.createCanvasContext("compressCanvas", this);
         ctx.setFillStyle("#ffffff");
         ctx.fillRect(0, 0, width, height);
@@ -551,11 +581,11 @@ const _sfc_main = {
               destWidth: width,
               destHeight: height,
               success: (res) => {
-                common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:859", "Canvas压缩成功:", res.tempFilePath);
+                common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:890", "Canvas压缩成功:", res.tempFilePath);
                 resolve(res.tempFilePath);
               },
               fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:863", "Canvas压缩失败", err);
+                common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:894", "Canvas压缩失败", err);
                 resolve(filePath);
               }
             }, this);
@@ -581,7 +611,7 @@ const _sfc_main = {
             resolve(false);
           }
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:889", "检查重复记录失败", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:920", "检查重复记录失败", err);
           resolve(false);
         });
       });

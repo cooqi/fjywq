@@ -80,7 +80,7 @@
   background: transparent;
 }
 .content .about .date .t0 {
-  color: #31eee0;
+  color: #7de6df;
 }
 .event-card {
   background: linear-gradient(135deg, rgba(188, 159, 255, 0.3) 0%, rgba(145, 228, 243, 0.2) 80%, rgba(145, 228, 243, 0.4) 90%, rgba(145, 228, 243, 0.8) 98%, rgba(145, 228, 243, 0.9) 100%);
@@ -112,7 +112,7 @@
   font-weight: 400;
   margin-left: 20rpx;
   font-size: 30rpx;
-  color: #eff179;
+  color: #f5f795;
 }
 .info {
   margin: 16rpx 0;

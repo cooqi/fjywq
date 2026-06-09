@@ -75,7 +75,14 @@ const _sfc_main = {
               },
               success: (res2) => {
                 common_vendor.index.hideLoading();
-                if (res2.result.result.result._id) {
+                if (res2.result.status === -3) {
+                  common_vendor.index.showModal({
+                    content: res2.result.msg || "该用户已被禁止登录",
+                    showCancel: false
+                  });
+                  return;
+                }
+                if (res2.result.result && res2.result.result.result && res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
                   _this.userInfo = res2.result.result.result;
                   _this.getUserStats();
@@ -83,7 +90,11 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/profile/profile.vue:158", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/profile/profile.vue:169", "云函数调用失败", err);
+                common_vendor.index.showModal({
+                  content: "登录失败，请重试",
+                  showCancel: false
+                });
               }
             });
           }
@@ -91,7 +102,7 @@ const _sfc_main = {
       });
     },
     getUserStats() {
-      common_vendor.index.__f__("log", "at pages/profile/profile.vue:167", "当前用户ID:", this.userInfo._id);
+      common_vendor.index.__f__("log", "at pages/profile/profile.vue:182", "当前用户ID:", this.userInfo._id);
       common_vendor._r.callFunction({
         name: "user",
         data: {
@@ -123,7 +134,7 @@ const _sfc_main = {
         const diffDays = Math.floor(diffTime / (1e3 * 60 * 60 * 24));
         this.joinDays = diffDays >= 0 ? diffDays : 0;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/profile/profile.vue:209", "计算入坑天数失败:", e);
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:224", "计算入坑天数失败:", e);
         this.joinDays = 0;
       }
     },
@@ -272,7 +283,7 @@ const _sfc_main = {
         }
       }).catch((err) => {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/profile/profile.vue:377", "刷新用户信息失败:", err);
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:392", "刷新用户信息失败:", err);
         common_vendor.index.showToast({
           title: "刷新失败",
           icon: "none"

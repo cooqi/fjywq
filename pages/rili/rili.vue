@@ -416,7 +416,7 @@
 			}
 			.date{
 				.t0{
-					color: #31eee0;
+					color: #7de6df;
 				}
 			}
 			
@@ -457,7 +457,7 @@
 		font-weight: 400;
 		margin-left: 20rpx;
 		font-size: 30rpx;
-		color: #eff179;
+		color: #f5f795;
 	}
 	.info{
 		margin: 16rpx 0;

@@ -171,7 +171,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 		},
 		onLoad() {
 			const userInfo = uni.getStorageSync('userInfo');
-				this.userInfo=JSON.parse(userInfo)
+			this.userInfo=JSON.parse(userInfo)
 		},
 		methods:{
 			isCalendarPermission(type) {
@@ -218,11 +218,12 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				uni.showLoading({
 					title: '处理中...'
 				})
+				let params = {...this.formData,add_czr:this.userInfo._id}
 				uniCloud.callFunction({
 					name: 'rili-add',
 					data: {
 						type:'add',
-						params:this.formData
+						params
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -271,11 +272,12 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				uni.showLoading({
 					title: '处理中...'
 				})
+				let params = {...this.formData,update_czr:this.userInfo._id}
 				uniCloud.callFunction({
 					name: 'rili-add',
 					data: {
 						type:'update',
-						params:this.formData
+						params
 					}
 				}).then((res) => {
 					uni.hideLoading()

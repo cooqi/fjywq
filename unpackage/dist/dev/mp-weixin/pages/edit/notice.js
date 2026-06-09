@@ -35,15 +35,17 @@ const _sfc_main = {
       sf: [
         { value: "0", text: "否" },
         { value: "1", text: "是" }
-      ]
+      ],
+      userInfo: {}
     };
   },
   onLoad(option) {
     let id = option.id;
-    common_vendor.index.__f__("log", "at pages/edit/notice.vue:142", option, id);
     if (id) {
       this.getDetail(id);
     }
+    const userInfo = common_vendor.index.getStorageSync("userInfo");
+    this.userInfo = JSON.parse(userInfo);
   },
   methods: {
     editInfo(item) {
@@ -53,11 +55,12 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
+      let params = { ...this.formData, add_czr: this.userInfo._id };
       common_vendor._r.callFunction({
         name: "notice-add",
         data: {
           type: "add",
-          params: this.formData
+          params
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -72,7 +75,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:174", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:178", err);
       });
     },
     remove(id) {
@@ -98,10 +101,11 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:201", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:205", err);
       });
     },
     update() {
+      let params = { ...this.formData, update_czr: this.userInfo._id };
       common_vendor.index.showLoading({
         title: "处理中..."
       });
@@ -109,7 +113,7 @@ const _sfc_main = {
         name: "notice-add",
         data: {
           type: "update",
-          params: this.formData
+          params
         }
       }).then((res) => {
         common_vendor.index.hideLoading();
@@ -123,7 +127,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:227", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:232", err);
       });
     },
     submit(type) {
@@ -154,7 +158,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:258", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:263", err);
       });
     },
     getList() {
@@ -177,7 +181,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:282", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:287", err);
       });
     },
     reset() {

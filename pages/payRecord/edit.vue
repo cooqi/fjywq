@@ -333,11 +333,42 @@
 				return placeholderMap[this.formData.payType] || '请输入名称'
 			},
 			selectType(type) {
+				// 如果切换到不同的类型，清空之前的数据
+				if (this.formData.payType !== type) {
+					this.clearFormData()
+				}
+				
 				this.formData.payType = type
 				// 如果选择的是音乐节或演唱会，加载列表
 				if (type === '音乐节' || type === '演唱会') {
 					this.loadConcertList()
 				}
+			},
+			// 清空表单数据
+			clearFormData() {
+				this.formData = {
+					payTime: this.getCurrentDate(),
+					payType: this.formData.payType, // 保留当前类型
+					payName: '',
+					payNum: '1',
+					payPrice: '',
+					TransportationExpenses: '',
+					HotelExpenses: '',
+					otherExpenses: '',
+					payAmount: '',
+					bz: '',
+					adress: '',
+					Province: '',
+					imgs: '',
+					sdUrl: '',
+					concertID: '',
+					isEntry: '',
+					SeatNumber: ''
+				}
+				this.imageList = []
+				this.originalFileIDs = []
+				this.concertIndex = -1
+				this.selectedConcert = null
 			},
 			// 加载演唱会/音乐节列表
 			loadConcertList() {
