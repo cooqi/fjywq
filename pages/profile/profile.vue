@@ -98,6 +98,17 @@
 				}
 			}
 		},
+		onShareAppMessage: function () {
+		   return {
+		     title: '宇青青宇全肯定',
+		     path: '/pages/rili/rili'
+		   }
+		 },
+		 onShareTimeline: function () {
+		    return {
+		      title: '宇青青宇全肯定'
+		    }
+		  },
 		onShow() {
 			const userInfo = uni.getStorageSync('userInfo')
 			if (userInfo) {

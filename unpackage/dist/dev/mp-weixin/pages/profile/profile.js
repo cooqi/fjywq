@@ -27,6 +27,17 @@ const _sfc_main = {
       }
     };
   },
+  onShareAppMessage: function() {
+    return {
+      title: "宇青青宇全肯定",
+      path: "/pages/rili/rili"
+    };
+  },
+  onShareTimeline: function() {
+    return {
+      title: "宇青青宇全肯定"
+    };
+  },
   onShow() {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
     if (userInfo) {
@@ -90,7 +101,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/profile/profile.vue:169", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/profile/profile.vue:180", "云函数调用失败", err);
                 common_vendor.index.showModal({
                   content: "登录失败，请重试",
                   showCancel: false
@@ -102,7 +113,7 @@ const _sfc_main = {
       });
     },
     getUserStats() {
-      common_vendor.index.__f__("log", "at pages/profile/profile.vue:182", "当前用户ID:", this.userInfo._id);
+      common_vendor.index.__f__("log", "at pages/profile/profile.vue:193", "当前用户ID:", this.userInfo._id);
       common_vendor._r.callFunction({
         name: "user",
         data: {
@@ -134,7 +145,7 @@ const _sfc_main = {
         const diffDays = Math.floor(diffTime / (1e3 * 60 * 60 * 24));
         this.joinDays = diffDays >= 0 ? diffDays : 0;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/profile/profile.vue:224", "计算入坑天数失败:", e);
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:235", "计算入坑天数失败:", e);
         this.joinDays = 0;
       }
     },
@@ -283,7 +294,7 @@ const _sfc_main = {
         }
       }).catch((err) => {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/profile/profile.vue:392", "刷新用户信息失败:", err);
+        common_vendor.index.__f__("error", "at pages/profile/profile.vue:403", "刷新用户信息失败:", err);
         common_vendor.index.showToast({
           title: "刷新失败",
           icon: "none"
@@ -376,5 +387,6 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
+_sfc_main.__runtimeHooks = 6;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/profile/profile.js.map
