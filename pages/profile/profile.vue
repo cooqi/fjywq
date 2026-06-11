@@ -44,7 +44,7 @@
 				</view>
 				<view class="menu-item" @click="goToPayRecord">
 					<view class="menu-icon">💰</view>
-					<view class="menu-text">消费记录</view>
+					<view class="menu-text">记账</view>
 				</view>
 				<view class="menu-item" @click="goToFootprint">
 					<view class="menu-icon">🗺️</view>
