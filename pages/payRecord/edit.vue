@@ -363,28 +363,21 @@
 			},
 			// 加载演唱会/音乐节列表
 			loadConcertList() {
-				uni.showLoading({ title: '加载中' })
-				uniCloud.callFunction({
+				return uniCloud.callFunction({
 					name: 'concert',
 					data: {
 						action: 'getList',
 						type: this.formData.payType // 根据当前类型筛选
 					}
 				}).then((res) => {
-					uni.hideLoading()
 					if (res.result.code === 0) {
-						// 处理数据，添加 displayName 字段用于显示
 						this.concertList = res.result.data.map(item => {
-							// 智能生成显示名称：优先使用 ychTheme，其次使用 Session
 							let displayName = ''
-							
 							if (item.ychTheme) {
-								// 如果有主题，使用：主题 - 场馆 (时间)
 								displayName = `${item.ychTheme}`
 								if (item.yhcTheme) {
 									displayName += ` - ${item.yhcTheme}`
 								}
-								
 								if (item.Session) {
 									displayName += ` - ${item.Session}`
 								}
@@ -392,7 +385,6 @@
 									displayName += ` (${item.time})`
 								}
 							} else if (item.Session) {
-								// 如果没有主题但有场次，使用：场次 - 地址 (时间)
 								displayName = `${item.Session}`
 								if (item.address) {
 									displayName += ` - ${item.address}`
@@ -401,10 +393,8 @@
 									displayName += ` (${item.time})`
 								}
 							} else {
-								// 都没有，使用时间或默认文本
 								displayName = item.time || '未命名场次'
 							}
-							
 							return {
 								...item,
 								displayName
@@ -418,7 +408,6 @@
 						})
 					}
 				}).catch((err) => {
-					uni.hideLoading()
 					console.error('加载演唱会列表失败', err)
 					uni.showToast({
 						title: '加载失败',
@@ -505,6 +494,8 @@
 							adress: data.adress || '',
 							Province: data.Province || '',
 							imgs: data.imgs || '',
+							sdUrl: data.sdUrl || '',
+							concertID: data.concertID || '',
 							isEntry: data.isEntry || '',
 							SeatNumber: data.SeatNumber || ''
 						}
@@ -512,16 +503,21 @@
 						// 如果是音乐节或演唱会类型，需要加载列表并匹配选中的项
 						if (data.payType === '音乐节' || data.payType === '演唱会') {
 							await this.loadConcertList()
-							// 根据 payName、Session 和 adress 尝试匹配已选择的演唱会
-							const matchedIndex = this.concertList.findIndex(item => 
-								item.ychTheme === data.payName || 
-								item.Session === data.payName ||
-								item.address === data.adress ||
-								item.displayName === data.payName
-							)
+							let matchedIndex = -1
+							if (data.concertID) {
+								matchedIndex = this.concertList.findIndex(item => item._id === data.concertID)
+							}
+							if (matchedIndex === -1) {
+								matchedIndex = this.concertList.findIndex(item => 
+									item.displayName === data.payName ||
+									(item.ychTheme && item.Session && `${item.ychTheme} - ${item.yhcTheme} - ${item.Session}` === data.payName)
+								)
+							}
 							if (matchedIndex > -1) {
 								this.concertIndex = matchedIndex
 								this.selectedConcert = this.concertList[matchedIndex]
+								this.formData.concertID = this.selectedConcert._id || ''
+								this.formData.adress = (this.selectedConcert.Province || '') + (this.selectedConcert.address || '')
 							}
 						}
 														

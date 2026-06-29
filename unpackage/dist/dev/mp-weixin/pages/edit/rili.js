@@ -242,6 +242,8 @@ const _sfc_main = {
     },
     clearForm() {
       delete this.formData._id;
+      this.formDatePicker = "";
+      this.searchDatePicker = "";
       this.formData.date = "";
       this.formData.title = "";
       this.formData.bz = "";

@@ -405,6 +405,9 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			clearForm(){
 				
 				delete this.formData._id
+				this.formDatePicker=''
+				this.searchDatePicker=''
+
 				this.formData.date=''
 				this.formData.title=''
 				this.formData.bz=''

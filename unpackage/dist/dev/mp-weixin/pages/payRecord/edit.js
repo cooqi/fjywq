@@ -137,8 +137,7 @@ const _sfc_main = {
     },
     // 加载演唱会/音乐节列表
     loadConcertList() {
-      common_vendor.index.showLoading({ title: "加载中" });
-      common_vendor._r.callFunction({
+      return common_vendor._r.callFunction({
         name: "concert",
         data: {
           action: "getList",
@@ -146,7 +145,6 @@ const _sfc_main = {
           // 根据当前类型筛选
         }
       }).then((res) => {
-        common_vendor.index.hideLoading();
         if (res.result.code === 0) {
           this.concertList = res.result.data.map((item) => {
             let displayName = "";
@@ -177,7 +175,7 @@ const _sfc_main = {
               displayName
             };
           });
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:413", "演唱会列表:", this.concertList);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:403", "演唱会列表:", this.concertList);
         } else {
           common_vendor.index.showToast({
             title: res.result.message || "加载失败",
@@ -185,8 +183,7 @@ const _sfc_main = {
           });
         }
       }).catch((err) => {
-        common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:422", "加载演唱会列表失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:411", "加载演唱会列表失败", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -210,7 +207,7 @@ const _sfc_main = {
         this.formData.payName = this.selectedConcert.displayName;
         this.formData.adress = this.selectedConcert.Province + this.selectedConcert.address || "";
         this.formData.concertID = this.selectedConcert._id || "";
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:451", "选中的演唱会:", this.selectedConcert);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:440", "选中的演唱会:", this.selectedConcert);
       }
     },
     calculateTotal() {
@@ -265,17 +262,27 @@ const _sfc_main = {
             adress: data.adress || "",
             Province: data.Province || "",
             imgs: data.imgs || "",
+            sdUrl: data.sdUrl || "",
+            concertID: data.concertID || "",
             isEntry: data.isEntry || "",
             SeatNumber: data.SeatNumber || ""
           };
           if (data.payType === "音乐节" || data.payType === "演唱会") {
             await this.loadConcertList();
-            const matchedIndex = this.concertList.findIndex(
-              (item) => item.ychTheme === data.payName || item.Session === data.payName || item.address === data.adress || item.displayName === data.payName
-            );
+            let matchedIndex = -1;
+            if (data.concertID) {
+              matchedIndex = this.concertList.findIndex((item) => item._id === data.concertID);
+            }
+            if (matchedIndex === -1) {
+              matchedIndex = this.concertList.findIndex(
+                (item) => item.displayName === data.payName || item.ychTheme && item.Session && `${item.ychTheme} - ${item.yhcTheme} - ${item.Session}` === data.payName
+              );
+            }
             if (matchedIndex > -1) {
               this.concertIndex = matchedIndex;
               this.selectedConcert = this.concertList[matchedIndex];
+              this.formData.concertID = this.selectedConcert._id || "";
+              this.formData.adress = (this.selectedConcert.Province || "") + (this.selectedConcert.address || "");
             }
           }
         }
@@ -446,7 +453,7 @@ const _sfc_main = {
             resolve(false);
           }
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:715", "检查重复记录失败", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:711", "检查重复记录失败", err);
           resolve(false);
         });
       });

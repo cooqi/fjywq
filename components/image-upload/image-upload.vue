@@ -7,13 +7,13 @@
 				<view class="upload-delete" @click.stop="deleteImage(index)">×</view>
 			</view>
 			<view class="upload-add" @click="chooseImage" v-if="imageList.length < maxCount">
-				<text class="upload-add-icon">+</text>
-				<text class="upload-add-text">添加照片</text>
-				<text class="upload-add-count">{{ imageList.length }}/{{ maxCount }}</text>
+					<text class="upload-add-icon">+</text>
+					<text class="upload-add-text">添加照片</text>
+					<text class="upload-add-count">{{ imageList.length }}/{{ maxCount }}</text>
+				</view>
 			</view>
+			<canvas :canvas-id="canvasId" style="width: 800px; height: 800px; position: fixed; left: -9999px; top: -9999px;"></canvas>
 		</view>
-		<canvas :canvas-id="canvasId" style="width: 800px; height: 800px; position: fixed; left: -9999px; top: -9999px;"></canvas>
-	</view>
 </template>
 
 <script>
@@ -44,9 +44,8 @@
 		data() {
 			return {
 				imageList: [],
-				originalFileIDs: [],
-				canvasId: `compressCanvas_${Date.now()}`,
-				cloudDomain: 'https://env-00jy66xyyok3.normal.cloudstatic.cn'
+				cloudDomain: 'https://env-00jy66xyyok3.normal.cloudstatic.cn',
+				canvasId: `compressCanvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 			}
 		},
 		watch: {
@@ -57,7 +56,6 @@
 						this.initImages(newVal)
 					} else {
 						this.imageList = []
-						this.originalFileIDs = []
 					}
 				}
 			}
@@ -67,108 +65,65 @@
 				const urls = imgUrl.split(';').filter(img => img)
 				this.imageList = urls
 			},
-			async chooseImage() {
+			chooseImage() {
 				uni.chooseImage({
 					count: this.maxCount - this.imageList.length,
 					sizeType: ['compressed'],
 					sourceType: ['album', 'camera'],
-					type: 'image',
 					success: async (res) => {
-						const compressedImages = []
-						for (let i = 0; i < res.tempFilePaths.length; i++) {
-							const compressedPath = await this.compressImage(res.tempFilePaths[i])
-							compressedImages.push(compressedPath)
-						}
-						this.imageList = this.imageList.concat(compressedImages)
-					}
-				})
-			},
-			deleteImage(index) {
-				this.imageList.splice(index, 1)
-			},
-			previewImage(index) {
-				uni.previewImage({
-					urls: this.imageList,
-					current: index,
-					longPressActions: {
-						itemList: ['发送给朋友', '保存图片', '收藏'],
-						success: function(data) {
-							console.log('选中了第' + (data.tapIndex + 1) + '个按钮,第' + (data.index + 1) + '张图片');
-						},
-						fail: function(err) {
-							console.log(err.errMsg);
-						}
-					}
-				})
-			},
-			async processImages(isEdit) {
-				let newImageFiles = []
-				let keptUrls = []
-
-				if (this.imageList.length > 0) {
-					this.imageList.forEach((imgPath) => {
-						if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
-							keptUrls.push(imgPath)
-						} else {
-							newImageFiles.push(imgPath)
-						}
-					})
-				}
-
-				if (newImageFiles.length > 0) {
-					uni.showLoading({
-						title: '上传中...'
-					})
-					try {
-						const timestamp = Date.now()
-						const uploadPromises = newImageFiles.map((filePath, index) => {
-							return uniCloud.uploadFile({
-								filePath: filePath,
-								cloudPath: `${this.uploadPath}/${timestamp}_${index}_${Math.random().toString(36).substr(2, 9)}.jpg`
-							}).then(res => {
-								const cloudPath = res.fileID.replace('cloud://', '')
-								return `${this.cloudDomain}/${cloudPath}`
+						uni.showLoading({
+							title: '处理中...'
+						})
+						try {
+							const compressedPaths = []
+							for (const filePath of res.tempFilePaths) {
+								const compressedPath = await this.compressImage(filePath)
+								compressedPaths.push(compressedPath)
+							}
+							this.imageList = this.imageList.concat(compressedPaths)
+						} catch (err) {
+							console.error('图片处理失败:', err)
+							uni.showToast({
+								title: '图片处理失败',
+								icon: 'none'
 							})
-						})
-						const newUrls = await Promise.all(uploadPromises)
-						const allUrls = [...keptUrls, ...newUrls]
-						const result = allUrls.join(';')
-						uni.hideLoading()
-						return result
-					} catch (err) {
-						uni.hideLoading()
-						console.error('图片上传失败详情:', err)
-						uni.showModal({
-							content: `图片上传失败：${err.message || '未知错误'}`,
-							showCancel: false
-						})
-						return null
+						} finally {
+							uni.hideLoading()
+						}
+					},
+					fail: (err) => {
+						console.error('chooseImage失败:', err)
 					}
-				} else {
-					if (isEdit) {
-						return keptUrls.join(';')
-					} else if (keptUrls.length > 0) {
-						return keptUrls.join(';')
-					}
-					return ''
-				}
+				})
 			},
 			compressImage(filePath) {
 				return new Promise((resolve) => {
+					const timeout = setTimeout(() => {
+						console.error('压缩超时，使用原图')
+						resolve(filePath)
+					}, 10000)
+
 					uni.getImageInfo({
 						src: filePath,
 						success: (info) => {
-							this.compressImageByCanvas(filePath, info).then(resolve)
+							this.compressImageByCanvas(filePath, info).then((compressedPath) => {
+								clearTimeout(timeout)
+								resolve(compressedPath)
+							}).catch(() => {
+								clearTimeout(timeout)
+								resolve(filePath)
+							})
 						},
 						fail: (err) => {
-							console.error('获取图片信息失败', err)
+							clearTimeout(timeout)
+							console.error('获取图片信息失败:', err)
 							resolve(filePath)
 						}
 					})
 				})
 			},
 			compressImageByCanvas(filePath, info) {
-				return new Promise((resolve) => {
+				return new Promise((resolve, reject) => {
 					let width = info.width
 					let height = info.height
 					const maxWidth = 500
@@ -201,17 +156,107 @@
 									resolve(res.tempFilePath)
 								},
 								fail: (err) => {
-									console.error('Canvas压缩失败', err)
-									resolve(filePath)
+									console.error('Canvas压缩失败:', err)
+									reject(err)
 								}
 							}, this)
-						}, 500)
+						}, 300)
 					})
 				})
 			},
+			deleteImage(index) {
+				this.imageList.splice(index, 1)
+			},
+			previewImage(index) {
+				uni.previewImage({
+					urls: this.imageList,
+					current: index,
+					longPressActions: {
+						itemList: ['发送给朋友', '保存图片', '收藏'],
+						success: function(data) {
+							console.log('选中了第' + (data.tapIndex + 1) + '个按钮,第' + (data.index + 1) + '张图片');
+						},
+						fail: function(err) {
+							console.log(err.errMsg);
+						}
+					}
+				})
+			},
+			async processImages(isEdit) {
+				let newImageFiles = []
+				let keptUrls = []
+
+				if (this.imageList.length > 0) {
+					this.imageList.forEach((imgPath) => {
+						if (imgPath.startsWith('http://tmp/') || imgPath.startsWith('wxfile://')) {
+							newImageFiles.push(imgPath)
+						} else if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+							keptUrls.push(imgPath)
+						} else {
+							newImageFiles.push(imgPath)
+						}
+					})
+				}
+
+				if (newImageFiles.length > 0) {
+					uni.showLoading({
+						title: '上传中...'
+					})
+					try {
+						const timestamp = Date.now()
+						const uploadPromises = newImageFiles.map((filePath, index) => {
+							return new Promise((resolve, reject) => {
+								const timeout = setTimeout(() => {
+									console.error('上传超时:', filePath)
+									reject(new Error('上传超时'))
+								}, 30000)
+
+								uniCloud.uploadFile({
+									filePath: filePath,
+									cloudPath: `${this.uploadPath}/${timestamp}_${index}_${Math.random().toString(36).substr(2, 9)}.jpg`,
+									success: (res) => {
+										clearTimeout(timeout)
+										console.log('上传返回 fileID:', res.fileID)
+										const parts = res.fileID.split('/')
+										const cloudPath = parts.slice(3).join('/')
+										const finalUrl = `${this.cloudDomain}/${cloudPath}`
+										console.log('最终URL:', finalUrl)
+										resolve(finalUrl)
+									},
+									fail: (err) => {
+										clearTimeout(timeout)
+										console.error('单个文件上传失败:', filePath, err)
+										reject(err)
+									}
+								})
+							})
+						})
+						const newUrls = await Promise.all(uploadPromises)
+						const allUrls = [...keptUrls, ...newUrls]
+						const result = allUrls.join(';')
+						uni.hideLoading()
+						return result
+					} catch (err) {
+						uni.hideLoading()
+						console.error('图片上传失败详情:', err)
+						uni.showModal({
+							content: `图片上传失败：${err.message || '未知错误'}`,
+							showCancel: false
+						})
+						return null
+					}
+				} else {
+					if (isEdit) {
+						return keptUrls.join(';')
+					} else if (keptUrls.length > 0) {
+						return keptUrls.join(';')
+					}
+					return ''
+				}
+			},
+			
 			clearImages() {
 				this.imageList = []
-				this.originalFileIDs = []
 			}
 		}
 	}
