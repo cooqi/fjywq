@@ -114,8 +114,12 @@
 		},
 		// 页面刷新方法
 		onPullDownRefresh() {
-			this.getList(this.currentMonth)
-			this.useCommon()
+			Promise.all([
+				this.getList(this.currentMonth),
+				this.useCommon()
+			]).finally(() => {
+				uni.stopPullDownRefresh()
+			})
 		},
 		watch:{
 			dayAboutInfo:{
@@ -211,15 +215,17 @@
 				uni.showLoading({
 					title: '处理中...'
 				})
-				uniCloud.callFunction({
+				return uniCloud.callFunction({
 					name: 'rili-get',
 					data:{
 						month:m,
 						year:y
 					}
-				}).then((res) => {
+				}).then(async (res) => {
 					uni.hideLoading()
 					this.allRili=JSON.parse(JSON.stringify(res.result.data))
+
+					await this.convertImageUrls(this.allRili)
 
 					if(currentMonth===m){
 						this.time=this.formatDate(new Date())
@@ -248,6 +254,45 @@
 					})
 					console.error(err)
 				})
+			},
+			async convertImageUrls(dataList) {
+				const cloudFileIDs = []
+				const urlMap = {}
+				
+				dataList.forEach((item, index) => {
+					if (item.imgurl) {
+						const fileIDs = item.imgurl.split(';').filter(img => img)
+						fileIDs.forEach(fileID => {
+							if (fileID.startsWith('cloud://')) {
+								cloudFileIDs.push(fileID)
+							} else {
+								urlMap[fileID] = fileID
+							}
+						})
+					}
+				})
+				
+				if (cloudFileIDs.length === 0) return
+				
+				try {
+					const urlRes = await uniCloud.getTempFileURL({
+						fileList: cloudFileIDs
+					})
+					
+					urlRes.fileList.forEach(item => {
+						urlMap[item.fileID] = item.tempFileURL || item.fileID
+					})
+					
+					dataList.forEach(item => {
+						if (item.imgurl) {
+							const fileIDs = item.imgurl.split(';').filter(img => img)
+							const tempUrls = fileIDs.map(fileID => urlMap[fileID] || fileID)
+							item.imgurl = tempUrls.join(';')
+						}
+					})
+				} catch (err) {
+					console.error('获取图片临时URL失败:', err)
+				}
 			},
 			onClickItem(e) {
 				if (this.current !== e.currentIndex) {
@@ -302,7 +347,7 @@
 			},
 			useCommon() {
 				
-				uniCloud.callFunction({
+				return uniCloud.callFunction({
 					name: 'welcome',
 					data:{
 						type:'get'

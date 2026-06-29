@@ -3,12 +3,11 @@
 		<!-- 搜索框 -->
 		<view class="search-box">
 			<text class="search-label">日期搜索</text>
-			<input 
-				class="search-input" 
-				name="date" 
-				v-model="search.date" 
-				placeholder="请输入日期"
-				@blur="getList"
+			<uni-datetime-picker 
+				type="date" 
+				v-model="searchDatePicker"
+				placeholder="请选择日期"
+				@change="onSearchDateChange"
 			/>
 		</view>
 		
@@ -35,11 +34,12 @@
 			<form>
 				<view class="form-item">
 					<text class="form-label">日期</text>
-					<input 
-						class="form-input" 
-						name="date" 
-						v-model="formData.date" 
-						placeholder="请输入日期（如：2024-1-1）"
+					<uni-datetime-picker 
+						class="form-input"
+						type="date" 
+						v-model="formDatePicker"
+						placeholder="请选择日期"
+						@change="onFormDateChange"
 					/>
 				</view>
 				
@@ -81,6 +81,15 @@
 						placeholder="请输入图片路径，多个用分号隔开"
 					/>
 				</view>
+				
+				<image-upload 
+						ref="imageUpload"
+						title="上传图片" 
+						optionalText="优先外链" 
+						maxCount="3"
+						uploadPath="rili"
+						:modelValue="formData.imgurl"
+					></image-upload>
 				
 				<view class="form-actions" v-if="formData._id">
 					<button 
@@ -144,6 +153,8 @@
 				</button>
 			</form>
 		</view>
+		
+		
 	</view>
 </template>
 
@@ -163,10 +174,12 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				search:{
 					date:''
 				},
+				searchDatePicker: '',
+				formDatePicker: '',
 				customGreeting:{
 					title:''
 				},
-				userInfo:null
+				userInfo:null,
 			}
 		},
 		onLoad() {
@@ -177,8 +190,32 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			isCalendarPermission(type) {
 				return hasCalendarPermission(this.userInfo, type)
 			},
-			editInfo(item){
-				this.formData= {...item};
+			editInfo(data){
+				this.formData = {...data}
+				this.formDatePicker = data.date ? this.formatToPicker(data.date) : ''
+			},
+			formatToPicker(dateStr) {
+				if (!dateStr) return ''
+				const parts = dateStr.split('-')
+				if (parts.length === 3) {
+					return `${parts[0]}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}`
+				}
+				return dateStr
+			},
+			formatDate(dateStr) {
+				if (!dateStr) return ''
+				const parts = dateStr.split('-')
+				if (parts.length === 3) {
+					return `${parts[0]}-${parseInt(parts[1])}-${parseInt(parts[2])}`
+				}
+				return dateStr
+			},
+			onSearchDateChange() {
+				this.search.date = this.formatDate(this.searchDatePicker)
+				this.getList()
+			},
+			onFormDateChange() {
+				this.formData.date = this.formatDate(this.formDatePicker)
 			},
 			add_customGreeting(){
 				if(!this.customGreeting.title&&!this.customGreeting.bgcolor){
@@ -214,7 +251,29 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					console.error(err)
 				})
 			},
-			add() {
+			async setImg(){
+				const isEdit = !!this.formData._id
+				const result = await this.$refs.imageUpload.processImages(isEdit)
+				if (result !== null) {
+					this.formData.imgurl = result
+				}
+			},
+			async add() {
+				if(!this.formData.date){
+					uni.showModal({
+						content: `请选择日期`,
+						showCancel: false
+					})
+					return
+				}
+				if(!this.formData.title){
+					uni.showModal({
+						content: `请输入标题`,
+						showCancel: false
+					})
+					return
+				}
+				await this.setImg()
 				uni.showLoading({
 					title: '处理中...'
 				})
@@ -258,6 +317,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 						showCancel: false
 					})
 					this.getList()
+					this.clearForm()
 					//console.log(res)
 				}).catch((err) => {
 					uni.hideLoading()
@@ -268,7 +328,22 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					console.error(err)
 				})
 			},
-			update() {
+			async update() {
+				if(!this.formData.date){
+					uni.showModal({
+						content: `请选择日期`,
+						showCancel: false
+					})
+					return
+				}
+				if(!this.formData.title){
+					uni.showModal({
+						content: `请输入标题`,
+						showCancel: false
+					})
+					return
+				}
+				await this.setImg()
 				uni.showLoading({
 					title: '处理中...'
 				})
@@ -286,6 +361,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 						showCancel: false
 					})
 					this.getList()
+					this.clearForm()
 					//console.log(res)
 				}).catch((err) => {
 					uni.hideLoading()
@@ -327,13 +403,16 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				})
 			},
 			clearForm(){
-				this.formData._id=''
+				
+				delete this.formData._id
 				this.formData.date=''
 				this.formData.title=''
 				this.formData.bz=''
 				this.formData.imgurl=''
-				
-			}
+				if (this.$refs.imageUpload) {
+					this.$refs.imageUpload.clearImages()
+				}
+			},
 		}
 	}
 </script>
@@ -611,4 +690,6 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 		text-align: center;
 	}
 }
+
+
 </style>

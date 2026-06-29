@@ -51,7 +51,26 @@ const _sfc_main = {
     editInfo(item) {
       this.formData = { ...item };
     },
-    add() {
+    async add() {
+      if (!this.formData.title) {
+        common_vendor.index.showModal({
+          content: `请输入标题`,
+          showCancel: false
+        });
+        return;
+      }
+      if (!this.formData.classType) {
+        common_vendor.index.showModal({
+          content: `请选择分类`,
+          showCancel: false
+        });
+        return;
+      }
+      const isEdit = !!this.formData._id;
+      const imgResult = await this.$refs.imageUpload.processImages(isEdit);
+      if (imgResult !== null) {
+        this.formData.imgs = imgResult;
+      }
       common_vendor.index.showLoading({
         title: "处理中..."
       });
@@ -75,7 +94,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:178", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:205", err);
       });
     },
     remove(id) {
@@ -101,10 +120,29 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:205", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:232", err);
       });
     },
-    update() {
+    async update() {
+      if (!this.formData.title) {
+        common_vendor.index.showModal({
+          content: `请输入标题`,
+          showCancel: false
+        });
+        return;
+      }
+      if (!this.formData.classType) {
+        common_vendor.index.showModal({
+          content: `请选择分类`,
+          showCancel: false
+        });
+        return;
+      }
+      const isEdit = !!this.formData._id;
+      const imgResult = await this.$refs.imageUpload.processImages(isEdit);
+      if (imgResult !== null) {
+        this.formData.imgs = imgResult;
+      }
       let params = { ...this.formData, update_czr: this.userInfo._id };
       common_vendor.index.showLoading({
         title: "处理中..."
@@ -127,7 +165,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:232", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:278", err);
       });
     },
     submit(type) {
@@ -158,7 +196,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:263", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:309", err);
       });
     },
     getList() {
@@ -181,7 +219,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/notice.vue:287", err);
+        common_vendor.index.__f__("error", "at pages/edit/notice.vue:333", err);
       });
     },
     reset() {
@@ -199,18 +237,23 @@ const _sfc_main = {
         is_countdown: "",
         is_countdown_date: ""
       };
+      if (this.$refs.imageUpload) {
+        this.$refs.imageUpload.clearImages();
+      }
     }
   }
 };
 if (!Array) {
   const _easycom_uni_data_select2 = common_vendor.resolveComponent("uni-data-select");
   const _easycom_uni_datetime_picker2 = common_vendor.resolveComponent("uni-datetime-picker");
-  (_easycom_uni_data_select2 + _easycom_uni_datetime_picker2)();
+  const _easycom_image_upload2 = common_vendor.resolveComponent("image-upload");
+  (_easycom_uni_data_select2 + _easycom_uni_datetime_picker2 + _easycom_image_upload2)();
 }
 const _easycom_uni_data_select = () => "../../uni_modules/uni-data-select/components/uni-data-select/uni-data-select.js";
 const _easycom_uni_datetime_picker = () => "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker.js";
+const _easycom_image_upload = () => "../../components/image-upload/image-upload.js";
 if (!Math) {
-  (_easycom_uni_data_select + _easycom_uni_datetime_picker)();
+  (_easycom_uni_data_select + _easycom_uni_datetime_picker + _easycom_image_upload)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
@@ -245,37 +288,45 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       localdata: $data.sf,
       modelValue: $data.formData.is_countdown
     }),
-    q: common_vendor.o(($event) => $data.formData.is_countdown_date = $event, "4e"),
+    q: common_vendor.o(($event) => $data.formData.is_countdown_date = $event, "7e"),
     r: common_vendor.p({
-      type: "date",
+      type: "datetime",
       placeholder: "请选择倒计时目标时间",
       modelValue: $data.formData.is_countdown_date
     }),
-    s: common_vendor.o(($event) => $data.formData.classType = $event, "54"),
+    s: common_vendor.o(($event) => $data.formData.classType = $event, "c8"),
     t: common_vendor.p({
       localdata: $data.range2,
       modelValue: $data.formData.classType
     }),
-    v: common_vendor.o(($event) => $data.formData.type = $event, "79"),
+    v: common_vendor.o(($event) => $data.formData.type = $event, "77"),
     w: common_vendor.p({
       localdata: $data.range,
       modelValue: $data.formData.type
     }),
     x: $data.formData.imgs,
-    y: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "2d"),
-    z: $data.formData.url,
-    A: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "2b"),
-    B: $data.formData.bz,
-    C: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "ca"),
-    D: $data.formData._id
-  }, $data.formData._id ? {
-    E: common_vendor.o(($event) => $options.submit("update"), "09")
-  } : {}, {
+    y: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "0d"),
+    z: common_vendor.sr("imageUpload", "726282d2-6"),
+    A: common_vendor.p({
+      title: "上传图片",
+      optionalText: "小程序会压缩图片，优先外链",
+      maxCount: "9",
+      uploadPath: "notice",
+      modelValue: $data.formData.imgs
+    }),
+    B: $data.formData.url,
+    C: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "e0"),
+    D: $data.formData.bz,
+    E: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "1e"),
     F: $data.formData._id
   }, $data.formData._id ? {
-    G: common_vendor.o(($event) => $options.remove($data.formData._id), "47")
+    G: common_vendor.o(($event) => $options.submit("update"), "3a")
+  } : {}, {
+    H: $data.formData._id
+  }, $data.formData._id ? {
+    I: common_vendor.o(($event) => $options.remove($data.formData._id), "c1")
   } : {
-    H: common_vendor.o(($event) => $options.submit("add"), "6d")
+    J: common_vendor.o(($event) => $options.submit("add"), "a6")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

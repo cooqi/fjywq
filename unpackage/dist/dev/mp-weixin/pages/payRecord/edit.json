@@ -3,6 +3,7 @@
   "enablePullDownRefresh": false,
   "navigationBarBackgroundColor": "#cff8f5",
   "usingComponents": {
-    "uni-datetime-picker": "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker"
+    "uni-datetime-picker": "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker",
+    "image-upload": "../../components/image-upload/image-upload"
   }
 }

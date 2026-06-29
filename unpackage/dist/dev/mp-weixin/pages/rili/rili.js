@@ -50,8 +50,12 @@ const _sfc_main = {
   },
   // 页面刷新方法
   onPullDownRefresh() {
-    this.getList(this.currentMonth);
-    this.useCommon();
+    Promise.all([
+      this.getList(this.currentMonth),
+      this.useCommon()
+    ]).finally(() => {
+      common_vendor.index.stopPullDownRefresh();
+    });
   },
   watch: {
     dayAboutInfo: {
@@ -137,15 +141,16 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      common_vendor._r.callFunction({
+      return common_vendor._r.callFunction({
         name: "rili-get",
         data: {
           month: m,
           year: y
         }
-      }).then((res) => {
+      }).then(async (res) => {
         common_vendor.index.hideLoading();
         this.allRili = JSON.parse(JSON.stringify(res.result.data));
+        await this.convertImageUrls(this.allRili);
         if (currentMonth === m) {
           this.time = this.formatDate(/* @__PURE__ */ new Date());
           this.getDetail();
@@ -160,15 +165,50 @@ const _sfc_main = {
           date: item.date,
           type: item.type
         }));
-        common_vendor.index.__f__("log", "at pages/rili/rili.vue:242", "特殊日期列表:", this.specialDateList);
+        common_vendor.index.__f__("log", "at pages/rili/rili.vue:248", "特殊日期列表:", this.specialDateList);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:249", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:255", err);
       });
+    },
+    async convertImageUrls(dataList) {
+      const cloudFileIDs = [];
+      const urlMap = {};
+      dataList.forEach((item, index) => {
+        if (item.imgurl) {
+          const fileIDs = item.imgurl.split(";").filter((img) => img);
+          fileIDs.forEach((fileID) => {
+            if (fileID.startsWith("cloud://")) {
+              cloudFileIDs.push(fileID);
+            } else {
+              urlMap[fileID] = fileID;
+            }
+          });
+        }
+      });
+      if (cloudFileIDs.length === 0)
+        return;
+      try {
+        const urlRes = await common_vendor._r.getTempFileURL({
+          fileList: cloudFileIDs
+        });
+        urlRes.fileList.forEach((item) => {
+          urlMap[item.fileID] = item.tempFileURL || item.fileID;
+        });
+        dataList.forEach((item) => {
+          if (item.imgurl) {
+            const fileIDs = item.imgurl.split(";").filter((img) => img);
+            const tempUrls = fileIDs.map((fileID) => urlMap[fileID] || fileID);
+            item.imgurl = tempUrls.join(";");
+          }
+        });
+      } catch (err) {
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:294", "获取图片临时URL失败:", err);
+      }
     },
     onClickItem(e) {
       if (this.current !== e.currentIndex) {
@@ -212,7 +252,7 @@ const _sfc_main = {
       }
     },
     useCommon() {
-      common_vendor._r.callFunction({
+      return common_vendor._r.callFunction({
         name: "welcome",
         data: {
           type: "get"
@@ -226,7 +266,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:319", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:364", err);
       });
     },
     toRedisPage() {
@@ -242,10 +282,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:336", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:381", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:339", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:384", err.errMsg);
           }
         }
       });

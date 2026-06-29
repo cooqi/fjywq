@@ -50,7 +50,7 @@
 				<view class="uni-form-item">
 					<text class="title">倒计时目标时间</text>
 					<uni-datetime-picker 
-						type="date" 
+						type="datetime" 
 						v-model="formData.is_countdown_date"
 						placeholder="请选择倒计时目标时间"
 					/>
@@ -74,6 +74,14 @@
 					<text class="title">图片</text>
 					<textarea class="uni-input" name="imgs" v-model="formData.imgs" placeholder="请输入" maxlength="1000"/>
 				</view>
+				<image-upload 
+					ref="imageUpload"
+					title="上传图片" 
+					optionalText="小程序会压缩图片，优先外链" 
+					maxCount="9"
+					uploadPath="notice"
+					:modelValue="formData.imgs"
+				></image-upload>
 				<view class="uni-form-item ">
 					<text class="title">url</text>
 					<textarea class="uni-input" name="imgs" v-model="formData.url" placeholder="请输入" maxlength="1000"/>
@@ -151,7 +159,26 @@
 			editInfo(item){
 				this.formData= {...item};
 			},
-			add() {
+			async add() {
+				if(!this.formData.title){
+					uni.showModal({
+						content: `请输入标题`,
+						showCancel: false
+					})
+					return
+				}
+				if(!this.formData.classType){
+					uni.showModal({
+						content: `请选择分类`,
+						showCancel: false
+					})
+					return
+				}
+				const isEdit = !!this.formData._id
+				const imgResult = await this.$refs.imageUpload.processImages(isEdit)
+				if (imgResult !== null) {
+					this.formData.imgs = imgResult
+				}
 				uni.showLoading({
 					title: '处理中...'
 				})
@@ -205,7 +232,26 @@
 					console.error(err)
 				})
 			},
-			update() {
+			async update() {
+				if(!this.formData.title){
+					uni.showModal({
+						content: `请输入标题`,
+						showCancel: false
+					})
+					return
+				}
+				if(!this.formData.classType){
+					uni.showModal({
+						content: `请选择分类`,
+						showCancel: false
+					})
+					return
+				}
+				const isEdit = !!this.formData._id
+				const imgResult = await this.$refs.imageUpload.processImages(isEdit)
+				if (imgResult !== null) {
+					this.formData.imgs = imgResult
+				}
 				let params = {...this.formData,update_czr:this.userInfo._id}
 				uni.showLoading({
 					title: '处理中...'
@@ -302,6 +348,9 @@
 					is_countdown: '',
 					is_countdown_date: ''
 					
+				}
+				if (this.$refs.imageUpload) {
+					this.$refs.imageUpload.clearImages()
 				}
 			}
 		}

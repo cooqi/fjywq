@@ -193,21 +193,14 @@
 				maxlength="200"></textarea>
 		</view>
 
-		<!-- 照片 功能完好，已测试，但是由于存库空间有限-->
-				<view class="section-box">
-					<view class="section-title">订单截图 <text class="optional">不建议在小程序储存图片，以防丢失</text></view>
-					<view class="upload-box">
-						<view class="upload-item" v-for="(img, index) in imageList" :key="index">
-							<image class="upload-image" :src="img" mode="aspectFill" @click="previewImage(index)"></image>
-							<view class="upload-delete" @click.stop="deleteImage(index)">×</view>
-						</view>
-						<view class="upload-add" @click="chooseImage" v-if="imageList.length < 1">
-							<text class="upload-add-icon">+</text>
-							<text class="upload-add-text">添加照片</text>
-							<text class="upload-add-count">{{imageList.length}}/1</text>
-						</view>
-					</view>
-				</view>
+		<image-upload 
+				ref="imageUpload"
+				title="订单截图" 
+				optionalText="不建议在小程序储存图片，以防丢失" 
+				maxCount="1"
+				uploadPath="payRecord"
+				:modelValue="formData.imgs"
+			></image-upload>
 		
 		<!-- 备注 -->
 		<view class="section-box">
@@ -225,8 +218,6 @@
 		</view>
 		
 		
-		<!-- 隐藏canvas用于图片压缩 -->
-		<canvas canvas-id="compressCanvas" style="width: 800px; height: 800px; position: fixed; left: -9999px; top: -9999px;"></canvas>
 	</view>
 </template>
 
@@ -259,8 +250,7 @@
 					isEntry: '', // 是否入场：1是/0否
 					SeatNumber: '' // 座位号
 				},
-				imageList: [],
-				originalFileIDs: [], // 存储原始的 fileID 列表
+				
 				showDatePicker: false,
 				userInfo: {
 					_id: ''
@@ -365,8 +355,9 @@
 					isEntry: '',
 					SeatNumber: ''
 				}
-				this.imageList = []
-				this.originalFileIDs = []
+				if (this.$refs.imageUpload) {
+					this.$refs.imageUpload.clearImages()
+				}
 				this.concertIndex = -1
 				this.selectedConcert = null
 			},
@@ -473,41 +464,7 @@
 					this.formData.payAmount = (price * num).toFixed(2)
 				}
 			},
-			chooseImage() {
-				uni.chooseImage({
-					count: 1,
-					sizeType: ['compressed'],
-					sourceType: ['album', 'camera'],
-					type: 'image',
-					success: async (res) => {
-						// 压缩图片
-						const compressedImages = []
-						for (let i = 0; i < res.tempFilePaths.length; i++) {
-							const compressedPath = await this.compressImage(res.tempFilePaths[i])
-							compressedImages.push(compressedPath)
-						}
-						this.imageList = this.imageList.concat(compressedImages)
-					}
-				})
-			},
-			deleteImage(index) {
-				this.imageList.splice(index, 1)
-			},
-			previewImage(index) {
-				uni.previewImage({
-					urls: this.imageList,
-					current: index,
-					longPressActions: {
-						itemList: ['发送给朋友', '保存图片', '收藏'],
-						success: function(data) {
-							console.log('选中了第' + (data.tapIndex + 1) + '个按钮,第' + (data.index + 1) + '张图片');
-						},
-						fail: function(err) {
-							console.log(err.errMsg);
-						}
-					}
-				});
-			},
+			
 			getRecordDetail(id) {
 				if (!this.userInfo._id) {
 					uni.showModal({
@@ -568,27 +525,7 @@
 							}
 						}
 														
-						// 如果有图片，需要将 fileID 转换为临时 URL
-						if (data.imgs) {
-							const fileIDs = data.imgs.split(';').filter(img => img)
-							this.originalFileIDs = fileIDs // 保存原始 fileID
-							console.log('需要转换的图片 fileIDs:', fileIDs)
-															
-							try {
-								const urlRes = await uniCloud.getTempFileURL({
-									fileList: fileIDs
-								})
-								console.log('获取临时URL成功:', urlRes)
-																
-								// 将临时 URL 赋值给 imageList
-								this.imageList = urlRes.fileList.map(item => item.tempFileURL)
-								console.log('图片列表:', this.imageList)
-							} catch (err) {
-								console.error('获取图片临时URL失败:', err)
-								// 如果失败，仍然使用 fileID（虽然无法显示）
-								this.imageList = fileIDs
-							}
-						}
+						
 					}
 				}).catch((err) => {
 					uni.hideLoading()
@@ -658,81 +595,10 @@
 					}
 				}
 							
-				// 处理图片：区分新图片和已有图片
-				let newImageFiles = [] // 需要上传的新图片（本地路径）
-				let keptFileIDs = [] // 保留的已有 fileID
-							
-				if (this.imageList.length > 0) {
-					// 创建一个映射表，将临时URL映射到fileID
-					const urlToFileIDMap = {}
-					if (this.originalFileIDs.length > 0 && this.imageList.length > 0) {
-						// 在编辑模式下，建立 URL -> fileID 的映射
-						// 注意：这里假设 imageList 中的 URL 顺序和 originalFileIDs 的顺序一致
-						for (let i = 0; i < this.imageList.length; i++) {
-							const imgPath = this.imageList[i]
-							// 如果是临时URL，说明是已有图片
-							if ((imgPath.startsWith('http://') || imgPath.startsWith('https://')) && this.originalFileIDs[i]) {
-								urlToFileIDMap[imgPath] = this.originalFileIDs[i]
-							}
-						}
-					}
-								
-					// 遍历当前图片列表
-					this.imageList.forEach((imgPath, index) => {
-						// 判断是临时URL还是本地文件路径
-						if ((imgPath.startsWith('http://') || imgPath.startsWith('https://')) && urlToFileIDMap[imgPath]) {
-							// 这是已有的图片（临时URL），使用映射表中的 fileID
-							keptFileIDs.push(urlToFileIDMap[imgPath])
-							console.log(`保留第${index + 1}张已有图片的fileID:`, urlToFileIDMap[imgPath])
-						} else {
-							// 这是新选择的图片（本地路径），需要上传
-							newImageFiles.push(imgPath)
-							console.log(`第${index + 1}张是新图片，需要上传`)
-						}
-					})
-				}
-							
-				console.log('保留的fileIDs:', keptFileIDs)
-				console.log('需要上传的新图片数量:', newImageFiles.length)
-							
-				// 上传新图片
-				if (newImageFiles.length > 0) {
-					uni.showLoading({
-						title: '上传中...'
-					})
-					try {
-						const uploadPromises = newImageFiles.map((filePath, index) => {
-							return uniCloud.uploadFile({
-								filePath: filePath,
-								cloudPath: `payRecord/${Date.now()}_${index}.jpg`
-							}).then(res => {
-								console.log(`新图片${index + 1}上传成功:`, res.fileID)
-								return res.fileID
-							})
-						})
-						const newFileIDs = await Promise.all(uploadPromises)
-									
-						// 合并保留的和新的 fileID
-						const allFileIDs = [...keptFileIDs, ...newFileIDs]
-						this.formData.imgs = allFileIDs.join(';')
-						console.log('最终所有图片fileIDs:', this.formData.imgs)
-					} catch (err) {
-						uni.hideLoading()
-						console.error('图片上传失败详情:', err)
-						uni.showModal({
-							content: `图片上传失败：${err.message || '未知错误'}`,
-							showCancel: false
-						})
-						return
-					}
-					uni.hideLoading()
-				} else {
-					// 没有新图片上传，但可能有删除操作
-					if (this.isEdit) {
-						// 编辑模式：使用保留的 fileID
-						this.formData.imgs = keptFileIDs.join(';')
-						console.log('没有新图片，保留的fileIDs:', this.formData.imgs)
-					}
+				// 处理图片
+				const imgResult = await this.$refs.imageUpload.processImages(this.isEdit)
+				if (imgResult !== null) {
+					this.formData.imgs = imgResult
 				}
 							
 				// 保存记录
@@ -827,78 +693,7 @@
 					}
 				})
 			},
-			// 压缩图片
-			compressImage(filePath) {
-				return new Promise((resolve, reject) => {
-					// 获取图片信息
-					uni.getImageInfo({
-						src: filePath,
-						success: (info) => {
-							console.log('原始图片信息:', info)
-									
-							// 使用 Canvas 进行等比例压缩（保证不变形）
-							this.compressImageByCanvas(filePath, info).then(resolve)
-						},
-						fail: (err) => {
-							console.error('获取图片信息失败', err)
-							resolve(filePath) // 失败返回原图
-						}
-					})
-				})
-			},
-			// Canvas 压缩（主方案）
-			compressImageByCanvas(filePath, info) {
-				return new Promise((resolve) => {
-					// 计算压缩后的尺寸（最大宽度500px，最大高度800px，保持宽高比）
-					let width = info.width
-					let height = info.height
-					const maxWidth = 500
-					const maxHeight = 800
-							
-					// 等比例缩放，确保不超过最大尺寸
-					if (width > maxWidth || height > maxHeight) {
-						const ratio = Math.min(maxWidth / width, maxHeight / height)
-						width = Math.round(width * ratio)
-						height = Math.round(height * ratio)
-					}
-							
-					console.log(`原始尺寸: ${info.width}x${info.height}, 压缩后: ${width}x${height}`)
-							
-					// 先填充白色背景（PNG转JPG防止透明区域变黑）
-					const ctx = uni.createCanvasContext('compressCanvas', this)
-					ctx.setFillStyle('#ffffff')
-					ctx.fillRect(0, 0, width, height)
-							
-					// 绘制图片（完整绘制整个图片到指定尺寸）
-					ctx.drawImage(filePath, 0, 0, width, height)
-							
-					ctx.draw(false, () => {
-						// 增加延迟确保绘制完成
-						setTimeout(() => {
-							uni.canvasToTempFilePath({
-								canvasId: 'compressCanvas',
-								quality: 0.6,
-								fileType: 'jpg',
-								// 指定导出区域，只导出绘制的内容部分
-								x: 0,
-								y: 0,
-								width: width,
-								height: height,
-								destWidth: width,
-								destHeight: height,
-								success: (res) => {
-									console.log('Canvas压缩成功:', res.tempFilePath)
-									resolve(res.tempFilePath)
-								},
-								fail: (err) => {
-									console.error('Canvas压缩失败', err)
-									resolve(filePath) // 压缩失败返回原图
-								}
-							}, this)
-						}, 500)
-					})
-				})
-			},
+			
 			// 检查是否重复添加
 			checkDuplicateRecord() {
 				return new Promise((resolve) => {
@@ -1198,66 +993,7 @@
 	color: #333;
 }
 
-.upload-box {
-	display: flex;
-	flex-wrap: wrap;
-	
-	.upload-item {
-		position: relative;
-		width: 160rpx;
-		height: 160rpx;
-		margin-right: 16rpx;
-		margin-bottom: 16rpx;
-		border-radius: 12rpx;
-		overflow: hidden;
-		
-		.upload-image {
-			width: 100%;
-			height: 100%;
-		}
-		
-		.upload-delete {
-			position: absolute;
-			top: 0;
-			right: 0;
-			width: 40rpx;
-			height: 40rpx;
-			background: rgba(0,0,0,0.6);
-			color: #fff;
-			font-size: 32rpx;
-			line-height: 40rpx;
-			text-align: center;
-		}
-	}
-	
-	.upload-add {
-		width: 160rpx;
-		height: 160rpx;
-		background: #f5f5f5;
-		border-radius: 12rpx;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		border: 2rpx dashed #ddd;
-		
-		.upload-add-icon {
-			font-size: 48rpx;
-			color: #999;
-		}
-		
-		.upload-add-text {
-			font-size: 24rpx;
-			color: #999;
-			margin-top: 8rpx;
-		}
-		
-		.upload-add-count {
-			font-size: 20rpx;
-			color: #bbb;
-		}
-	}
-}
+
 
 .textarea {
 	height: 120rpx;

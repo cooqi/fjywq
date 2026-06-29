@@ -377,13 +377,13 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     m: common_vendor.o((...args) => $options.goToTodo && $options.goToTodo(...args), "31"),
     n: common_vendor.o((...args) => $options.showMeetTypeDialog && $options.showMeetTypeDialog(...args), "54"),
     o: common_vendor.o((...args) => $options.goToPayRecord && $options.goToPayRecord(...args), "eb"),
-    p: common_vendor.o((...args) => $options.goToFootprint && $options.goToFootprint(...args), "ac"),
-    q: common_vendor.o((...args) => $options.goToSuggestion && $options.goToSuggestion(...args), "1c"),
+    p: common_vendor.o((...args) => $options.goToFootprint && $options.goToFootprint(...args), "24"),
+    q: common_vendor.o((...args) => $options.goToSuggestion && $options.goToSuggestion(...args), "d3"),
     r: $data.canManageConcert
   }, $data.canManageConcert ? {
-    s: common_vendor.o((...args) => $options.goToConcertAdmin && $options.goToConcertAdmin(...args), "b6")
+    s: common_vendor.o((...args) => $options.goToConcertAdmin && $options.goToConcertAdmin(...args), "79")
   } : {}, {
-    t: common_vendor.o((...args) => $options.showAbout && $options.showAbout(...args), "e0")
+    t: common_vendor.o((...args) => $options.showAbout && $options.showAbout(...args), "ba")
   }));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

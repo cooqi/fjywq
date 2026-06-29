@@ -33,9 +33,6 @@ const _sfc_main = {
         SeatNumber: ""
         // 座位号
       },
-      imageList: [],
-      originalFileIDs: [],
-      // 存储原始的 fileID 列表
       showDatePicker: false,
       userInfo: {
         _id: ""
@@ -58,7 +55,7 @@ const _sfc_main = {
   },
   onShow() {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
-    common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:289", "userInfo", userInfo);
+    common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:279", "userInfo", userInfo);
     this.userInfo = JSON.parse(userInfo);
     if (!this.userInfo._id) {
       common_vendor.index.navigateBack();
@@ -132,8 +129,9 @@ const _sfc_main = {
         isEntry: "",
         SeatNumber: ""
       };
-      this.imageList = [];
-      this.originalFileIDs = [];
+      if (this.$refs.imageUpload) {
+        this.$refs.imageUpload.clearImages();
+      }
       this.concertIndex = -1;
       this.selectedConcert = null;
     },
@@ -179,7 +177,7 @@ const _sfc_main = {
               displayName
             };
           });
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:422", "演唱会列表:", this.concertList);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:413", "演唱会列表:", this.concertList);
         } else {
           common_vendor.index.showToast({
             title: res.result.message || "加载失败",
@@ -188,7 +186,7 @@ const _sfc_main = {
         }
       }).catch((err) => {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:431", "加载演唱会列表失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:422", "加载演唱会列表失败", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -212,7 +210,7 @@ const _sfc_main = {
         this.formData.payName = this.selectedConcert.displayName;
         this.formData.adress = this.selectedConcert.Province + this.selectedConcert.address || "";
         this.formData.concertID = this.selectedConcert._id || "";
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:460", "选中的演唱会:", this.selectedConcert);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:451", "选中的演唱会:", this.selectedConcert);
       }
     },
     calculateTotal() {
@@ -227,40 +225,6 @@ const _sfc_main = {
         const num = parseInt(this.formData.payNum) || 1;
         this.formData.payAmount = (price * num).toFixed(2);
       }
-    },
-    chooseImage() {
-      common_vendor.index.chooseImage({
-        count: 1,
-        sizeType: ["compressed"],
-        sourceType: ["album", "camera"],
-        type: "image",
-        success: async (res) => {
-          const compressedImages = [];
-          for (let i = 0; i < res.tempFilePaths.length; i++) {
-            const compressedPath = await this.compressImage(res.tempFilePaths[i]);
-            compressedImages.push(compressedPath);
-          }
-          this.imageList = this.imageList.concat(compressedImages);
-        }
-      });
-    },
-    deleteImage(index) {
-      this.imageList.splice(index, 1);
-    },
-    previewImage(index) {
-      common_vendor.index.previewImage({
-        urls: this.imageList,
-        current: index,
-        longPressActions: {
-          itemList: ["发送给朋友", "保存图片", "收藏"],
-          success: function(data) {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:503", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
-          },
-          fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:506", err.errMsg);
-          }
-        }
-      });
     },
     getRecordDetail(id) {
       if (!this.userInfo._id) {
@@ -312,22 +276,6 @@ const _sfc_main = {
             if (matchedIndex > -1) {
               this.concertIndex = matchedIndex;
               this.selectedConcert = this.concertList[matchedIndex];
-            }
-          }
-          if (data.imgs) {
-            const fileIDs = data.imgs.split(";").filter((img) => img);
-            this.originalFileIDs = fileIDs;
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:575", "需要转换的图片 fileIDs:", fileIDs);
-            try {
-              const urlRes = await common_vendor._r.getTempFileURL({
-                fileList: fileIDs
-              });
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:581", "获取临时URL成功:", urlRes);
-              this.imageList = urlRes.fileList.map((item) => item.tempFileURL);
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:585", "图片列表:", this.imageList);
-            } catch (err) {
-              common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:587", "获取图片临时URL失败:", err);
-              this.imageList = fileIDs;
             }
           }
         }
@@ -388,63 +336,9 @@ const _sfc_main = {
           return;
         }
       }
-      let newImageFiles = [];
-      let keptFileIDs = [];
-      if (this.imageList.length > 0) {
-        const urlToFileIDMap = {};
-        if (this.originalFileIDs.length > 0 && this.imageList.length > 0) {
-          for (let i = 0; i < this.imageList.length; i++) {
-            const imgPath = this.imageList[i];
-            if ((imgPath.startsWith("http://") || imgPath.startsWith("https://")) && this.originalFileIDs[i]) {
-              urlToFileIDMap[imgPath] = this.originalFileIDs[i];
-            }
-          }
-        }
-        this.imageList.forEach((imgPath, index) => {
-          if ((imgPath.startsWith("http://") || imgPath.startsWith("https://")) && urlToFileIDMap[imgPath]) {
-            keptFileIDs.push(urlToFileIDMap[imgPath]);
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:686", `保留第${index + 1}张已有图片的fileID:`, urlToFileIDMap[imgPath]);
-          } else {
-            newImageFiles.push(imgPath);
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:690", `第${index + 1}张是新图片，需要上传`);
-          }
-        });
-      }
-      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:695", "保留的fileIDs:", keptFileIDs);
-      common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:696", "需要上传的新图片数量:", newImageFiles.length);
-      if (newImageFiles.length > 0) {
-        common_vendor.index.showLoading({
-          title: "上传中..."
-        });
-        try {
-          const uploadPromises = newImageFiles.map((filePath, index) => {
-            return common_vendor._r.uploadFile({
-              filePath,
-              cloudPath: `payRecord/${Date.now()}_${index}.jpg`
-            }).then((res) => {
-              common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:709", `新图片${index + 1}上传成功:`, res.fileID);
-              return res.fileID;
-            });
-          });
-          const newFileIDs = await Promise.all(uploadPromises);
-          const allFileIDs = [...keptFileIDs, ...newFileIDs];
-          this.formData.imgs = allFileIDs.join(";");
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:718", "最终所有图片fileIDs:", this.formData.imgs);
-        } catch (err) {
-          common_vendor.index.hideLoading();
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:721", "图片上传失败详情:", err);
-          common_vendor.index.showModal({
-            content: `图片上传失败：${err.message || "未知错误"}`,
-            showCancel: false
-          });
-          return;
-        }
-        common_vendor.index.hideLoading();
-      } else {
-        if (this.isEdit) {
-          this.formData.imgs = keptFileIDs.join(";");
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:734", "没有新图片，保留的fileIDs:", this.formData.imgs);
-        }
+      const imgResult = await this.$refs.imageUpload.processImages(this.isEdit);
+      if (imgResult !== null) {
+        this.formData.imgs = imgResult;
       }
       common_vendor.index.showLoading({
         title: "保存中..."
@@ -534,65 +428,6 @@ const _sfc_main = {
         }
       });
     },
-    // 压缩图片
-    compressImage(filePath) {
-      return new Promise((resolve, reject) => {
-        common_vendor.index.getImageInfo({
-          src: filePath,
-          success: (info) => {
-            common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:837", "原始图片信息:", info);
-            this.compressImageByCanvas(filePath, info).then(resolve);
-          },
-          fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:843", "获取图片信息失败", err);
-            resolve(filePath);
-          }
-        });
-      });
-    },
-    // Canvas 压缩（主方案）
-    compressImageByCanvas(filePath, info) {
-      return new Promise((resolve) => {
-        let width = info.width;
-        let height = info.height;
-        const maxWidth = 500;
-        const maxHeight = 800;
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:865", `原始尺寸: ${info.width}x${info.height}, 压缩后: ${width}x${height}`);
-        const ctx = common_vendor.index.createCanvasContext("compressCanvas", this);
-        ctx.setFillStyle("#ffffff");
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(filePath, 0, 0, width, height);
-        ctx.draw(false, () => {
-          setTimeout(() => {
-            common_vendor.index.canvasToTempFilePath({
-              canvasId: "compressCanvas",
-              quality: 0.6,
-              fileType: "jpg",
-              // 指定导出区域，只导出绘制的内容部分
-              x: 0,
-              y: 0,
-              width,
-              height,
-              destWidth: width,
-              destHeight: height,
-              success: (res) => {
-                common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:890", "Canvas压缩成功:", res.tempFilePath);
-                resolve(res.tempFilePath);
-              },
-              fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:894", "Canvas压缩失败", err);
-                resolve(filePath);
-              }
-            }, this);
-          }, 500);
-        });
-      });
-    },
     // 检查是否重复添加
     checkDuplicateRecord() {
       return new Promise((resolve) => {
@@ -611,7 +446,7 @@ const _sfc_main = {
             resolve(false);
           }
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:920", "检查重复记录失败", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:715", "检查重复记录失败", err);
           resolve(false);
         });
       });
@@ -620,11 +455,13 @@ const _sfc_main = {
 };
 if (!Array) {
   const _easycom_uni_datetime_picker2 = common_vendor.resolveComponent("uni-datetime-picker");
-  _easycom_uni_datetime_picker2();
+  const _easycom_image_upload2 = common_vendor.resolveComponent("image-upload");
+  (_easycom_uni_datetime_picker2 + _easycom_image_upload2)();
 }
 const _easycom_uni_datetime_picker = () => "../../uni_modules/uni-datetime-picker/components/uni-datetime-picker/uni-datetime-picker.js";
+const _easycom_image_upload = () => "../../components/image-upload/image-upload.js";
 if (!Math) {
-  _easycom_uni_datetime_picker();
+  (_easycom_uni_datetime_picker + _easycom_image_upload)();
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
@@ -710,26 +547,21 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}, {
     Z: $data.formData.sdUrl,
     aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "4b"),
-    ab: common_vendor.f($data.imageList, (img, index, i0) => {
-      return {
-        a: img,
-        b: common_vendor.o(($event) => $options.previewImage(index), index),
-        c: common_vendor.o(($event) => $options.deleteImage(index), index),
-        d: index
-      };
+    ab: common_vendor.sr("imageUpload", "eccb62d4-1"),
+    ac: common_vendor.p({
+      title: "订单截图",
+      optionalText: "不建议在小程序储存图片，以防丢失",
+      maxCount: "1",
+      uploadPath: "payRecord",
+      modelValue: $data.formData.imgs
     }),
-    ac: $data.imageList.length < 1
-  }, $data.imageList.length < 1 ? {
-    ad: common_vendor.t($data.imageList.length),
-    ae: common_vendor.o((...args) => $options.chooseImage && $options.chooseImage(...args), "92")
-  } : {}, {
-    af: $data.formData.bz,
-    ag: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "fc"),
-    ah: common_vendor.t($data.isEdit ? "更新记录" : "保存记录"),
-    ai: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "99"),
-    aj: $data.isEdit
+    ad: $data.formData.bz,
+    ae: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "69"),
+    af: common_vendor.t($data.isEdit ? "更新记录" : "保存记录"),
+    ag: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "81"),
+    ah: $data.isEdit
   }, $data.isEdit ? {
-    ak: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "bb")
+    ai: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "d5")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
