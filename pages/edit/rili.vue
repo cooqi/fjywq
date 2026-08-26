@@ -61,7 +61,7 @@
 						v-model="formData.bz" 
 						placeholder="请输入备注"
 						auto-height
-						maxlength="2000"
+						maxlength="4000"
 					/>
 				</view>
 				<view class="form-item">
