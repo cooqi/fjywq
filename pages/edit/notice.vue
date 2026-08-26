@@ -18,7 +18,7 @@
 				  </view>
 				  <view class="uni-form-item ">
 					<text class="title">内容</text>
-					<textarea class="uni-input" name="content" v-model="formData.content" placeholder="请输入"  maxlength="2000"/>
+					<textarea class="uni-input form-textarea" name="content" v-model="formData.content" placeholder="请输入" auto-height maxlength="2000"/>
 				  </view>
 				<view class="uni-form-item ">
 					<text class="title">置顶</text>
@@ -72,7 +72,7 @@
 				</view>
 				<view class="uni-form-item ">
 					<text class="title">图片</text>
-					<textarea class="uni-input" name="imgs" v-model="formData.imgs" placeholder="请输入" maxlength="1000"/>
+					<textarea class="uni-input form-textarea" name="imgs" v-model="formData.imgs" placeholder="请输入" auto-height maxlength="1000"/>
 				</view>
 				<image-upload 
 					ref="imageUpload"
@@ -84,11 +84,11 @@
 				></image-upload>
 				<view class="uni-form-item ">
 					<text class="title">url</text>
-					<textarea class="uni-input" name="imgs" v-model="formData.url" placeholder="请输入" maxlength="1000"/>
+					<textarea class="uni-input form-textarea" name="url" v-model="formData.url" placeholder="请输入" auto-height maxlength="1000"/>
 				</view>
 					<view class="uni-form-item">
 					  <text class="title">备注</text>
-					  <textarea name="bz" v-model="formData.bz" placeholder="请输入备注" style="background: #FFF;" />
+					  <textarea class="uni-input form-textarea" name="bz" v-model="formData.bz" placeholder="请输入备注" auto-height />
 					
 					</view>
 		        
@@ -377,4 +377,8 @@
 	   .title{color: cadetblue;}
 	   .uni-form-item{margin-bottom: 5px;}
 	   .flex-row{display: flex;}
+	   .form-textarea {
+	   	min-height: 80px;
+	   	line-height: 1.5;
+	   }
 </style>

@@ -70,6 +70,8 @@
 }
 .content .bz {
   color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .content .date {
   font-size: 40rpx;

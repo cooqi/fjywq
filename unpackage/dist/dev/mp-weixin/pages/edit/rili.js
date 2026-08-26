@@ -90,7 +90,7 @@ const _sfc_main = {
           content: `修改数据失败`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:251", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:255", err);
       });
     },
     async setImg() {
@@ -139,7 +139,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:300", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:304", err);
       });
     },
     remove(id) {
@@ -166,7 +166,7 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:328", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:332", err);
       });
     },
     async update() {
@@ -209,7 +209,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:372", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:376", err);
       });
     },
     submit(type) {
@@ -237,7 +237,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:402", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:406", err);
       });
     },
     clearForm() {
@@ -295,9 +295,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     k: $data.formData.bz,
     l: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "22"),
     m: $data.formData.type,
-    n: common_vendor.o(($event) => $data.formData.type = $event.detail.value, "6f"),
+    n: common_vendor.o(($event) => $data.formData.type = $event.detail.value, "7d"),
     o: $data.formData.imgurl,
-    p: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "4b"),
+    p: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "a9"),
     q: common_vendor.sr("imageUpload", "7559c173-2"),
     r: common_vendor.p({
       title: "上传图片",
@@ -308,18 +308,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     s: $data.formData._id
   }, $data.formData._id ? common_vendor.e({
-    t: common_vendor.o(($event) => $options.submit("update"), "b1"),
+    t: common_vendor.o(($event) => $options.submit("update"), "8d"),
     v: $options.isCalendarPermission("del")
   }, $options.isCalendarPermission("del") ? {
-    w: common_vendor.o(($event) => $options.remove($data.formData._id), "8f")
+    w: common_vendor.o(($event) => $options.remove($data.formData._id), "4b")
   } : {}, {
-    x: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "e2")
+    x: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "d8")
   }) : {
-    y: common_vendor.o(($event) => $options.submit("add"), "a8")
+    y: common_vendor.o(($event) => $options.submit("add"), "be")
   }, {
     z: $data.customGreeting.title,
-    A: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "12"),
-    B: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "d9")
+    A: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "60"),
+    B: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "5d")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

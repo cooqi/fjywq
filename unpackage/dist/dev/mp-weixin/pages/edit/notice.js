@@ -270,42 +270,42 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     e: $data.formData.title,
     f: common_vendor.o(($event) => $data.formData.title = $event.detail.value, "7f"),
     g: $data.formData.content,
-    h: common_vendor.o(($event) => $data.formData.content = $event.detail.value, "3b"),
+    h: common_vendor.o(($event) => $data.formData.content = $event.detail.value, "02"),
     i: $data.formData.top,
-    j: common_vendor.o(($event) => $data.formData.top = $event.detail.value, "6c"),
-    k: common_vendor.o(($event) => $data.formData.hide = $event, "c1"),
+    j: common_vendor.o(($event) => $data.formData.top = $event.detail.value, "eb"),
+    k: common_vendor.o(($event) => $data.formData.hide = $event, "0f"),
     l: common_vendor.p({
       localdata: $data.sf,
       modelValue: $data.formData.hide
     }),
-    m: common_vendor.o(($event) => $data.formData.is_today_important = $event, "4d"),
+    m: common_vendor.o(($event) => $data.formData.is_today_important = $event, "da"),
     n: common_vendor.p({
       localdata: $data.sf,
       modelValue: $data.formData.is_today_important
     }),
-    o: common_vendor.o(($event) => $data.formData.is_countdown = $event, "45"),
+    o: common_vendor.o(($event) => $data.formData.is_countdown = $event, "4d"),
     p: common_vendor.p({
       localdata: $data.sf,
       modelValue: $data.formData.is_countdown
     }),
-    q: common_vendor.o(($event) => $data.formData.is_countdown_date = $event, "7e"),
+    q: common_vendor.o(($event) => $data.formData.is_countdown_date = $event, "c7"),
     r: common_vendor.p({
       type: "datetime",
       placeholder: "请选择倒计时目标时间",
       modelValue: $data.formData.is_countdown_date
     }),
-    s: common_vendor.o(($event) => $data.formData.classType = $event, "c8"),
+    s: common_vendor.o(($event) => $data.formData.classType = $event, "8f"),
     t: common_vendor.p({
       localdata: $data.range2,
       modelValue: $data.formData.classType
     }),
-    v: common_vendor.o(($event) => $data.formData.type = $event, "77"),
+    v: common_vendor.o(($event) => $data.formData.type = $event, "91"),
     w: common_vendor.p({
       localdata: $data.range,
       modelValue: $data.formData.type
     }),
     x: $data.formData.imgs,
-    y: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "0d"),
+    y: common_vendor.o(($event) => $data.formData.imgs = $event.detail.value, "18"),
     z: common_vendor.sr("imageUpload", "726282d2-6"),
     A: common_vendor.p({
       title: "上传图片",
@@ -315,18 +315,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       modelValue: $data.formData.imgs
     }),
     B: $data.formData.url,
-    C: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "e0"),
+    C: common_vendor.o(($event) => $data.formData.url = $event.detail.value, "87"),
     D: $data.formData.bz,
-    E: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "1e"),
+    E: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "38"),
     F: $data.formData._id
   }, $data.formData._id ? {
-    G: common_vendor.o(($event) => $options.submit("update"), "3a")
+    G: common_vendor.o(($event) => $options.submit("update"), "05")
   } : {}, {
     H: $data.formData._id
   }, $data.formData._id ? {
-    I: common_vendor.o(($event) => $options.remove($data.formData._id), "c1")
+    I: common_vendor.o(($event) => $options.remove($data.formData._id), "4f")
   } : {
-    J: common_vendor.o(($event) => $options.submit("add"), "a6")
+    J: common_vendor.o(($event) => $options.submit("add"), "ee")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

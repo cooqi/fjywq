@@ -278,10 +278,16 @@
 		border-bottom:1px solid #ccc;
 		padding-bottom:10px ;
 		color: #010a09;
+		.uni-body {
+			white-space: pre-wrap;
+			word-break: break-word;
+		}
 	}
 	.bz{
 		color: #f7b606;
 		padding: 5px 0;
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
 	.title {
 		font-weight: bold;

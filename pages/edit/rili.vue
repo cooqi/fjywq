@@ -60,6 +60,8 @@
 						name="bz" 
 						v-model="formData.bz" 
 						placeholder="请输入备注"
+						auto-height
+						maxlength="2000"
 					/>
 				</view>
 				<view class="form-item">
@@ -79,6 +81,8 @@
 						name="imgurl" 
 						v-model="formData.imgurl" 
 						placeholder="请输入图片路径，多个用分号隔开"
+						auto-height
+						maxlength="2000"
 					/>
 				</view>
 				

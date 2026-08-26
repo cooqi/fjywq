@@ -445,6 +445,8 @@
 		}
 		.bz{
 			color: #333;
+			white-space: pre-wrap;
+			word-break: break-word;
 		}
 		.date{
 			font-size: 40rpx;

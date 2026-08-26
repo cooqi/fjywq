@@ -90,7 +90,7 @@
 					<view class="amount-label">原票价</view>
 					<input class="amount-input" 
 						type="digit"
-						v-model="formData.payPrice" 
+						v-model="formData.regular" 
 						placeholder="0.00"
 						@input="calculateTotal" />
 				</view>
@@ -213,8 +213,8 @@
 		
 		<!-- 操作按钮 -->
 		<view class="btn-box">
-			<button class="btn-save" @click="saveRecord">{{isEdit ? '更新记录' : '保存记录'}}</button>
-			<button class="btn-delete" v-if="isEdit" @click="deleteRecord">删除这条记录</button>
+			<button class="btn btn-save" @click="saveRecord">{{isEdit ? '更新记录' : '保存记录'}}</button>
+			<button class="btn btn-delete" v-if="isEdit" @click="deleteRecord">删除这条记录</button>
 		</view>
 		
 		
@@ -248,7 +248,8 @@
 					sdUrl:'',
 					concertID:'',
 					isEntry: '', // 是否入场：1是/0否
-					SeatNumber: '' // 座位号
+					SeatNumber: '', // 座位号
+					regular:''
 				},
 				
 				showDatePicker: false,
@@ -353,7 +354,8 @@
 					sdUrl: '',
 					concertID: '',
 					isEntry: '',
-					SeatNumber: ''
+					SeatNumber: '',
+					regular:''
 				}
 				if (this.$refs.imageUpload) {
 					this.$refs.imageUpload.clearImages()
@@ -421,6 +423,7 @@
 				// 如果选择未入场，清空票价相关字段
 				if (value === '否') {
 					this.formData.payPrice = ''
+					this.formData.regular=''
 					this.calculateTotal()
 				}
 			},
@@ -486,6 +489,8 @@
 							payName: data.payName || '',
 							payNum: data.payNum || '1',
 							payPrice: data.payPrice || '0',
+							regular:data.regular || '0',
+							formData:data.formData|| '0',
 							TransportationExpenses: data.TransportationExpenses || '0',
 							HotelExpenses: data.HotelExpenses || '0',
 							otherExpenses: data.otherExpenses || '0',
@@ -806,6 +811,7 @@
 	font-size: 28rpx;
 	line-height: 80rpx;
 	color: #333;
+	overflow: hidden;
 }
 
 .concert-info {
@@ -1008,6 +1014,12 @@
 	background: #fff;
 	box-shadow: 0 -4rpx 12rpx rgba(0,0,0,0.1);
 	z-index: 9999;
+	display: flex;
+	align-items: center;
+	.btn{
+		flex:1;
+		margin:0 5px;
+	}
 	
 	.btn-save {
 		width: 100%;
@@ -1027,7 +1039,6 @@
 		border: 2rpx solid #c62828;
 		border-radius: 44rpx;
 		font-size: 32rpx;
-		margin-top: 16rpx;
 	}
 }
 </style>

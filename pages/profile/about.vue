@@ -6,7 +6,7 @@
 		<view class="intro-section">
 			<view class="section-title">应用介绍</view>
 			<view class="intro-content">
-				<text>本款小程序是一款专为杯杯儿打造的备忘录记录工具，帮助你记录与偶像的每一次相遇。</text>
+				<text>本款小程序是一款专为杯杯儿打造的备忘录记录工具，帮助你记录与青宇的每一次相遇。</text>
 			</view>
 		</view>
 		
@@ -25,8 +25,8 @@
 			<view class="info-block">
 				<view class="block-title">演出场次数据库</view>
 				<view class="block-content">
-					<text>包含2025年至今的全部已举办/官宣/报批的演唱会、音乐节、拼盘演唱会。未来更多场次信息及歌单会持续更新同步。</text>
-					<text class="mt-20">综艺、线下商务、接送机等见面暂不纳入统计。取消场次不纳入统计。具体展示以当前数据库中的记录为准。</text>
+					<view>包含2025年至今的全部已举办/官宣/报批的演唱会、音乐节、拼盘演唱会。未来更多场次信息及歌单会持续更新同步。</view>
+					<view class="mt-20">综艺、线下商务、接送机等见面暂不纳入统计。取消场次不纳入统计。具体展示以当前数据库中的记录为准。</view>
 				</view>
 			</view>
 			
@@ -42,8 +42,8 @@
 			<view class="info-block">
 				<view class="block-title">数据统计规则</view>
 				<view class="block-content">
-					<text>「日历」上的粉色标记表示2025年及以后的糖点，是开发者亲自见证过的糖，大家放心食用；</text>
-					<text>「足迹」统计演出日期在今天及以前的已参加场次；</text>
+					<view>「日历」上的粉色标记是管理员/维护人员亲自见证过的糖，大家放心食用；</view>
+					<view>「足迹」统计演出日期在今天及以前的已参加场次；</view>
 				</view>
 			</view>
 
@@ -51,9 +51,9 @@
 			<view class="info-block">
 				<view class="block-title">其他说明</view>
 				<view class="block-content">
-					<text>转载、截图、登录都视为认同和青青宇宇是相亲相爱一家人</text>
-					<text>如果想永久注销，请联系我们，我们会尽快处理。</text>
-					<text>转载请注明出处，保留所有著作权声明</text>
+					<view>转载、截图、登录都视为认同和青青宇宇是相亲相爱一家人。</view>
+					<view>如果想永久注销，请联系我们，我们会尽快处理。</view>
+					<view>转载请注明出处，保留所有著作权声明</view>
 				</view>
 			</view>
 		</view>

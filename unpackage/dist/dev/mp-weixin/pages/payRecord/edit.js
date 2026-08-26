@@ -30,8 +30,9 @@ const _sfc_main = {
         concertID: "",
         isEntry: "",
         // 是否入场：1是/0否
-        SeatNumber: ""
+        SeatNumber: "",
         // 座位号
+        regular: ""
       },
       showDatePicker: false,
       userInfo: {
@@ -55,7 +56,7 @@ const _sfc_main = {
   },
   onShow() {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
-    common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:279", "userInfo", userInfo);
+    common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:280", "userInfo", userInfo);
     this.userInfo = JSON.parse(userInfo);
     if (!this.userInfo._id) {
       common_vendor.index.navigateBack();
@@ -127,7 +128,8 @@ const _sfc_main = {
         sdUrl: "",
         concertID: "",
         isEntry: "",
-        SeatNumber: ""
+        SeatNumber: "",
+        regular: ""
       };
       if (this.$refs.imageUpload) {
         this.$refs.imageUpload.clearImages();
@@ -175,7 +177,7 @@ const _sfc_main = {
               displayName
             };
           });
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:403", "演唱会列表:", this.concertList);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:405", "演唱会列表:", this.concertList);
         } else {
           common_vendor.index.showToast({
             title: res.result.message || "加载失败",
@@ -183,7 +185,7 @@ const _sfc_main = {
           });
         }
       }).catch((err) => {
-        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:411", "加载演唱会列表失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:413", "加载演唱会列表失败", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -195,6 +197,7 @@ const _sfc_main = {
       this.formData.isEntry = value;
       if (value === "否") {
         this.formData.payPrice = "";
+        this.formData.regular = "";
         this.calculateTotal();
       }
     },
@@ -207,7 +210,7 @@ const _sfc_main = {
         this.formData.payName = this.selectedConcert.displayName;
         this.formData.adress = this.selectedConcert.Province + this.selectedConcert.address || "";
         this.formData.concertID = this.selectedConcert._id || "";
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:440", "选中的演唱会:", this.selectedConcert);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:443", "选中的演唱会:", this.selectedConcert);
       }
     },
     calculateTotal() {
@@ -254,6 +257,8 @@ const _sfc_main = {
             payName: data.payName || "",
             payNum: data.payNum || "1",
             payPrice: data.payPrice || "0",
+            regular: data.regular || "0",
+            formData: data.formData || "0",
             TransportationExpenses: data.TransportationExpenses || "0",
             HotelExpenses: data.HotelExpenses || "0",
             otherExpenses: data.otherExpenses || "0",
@@ -453,7 +458,7 @@ const _sfc_main = {
             resolve(false);
           }
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:711", "检查重复记录失败", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:716", "检查重复记录失败", err);
           resolve(false);
         });
       });
@@ -522,12 +527,12 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   } : {}, {
     C: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
   }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? {
-    D: common_vendor.o([($event) => $data.formData.payPrice = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "29"),
-    E: $data.formData.payPrice,
+    D: common_vendor.o([($event) => $data.formData.regular = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "95"),
+    E: $data.formData.regular,
     F: common_vendor.o([($event) => $data.formData.payNum = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "59"),
     G: $data.formData.payNum,
     H: $data.formData.payPrice,
-    I: common_vendor.o(($event) => $data.formData.payPrice = $event.detail.value, "34"),
+    I: common_vendor.o(($event) => $data.formData.payPrice = $event.detail.value, "18"),
     J: common_vendor.o([($event) => $data.formData.TransportationExpenses = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "02"),
     K: $data.formData.TransportationExpenses,
     L: common_vendor.o([($event) => $data.formData.HotelExpenses = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "51"),
@@ -541,7 +546,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     S: $data.formData.payNum
   }, {
     T: common_vendor.t($data.formData.payAmount),
-    U: common_vendor.o(($event) => $data.formData.payTime = $event, "3b"),
+    U: common_vendor.o(($event) => $data.formData.payTime = $event, "da"),
     V: common_vendor.p({
       type: "date",
       placeholder: "请选择标时间",
@@ -550,10 +555,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     W: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
   }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? {
     X: $data.formData.adress,
-    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "df")
+    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "34")
   } : {}, {
     Z: $data.formData.sdUrl,
-    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "4b"),
+    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "fa"),
     ab: common_vendor.sr("imageUpload", "eccb62d4-1"),
     ac: common_vendor.p({
       title: "订单截图",
@@ -563,12 +568,12 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       modelValue: $data.formData.imgs
     }),
     ad: $data.formData.bz,
-    ae: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "69"),
+    ae: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "75"),
     af: common_vendor.t($data.isEdit ? "更新记录" : "保存记录"),
-    ag: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "81"),
+    ag: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "b7"),
     ah: $data.isEdit
   }, $data.isEdit ? {
-    ai: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "d5")
+    ai: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "fa")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
