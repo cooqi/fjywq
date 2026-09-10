@@ -131,6 +131,66 @@
   font-size: 15px;
   line-height: 1.5;
 }
+.form-section .date-extract-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #aaa1ce;
+  line-height: 1.5;
+}
+.form-section .related-date-picker {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 0 12px;
+}
+.form-section .related-dates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.form-section .date-tag {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #aaa1ce22, #e6cffc44);
+  border-radius: 16px;
+  padding: 4px 12px;
+}
+.form-section .date-tag .date-tag-text {
+  font-size: 13px;
+  color: #8b5cf6;
+}
+.form-section .date-tag .date-tag-remove {
+  font-size: 16px;
+  color: #fa709a;
+  margin-left: 6px;
+  line-height: 1;
+}
+.form-section .bz-extract-section {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  border: 1px dashed #aaa1ce;
+}
+.form-section .bz-extract-section .extract-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 8px;
+  display: block;
+}
+.form-section .bz-extract-section .extract-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.form-section .bz-extract-section .extract-date-item {
+  font-size: 13px;
+  color: #4facfe;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #4facfe44;
+}
 .form-section .form-actions {
   display: flex;
   gap: 12px;

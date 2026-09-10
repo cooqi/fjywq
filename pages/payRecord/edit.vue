@@ -3,7 +3,7 @@
 		<!-- 分类选择 -->
 		<view class="section-box">
 			<view class="section-title">分类</view>
-			<scroll-view scroll-x class="type-scroll">
+			<view class="type-wrap">
 				<view class="type-item" 
 					:class="{active: formData.payType === item, disabled: isEdit}" 
 					v-for="(item, index) in typeList" 
@@ -12,11 +12,11 @@
 					<view class="type-icon">{{getTypeIcon(item)}}</view>
 					<view class="type-name">{{item}}</view>
 				</view>
-			</scroll-view>
+			</view>
 		</view>
 		
 		<!-- 演唱会/音乐节选择（仅在选择音乐节或演唱会时显示） -->
-		<view class="section-box" v-if="formData.payType === '音乐节' || formData.payType === '演唱会'">
+		<view class="section-box" v-if="['音乐节', '演唱会', '见面会'].includes(formData.payType)">
 			<view class="section-title">选择场次 <text class="required">*</text></view>
 			<picker @change="onConcertChange" :value="concertIndex" :range="concertList" range-key="displayName">
 				<view class="form-picker">
@@ -73,7 +73,7 @@
 		</view>
 		
 		<!-- 基本信息（非音乐节/演唱会类型显示） -->
-		<view class="section-box" v-if="formData.payType !== '音乐节' && formData.payType !== '演唱会'">
+		<view class="section-box" v-if="formData.payType !== '音乐节' && formData.payType !== '演唱会' && formData.payType !== '见面会'">
 			<view class="section-title">名称</view>
 			<input class="input" 
 				v-model="formData.payName" 
@@ -85,7 +85,7 @@
 			<view class="section-title">金额</view>
 			
 			<!-- 音乐节/演唱会类型：显示详细的费用明细 -->
-			<template v-if="formData.payType === '音乐节' || formData.payType === '演唱会'">
+			<template v-if="formData.payType === '音乐节' || formData.payType === '演唱会' || formData.payType === '见面会'">
 				<view class="amount-item">
 					<view class="amount-label">原票价</view>
 					<input class="amount-input" 
@@ -174,8 +174,8 @@
 		</view>
 		
 		<!-- 地址（音乐节/演唱会类型，从选择的场次自动填充） -->
-		<view class="section-box" v-if="formData.payType === '音乐节' || formData.payType === '演唱会'">
-			<view class="section-title">演唱会/音乐节主办地址 <text class="optional">已自动填充</text></view>
+		<view class="section-box" v-if="formData.payType === '音乐节' || formData.payType === '演唱会' || formData.payType === '见面会'">
+			<view class="section-title">演唱会/音乐节/见面会主办地址 <text class="optional">已自动填充</text></view>
 			<input class="input" 
 				v-model="formData.adress" 
 				placeholder="地址将从选择的场次自动填充" 
@@ -227,7 +227,7 @@
 			return {
 				isEdit: false,
 				recordId: '',
-				typeList: ['音乐节', '演唱会', '周边', '专辑', '商务', '其他'],
+				typeList: ['音乐节', '演唱会', '见面会', '商务', '周边', '专辑', '其他'],
 				concertList: [], // 演唱会/音乐节列表
 				concertIndex: -1, // 选中的演唱会索引
 				selectedConcert: null, // 选中的演唱会对象
@@ -305,6 +305,7 @@
 				const iconMap = {
 					'音乐节': '🎵',
 					'演唱会': '🎤',
+					'见面会': '🤝',
 					'周边': '🧸',
 					'专辑': '💿',
 					'商务': '💼',
@@ -316,6 +317,7 @@
 				const placeholderMap = {
 					'音乐节': '如：迷笛音乐节 - 连云港',
 					'演唱会': '如：某某演唱会',
+					'见面会': '如：某某见面会',
 					'周边': '如：涂鸦森林黑胶',
 					'专辑': '如：专辑名称',
 					'商务': '如：ELLEMEN杂志',
@@ -331,7 +333,7 @@
 				
 				this.formData.payType = type
 				// 如果选择的是音乐节或演唱会，加载列表
-				if (type === '音乐节' || type === '演唱会') {
+				if (type === '音乐节' || type === '演唱会' || type === '见面会') {
 					this.loadConcertList()
 				}
 			},
@@ -444,7 +446,7 @@
 				}
 			},
 			calculateTotal() {
-				if (this.formData.payType === '音乐节' || this.formData.payType === '演唱会') {
+				if (this.formData.payType === '音乐节' || this.formData.payType === '演唱会' || this.formData.payType === '见面会') {
 					const payPrice = parseFloat(this.formData.payPrice) || 0
 					const transportation = parseFloat(this.formData.TransportationExpenses) || 0
 					const hotel = parseFloat(this.formData.HotelExpenses) || 0
@@ -506,7 +508,7 @@
 						}
 														
 						// 如果是音乐节或演唱会类型，需要加载列表并匹配选中的项
-						if (data.payType === '音乐节' || data.payType === '演唱会') {
+						if (data.payType === '音乐节' || data.payType === '演唱会' || data.payType === '见面会') {
 							await this.loadConcertList()
 							let matchedIndex = -1
 							if (data.concertID) {
@@ -546,11 +548,11 @@
 				}
 				
 				// 验证必填项
-				if (this.formData.payType === '音乐节' || this.formData.payType === '演唱会') {
-					// 音乐节/演唱会类型：必须选择场次
+				if (this.formData.payType === '音乐节' || this.formData.payType === '演唱会' || this.formData.payType === '见面会') {
+					// 音乐节/演唱会/见面会类型：必须选择场次
 					if (!this.selectedConcert) {
 						uni.showModal({
-							content: '请选择演唱会/音乐节场次',
+							content: '请选择演唱会/音乐节/见面会场次',
 							showCancel: false
 						})
 						return
@@ -756,17 +758,18 @@
 	}
 }
 
-.type-scroll {
-	white-space: nowrap;
+.type-wrap {
+	display: flex;
+	flex-wrap: wrap;
 	
 	.type-item {
-		display: inline-block;
-		width: 120rpx;
+		width: calc(25% - 16rpx);
 		text-align: center;
 		padding: 20rpx 10rpx;
-		margin-right: 16rpx;
+		margin: 8rpx;
 		background: #f5f5f5;
 		border-radius: 12rpx;
+		box-sizing: border-box;
 		
 		&.active {
 			background: linear-gradient(135deg, #66baea 0%, #a97bd6 100%);

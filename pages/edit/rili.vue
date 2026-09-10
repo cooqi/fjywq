@@ -63,6 +63,9 @@
 						auto-height
 						maxlength="4000"
 					/>
+					<view class="date-extract-hint">
+						<text>在备注中用【2024-01-01】格式包裹日期，可提取为关联日期</text>
+					</view>
 				</view>
 				<view class="form-item">
 					<text class="form-label">类型</text>
@@ -94,6 +97,39 @@
 						uploadPath="rili"
 						:modelValue="formData.imgurl"
 					></image-upload>
+				
+				<view class="form-item">
+					<text class="form-label">关联日期</text>
+					<view class="related-date-picker">
+						<uni-datetime-picker 
+							type="date" 
+							v-model="relatedDatePicker"
+							placeholder="选择日期添加"
+							@change="onRelatedDateChange"
+						/>
+					</view>
+					<view class="related-dates-list" v-if="formData.relatedDates.length">
+						<view 
+							class="date-tag" 
+							v-for="(d,i) in formData.relatedDates" 
+							:key="i"
+						>
+							<text class="date-tag-text">{{d}}</text>
+							<text class="date-tag-remove" @click="removeRelatedDate(i)">×</text>
+						</view>
+					</view>
+					<view class="bz-extract-section" v-if="getBzInlineDates().length">
+						<text class="extract-label">备注中发现的日期：</text>
+						<view class="extract-dates">
+							<text 
+								class="extract-date-item" 
+								v-for="(d,i) in getBzInlineDates()" 
+								:key="i"
+								@click="extractBzDate(d)"
+							>{{d}} +</text>
+						</view>
+					</view>
+				</view>
 				
 				<view class="form-actions" v-if="formData._id">
 					<button 
@@ -173,29 +209,47 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					bz:'',
 					date:'',
 					imgurl:'',
-					type:''
+					type:'',
+					relatedDates:[]
 				},
 				search:{
 					date:''
 				},
 				searchDatePicker: '',
 				formDatePicker: '',
+				relatedDatePicker: '',
 				customGreeting:{
 					title:''
 				},
 				userInfo:null,
 			}
 		},
-		onLoad() {
+		onLoad(options) {
 			const userInfo = uni.getStorageSync('userInfo');
 			this.userInfo=JSON.parse(userInfo)
+			if(options.itemData){
+				try {
+					const item = JSON.parse(decodeURIComponent(options.itemData))
+					this.editInfo(item)
+				} catch(e) {
+					console.error('解析编辑数据失败:', e)
+				}
+			}
 		},
 		methods:{
 			isCalendarPermission(type) {
 				return hasCalendarPermission(this.userInfo, type)
 			},
 			editInfo(data){
-				this.formData = {...data}
+				this.formData = {
+					_id: data._id || '',
+					title: data.title || '',
+					bz: data.bz || '',
+					date: data.date || '',
+					imgurl: data.imgurl || '',
+					type: data.type || '',
+				}
+				this.formData.relatedDates = data.relatedDates ? (typeof data.relatedDates === 'string' ? data.relatedDates.split(',').filter(d=>d) : (Array.isArray(data.relatedDates) ? data.relatedDates : [])) : []
 				this.formDatePicker = data.date ? this.formatToPicker(data.date) : ''
 			},
 			formatToPicker(dateStr) {
@@ -220,6 +274,47 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			},
 			onFormDateChange() {
 				this.formData.date = this.formatDate(this.formDatePicker)
+			},
+			onRelatedDateChange() {
+				if(!this.relatedDatePicker) return
+				const date = this.formatToPicker(this.relatedDatePicker)
+				if(date && !this.formData.relatedDates.includes(date)){
+					this.formData.relatedDates.push(date)
+				}
+				this.relatedDatePicker = ''
+			},
+			removeRelatedDate(index) {
+				this.formData.relatedDates.splice(index, 1)
+			},
+			getBzInlineDates() {
+				if(!this.formData.bz) return []
+				const regex = /【(\d{4}-\d{1,2}-\d{1,2})】/g
+				const dates = []
+				let match
+				while((match = regex.exec(this.formData.bz)) !== null){
+					if(this.isValidDate(match[1]) && !dates.includes(match[1])){
+						dates.push(match[1])
+					}
+				}
+				return dates.filter(d => !this.formData.relatedDates.includes(d))
+			},
+			extractBzDate(date) {
+				if(!this.formData.relatedDates.includes(date)){
+					this.formData.relatedDates.push(date)
+				}
+			},
+			isValidDate(dateStr) {
+				if(!dateStr) return false
+				const parts = dateStr.split('-')
+				if(parts.length !== 3) return false
+				const year = parseInt(parts[0])
+				const month = parseInt(parts[1])
+				const day = parseInt(parts[2])
+				if(month < 1 || month > 12) return false
+				const daysInMonth = new Date(year, month, 0).getDate()
+				if(day < 1 || day > daysInMonth) return false
+				const d = new Date(dateStr.replace(/-/g,'/'))
+				return !isNaN(d.getTime())
 			},
 			add_customGreeting(){
 				if(!this.customGreeting.title&&!this.customGreeting.bgcolor){
@@ -281,7 +376,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				uni.showLoading({
 					title: '处理中...'
 				})
-				let params = {...this.formData,add_czr:this.userInfo._id}
+				let params = {...this.formData, relatedDates: this.formData.relatedDates.join(','), add_czr:this.userInfo._id}
 				uniCloud.callFunction({
 					name: 'rili-add',
 					data: {
@@ -351,7 +446,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				uni.showLoading({
 					title: '处理中...'
 				})
-				let params = {...this.formData,update_czr:this.userInfo._id}
+				let params = {...this.formData, relatedDates: this.formData.relatedDates.join(','), update_czr:this.userInfo._id}
 				uniCloud.callFunction({
 					name: 'rili-add',
 					data: {
@@ -411,11 +506,13 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				delete this.formData._id
 				this.formDatePicker=''
 				this.searchDatePicker=''
+				this.relatedDatePicker=''
 
 				this.formData.date=''
 				this.formData.title=''
 				this.formData.bz=''
 				this.formData.imgurl=''
+				this.formData.relatedDates=[]
 				if (this.$refs.imageUpload) {
 					this.$refs.imageUpload.clearImages()
 				}
@@ -551,6 +648,76 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			padding: 12px;
 			font-size: 15px;
 			line-height: 1.5;
+		}
+	}
+	
+	.date-extract-hint {
+		margin-top: 8px;
+		font-size: 12px;
+		color: #aaa1ce;
+		line-height: 1.5;
+	}
+	
+	.related-date-picker {
+		background: #f5f7fa;
+		border-radius: 8px;
+		padding: 0 12px;
+	}
+	
+	.related-dates-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 10px;
+	}
+	
+	.date-tag {
+		display: flex;
+		align-items: center;
+		background: linear-gradient(135deg, #aaa1ce22, #e6cffc44);
+		border-radius: 16px;
+		padding: 4px 12px;
+		
+		.date-tag-text {
+			font-size: 13px;
+			color: #8b5cf6;
+		}
+		
+		.date-tag-remove {
+			font-size: 16px;
+			color: #fa709a;
+			margin-left: 6px;
+			line-height: 1;
+		}
+	}
+	
+	.bz-extract-section {
+		margin-top: 12px;
+		padding: 10px;
+		background: #f0f7ff;
+		border-radius: 8px;
+		border: 1px dashed #aaa1ce;
+		
+		.extract-label {
+			font-size: 12px;
+			color: #888;
+			margin-bottom: 8px;
+			display: block;
+		}
+		
+		.extract-dates {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		
+		.extract-date-item {
+			font-size: 13px;
+			color: #4facfe;
+			background: #fff;
+			padding: 4px 10px;
+			border-radius: 12px;
+			border: 1px solid #4facfe44;
 		}
 	}
 	

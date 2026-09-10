@@ -88,6 +88,13 @@ const _sfc_main = {
         url: "/pages/edit/rili"
       });
     },
+    editItem(item) {
+      if (!this.canEditCalendar)
+        return;
+      common_vendor.index.navigateTo({
+        url: "/pages/edit/rili?itemData=" + encodeURIComponent(JSON.stringify(item))
+      });
+    },
     setArr(date) {
       if (!date)
         return [];
@@ -165,14 +172,14 @@ const _sfc_main = {
           date: item.date,
           type: item.type
         }));
-        common_vendor.index.__f__("log", "at pages/rili/rili.vue:248", "特殊日期列表:", this.specialDateList);
+        common_vendor.index.__f__("log", "at pages/rili/rili.vue:277", "特殊日期列表:", this.specialDateList);
       }).catch((err) => {
         common_vendor.index.hideLoading();
         common_vendor.index.showModal({
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:255", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:284", err);
       });
     },
     async convertImageUrls(dataList) {
@@ -207,7 +214,7 @@ const _sfc_main = {
           }
         });
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:294", "获取图片临时URL失败:", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:323", "获取图片临时URL失败:", err);
       }
     },
     onClickItem(e) {
@@ -266,7 +273,7 @@ const _sfc_main = {
           content: `云函数use-common执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/rili/rili.vue:364", err);
+        common_vendor.index.__f__("error", "at pages/rili/rili.vue:393", err);
       });
     },
     toRedisPage() {
@@ -282,10 +289,10 @@ const _sfc_main = {
         longPressActions: {
           itemList: ["发送给朋友", "保存图片", "收藏"],
           success: function(data) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:381", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:410", "选中了第" + (data.tapIndex + 1) + "个按钮,第" + (data.index + 1) + "张图片");
           },
           fail: function(err) {
-            common_vendor.index.__f__("log", "at pages/rili/rili.vue:384", err.errMsg);
+            common_vendor.index.__f__("log", "at pages/rili/rili.vue:413", err.errMsg);
           }
         }
       });
@@ -294,6 +301,48 @@ const _sfc_main = {
       common_vendor.index.navigateTo({
         url: "/pages/rili/search"
       });
+    },
+    parseBz(bz) {
+      if (!bz)
+        return [{ text: "", isDate: false }];
+      const segments = [];
+      const regex = /【(\d{4}-\d{1,2}-\d{1,2})】/g;
+      let lastIndex = 0;
+      let match;
+      while ((match = regex.exec(bz)) !== null) {
+        if (match.index > lastIndex) {
+          segments.push({ text: bz.slice(lastIndex, match.index), isDate: false });
+        }
+        segments.push({ text: match[1], isDate: true });
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < bz.length) {
+        segments.push({ text: bz.slice(lastIndex), isDate: false });
+      }
+      return segments.length ? segments : [{ text: bz, isDate: false }];
+    },
+    navigateToDate(dateStr) {
+      if (!dateStr)
+        return;
+      const parts = dateStr.split("-");
+      if (parts.length !== 3)
+        return;
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      const day = parseInt(parts[2]);
+      const formattedDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const cal = this.$refs.calendar;
+      if (cal) {
+        cal.y = year;
+        cal.m = month - 1;
+        cal.dates = cal.monthDay(cal.y, cal.m);
+        cal.choose = `${year}-${month}-${day}`;
+      }
+      this.time = formattedDate;
+      this.getDetail(formattedDate);
+      if (this.currentMonth !== month) {
+        this.getList(month, year);
+      }
     }
   }
 };
@@ -310,11 +359,12 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o($options.handleDateClick, "1a"),
-    b: common_vendor.o($options.handleTodayPlanClick, "1f"),
-    c: common_vendor.o($options.yearMonthChange, "ec"),
-    d: common_vendor.o($options.MonthChange, "2f"),
-    e: common_vendor.p({
+    a: common_vendor.sr("calendar", "1000e66e-0"),
+    b: common_vendor.o($options.handleDateClick, "67"),
+    c: common_vendor.o($options.handleTodayPlanClick, "d2"),
+    d: common_vendor.o($options.yearMonthChange, "b4"),
+    e: common_vendor.o($options.MonthChange, "f4"),
+    f: common_vendor.p({
       ["show-top-section"]: true,
       ["greeting-text"]: $data.customGreeting,
       ["signed-dates"]: $data.signedDates,
@@ -323,44 +373,70 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       open: true,
       bgcolorGreeting: $data.bgcolorGreeting
     }),
-    f: common_vendor.o($options.onClickItem, "8b"),
-    g: common_vendor.p({
+    g: common_vendor.o($options.onClickItem, "f6"),
+    h: common_vendor.p({
       current: $data.current,
       values: $data.items,
       ["style-type"]: "text"
     }),
-    h: $data.current === 0
+    i: $data.current === 0
   }, $data.current === 0 ? common_vendor.e({
-    i: common_vendor.t($data.time),
-    j: $data.dayText
+    j: common_vendor.t($data.time),
+    k: $data.dayText
   }, $data.dayText ? {
-    k: common_vendor.t($data.dayText)
+    l: common_vendor.t($data.dayText)
   } : {}, {
-    l: common_vendor.f($data.dayInfo, (item, k0, i0) => {
+    m: common_vendor.f($data.dayInfo, (item, k0, i0) => {
       return common_vendor.e({
         a: item.type == 2
       }, item.type == 2 ? {} : {}, {
         b: common_vendor.t(item.title),
         c: common_vendor.n("title_" + item.type),
-        d: item.bz,
-        e: item.imgurl
+        d: common_vendor.o(($event) => $options.editItem(item), item._id),
+        e: common_vendor.f($options.parseBz(item.bz), (seg, si, i1) => {
+          return common_vendor.e({
+            a: seg.isDate
+          }, seg.isDate ? {
+            b: common_vendor.t(seg.text),
+            c: "d-" + si,
+            d: common_vendor.o(($event) => $options.navigateToDate(seg.text), "d-" + si)
+          } : {
+            e: common_vendor.t(seg.text),
+            f: "t-" + si
+          });
+        }),
+        f: item.relatedDates
+      }, item.relatedDates ? {
+        g: common_vendor.f(item.relatedDates.split(","), (d, di, i1) => {
+          return {
+            a: common_vendor.t(d),
+            b: di,
+            c: common_vendor.o(($event) => $options.navigateToDate(d), di)
+          };
+        }),
+        h: common_vendor.o(() => {
+        }, item._id)
+      } : {}, {
+        i: item.imgurl
       }, item.imgurl ? {
-        f: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+        j: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
           return {
             a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), index),
             b: index,
             c: img
           };
-        })
+        }),
+        k: common_vendor.o(() => {
+        }, item._id)
       } : {}, {
-        g: item._id
+        l: item._id
       });
     }),
-    m: !$data.dayInfo.length
+    n: !$data.dayInfo.length
   }, !$data.dayInfo.length ? {} : {}) : {}, {
-    n: $data.current === 1
+    o: $data.current === 1
   }, $data.current === 1 ? common_vendor.e({
-    o: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
+    p: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
       return common_vendor.e({
         a: item.date
       }, item.date ? {
@@ -379,32 +455,58 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       }, item.type == 2 ? {} : {}, {
         f: common_vendor.t(item.title),
         g: common_vendor.n("title_" + item.type),
-        h: item.bz,
-        i: item.imgurl
+        h: common_vendor.o(($event) => $options.editItem(item), item._id),
+        i: common_vendor.f($options.parseBz(item.bz), (seg, si, i1) => {
+          return common_vendor.e({
+            a: seg.isDate
+          }, seg.isDate ? {
+            b: common_vendor.t(seg.text),
+            c: "d-" + si,
+            d: common_vendor.o(($event) => $options.navigateToDate(seg.text), "d-" + si)
+          } : {
+            e: common_vendor.t(seg.text),
+            f: "t-" + si
+          });
+        }),
+        j: item.relatedDates
+      }, item.relatedDates ? {
+        k: common_vendor.f(item.relatedDates.split(","), (d, di, i1) => {
+          return {
+            a: common_vendor.t(d),
+            b: di,
+            c: common_vendor.o(($event) => $options.navigateToDate(d), di)
+          };
+        }),
+        l: common_vendor.o(() => {
+        }, item._id)
+      } : {}, {
+        m: item.imgurl
       }, item.imgurl ? {
-        j: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+        n: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
           return {
             a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), index),
             b: index,
             c: img
           };
-        })
+        }),
+        o: common_vendor.o(() => {
+        }, item._id)
       } : {}, {
-        k: item._id
+        p: item._id
       });
     }),
-    p: !$data.dayAboutInfo.length
+    q: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
-    q: $data.canEditCalendar
+    r: $data.canEditCalendar
   }, $data.canEditCalendar ? {
-    r: common_vendor.o((...args) => $options.edit && $options.edit(...args), "79")
+    s: common_vendor.o((...args) => $options.edit && $options.edit(...args), "85")
   } : {}, {
-    s: common_vendor.p({
+    t: common_vendor.p({
       type: "search",
       size: "24",
       color: "#fff"
     }),
-    t: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "5f")
+    v: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "85")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

@@ -10,6 +10,7 @@ const _sfc_main = {
         { label: "全部", value: "all" },
         { label: "演唱会", value: "演唱会" },
         { label: "音乐节", value: "音乐节" },
+        { label: "见面会", value: "见面会" },
         { label: "其他", value: "其他" }
       ],
       provinceList: [
@@ -123,7 +124,7 @@ const _sfc_main = {
           this.loading = false;
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("error", "at pages/concert/admin.vue:259", "加载失败", err);
+          common_vendor.index.__f__("error", "at pages/concert/admin.vue:260", "加载失败", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -228,7 +229,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("error", "at pages/concert/admin.vue:376", "删除失败", err);
+                common_vendor.index.__f__("error", "at pages/concert/admin.vue:377", "删除失败", err);
                 common_vendor.index.showToast({
                   title: "删除失败",
                   icon: "none"
@@ -280,7 +281,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("error", "at pages/concert/admin.vue:433", "保存失败", err);
+          common_vendor.index.__f__("error", "at pages/concert/admin.vue:434", "保存失败", err);
           common_vendor.index.showToast({
             title: "保存失败",
             icon: "none"

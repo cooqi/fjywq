@@ -165,6 +165,7 @@
 					{ label: '全部', value: 'all' },
 					{ label: '演唱会', value: '演唱会' },
 					{ label: '音乐节', value: '音乐节' },
+					{ label: '见面会', value: '见面会' },
 					{ label: '其他', value: '其他' }
 				],
 				provinceList: [

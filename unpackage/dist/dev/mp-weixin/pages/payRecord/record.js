@@ -10,9 +10,10 @@ const _sfc_main = {
         { label: "全部", value: "all" },
         { label: "音乐节", value: "音乐节" },
         { label: "演唱会", value: "演唱会" },
+        { label: "见面会", value: "见面会" },
+        { label: "商务", value: "商务" },
         { label: "周边", value: "周边" },
         { label: "专辑", value: "专辑" },
-        { label: "商务", value: "商务" },
         { label: "其他", value: "其他" }
       ],
       currentType: "all",
@@ -26,7 +27,7 @@ const _sfc_main = {
   },
   onShow() {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
-    common_vendor.index.__f__("log", "at pages/payRecord/record.vue:79", "userInfo", userInfo);
+    common_vendor.index.__f__("log", "at pages/payRecord/record.vue:80", "userInfo", userInfo);
     this.userInfo = JSON.parse(userInfo);
     if (this.userInfo._id) {
       this.getRecords();
@@ -46,7 +47,7 @@ const _sfc_main = {
         desc: "用于完善会员资料",
         success: (result) => {
           _this.userInfo = result.userInfo;
-          common_vendor.index.__f__("log", "at pages/payRecord/record.vue:98", _this.userInfo);
+          common_vendor.index.__f__("log", "at pages/payRecord/record.vue:99", _this.userInfo);
           _this.wxLogin();
         },
         fail: () => {
@@ -64,7 +65,7 @@ const _sfc_main = {
       common_vendor.index.login({
         provider: "weixin",
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/payRecord/record.vue:112", "login", res);
+          common_vendor.index.__f__("log", "at pages/payRecord/record.vue:113", "login", res);
           if (res.code) {
             common_vendor._r.callFunction({
               name: "user",
@@ -74,7 +75,7 @@ const _sfc_main = {
                 user_info: _this.userInfo
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/payRecord/record.vue:122", "云函数返回的值：：：：", res2.result);
+                common_vendor.index.__f__("log", "at pages/payRecord/record.vue:123", "云函数返回的值：：：：", res2.result);
                 common_vendor.index.hideLoading();
                 if (res2.result.result.result._id) {
                   common_vendor.index.setStorageSync("userInfo", JSON.stringify(res2.result.result.result));
@@ -85,7 +86,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("log", "at pages/payRecord/record.vue:132", "云函数调用失败", err);
+                common_vendor.index.__f__("log", "at pages/payRecord/record.vue:133", "云函数调用失败", err);
               }
             });
           }
@@ -118,7 +119,7 @@ const _sfc_main = {
           this.totalCount = res.result.data.count;
         }
       }).catch((err) => {
-        common_vendor.index.__f__("error", "at pages/payRecord/record.vue:166", "获取统计失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/record.vue:167", "获取统计失败", err);
       });
     },
     getRecords() {
@@ -206,7 +207,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     e: !$data.list.length && !$data.loading
   }, !$data.list.length && !$data.loading ? {} : {}, {
-    f: common_vendor.o((...args) => $options.addRecord && $options.addRecord(...args), "42")
+    f: common_vendor.o((...args) => $options.addRecord && $options.addRecord(...args), "36")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

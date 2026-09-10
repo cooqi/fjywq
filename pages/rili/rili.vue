@@ -2,6 +2,7 @@
 	<view class="page-container">
 	<view class="calendar">
 		  <EmbedCalendar
+			ref="calendar"
 		    :show-top-section="true"
 		    :greeting-text="customGreeting"
 		    :signed-dates="signedDates"
@@ -23,30 +24,52 @@
 		
 		<view v-if="current === 0" class="today">
 			<view class="date">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
-			<view v-for="item in dayInfo" :key="item._id" class="event-card today">
-				<view :class="['title','title_'+item.type]">
+			<view v-for="item in dayInfo" :key="item._id" class="event-card today" hover-class="event-card-hover">
+				<view :class="['title','title_'+item.type]"  @click="editItem(item)">
 					<text v-if="item.type == 2" class="lollipop-icon">🍭</text>
 					{{item.title}}
 				</view>
-				<view class="bz" v-html="item.bz"></view>
-				<view class="imgs" v-if="item.imgurl">
+				<view class="bz">
+					<template v-for="(seg, si) in parseBz(item.bz)">
+						<text v-if="seg.isDate" :key="'d-'+si" class="inline-date" @click.stop="navigateToDate(seg.text)">{{seg.text}}</text>
+						<text v-else :key="'t-'+si">{{seg.text}}</text>
+					</template>
+				</view>
+				<view class="related-dates" v-if="item.relatedDates" @click.stop>
+					<text class="related-dates-label">📅 关联日期</text>
+					<view class="related-dates-tags">
+						<text class="related-date-tag" v-for="(d,di) in item.relatedDates.split(',')" :key="di" @click="navigateToDate(d)">{{d}}</text>
+					</view>
+				</view>
+				<view class="imgs" v-if="item.imgurl" @click.stop>
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
 				</view>
 			</view>
 			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员，但你不一定联系得上</view>
 		</view>
 		<view v-if="current === 1" class="about">
-			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card ">
+			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card " hover-class="event-card-hover" >
 				<view class="date" v-if="item.date">
-					<text v-for="(t,i) in setArr(item.date)" :key="i"><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
+					<text v-for="(t,i) in setArr(item.date)" :key="i" ><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
 					<text v-show="item.distanceInfo.displayText" class="displayText">{{item.distanceInfo.displayText}}</text>
 				</view>
-				<view :class="['title','title_'+item.type]">
+				<view :class="['title','title_'+item.type]" @click="editItem(item)">
 					<text v-if="item.type == 2" class="lollipop-icon">🍭</text>
 					{{item.title}}
 				</view>
-				<view class="bz" v-html="item.bz"></view>
-				<view class="imgs" v-if="item.imgurl">
+				<view class="bz">
+					<template v-for="(seg, si) in parseBz(item.bz)">
+						<text v-if="seg.isDate" :key="'d-'+si" class="inline-date" @click.stop="navigateToDate(seg.text)">{{seg.text}}</text>
+						<text v-else :key="'t-'+si">{{seg.text}}</text>
+					</template>
+				</view>
+				<view class="related-dates" v-if="item.relatedDates" @click.stop>
+					<text class="related-dates-label">📅 关联日期</text>
+					<view class="related-dates-tags">
+						<text class="related-date-tag" v-for="(d,di) in item.relatedDates.split(',')" :key="di" @click="navigateToDate(d)">{{d}}</text>
+					</view>
+				</view>
+				<view class="imgs" v-if="item.imgurl" @click.stop>
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
 				</view>
 			</view>
@@ -150,6 +173,12 @@
 			edit(){
 				uni.navigateTo({
 					url: '/pages/edit/rili'
+				});
+			},
+			editItem(item){
+				if(!this.canEditCalendar) return
+				uni.navigateTo({
+					url: '/pages/edit/rili?itemData=' + encodeURIComponent(JSON.stringify(item))
 				});
 			},
 			setArr(date){
@@ -390,6 +419,50 @@
 				uni.navigateTo({
 					url: '/pages/rili/search'
 				});
+			},
+			parseBz(bz) {
+				if(!bz) return [{text:'', isDate:false}]
+				const segments = []
+				const regex = /【(\d{4}-\d{1,2}-\d{1,2})】/g
+				let lastIndex = 0
+				let match
+				while((match = regex.exec(bz)) !== null) {
+					if(match.index > lastIndex) {
+						segments.push({text: bz.slice(lastIndex, match.index), isDate: false})
+					}
+					segments.push({text: match[1], isDate: true})
+					lastIndex = match.index + match[0].length
+				}
+				if(lastIndex < bz.length) {
+					segments.push({text: bz.slice(lastIndex), isDate: false})
+				}
+				return segments.length ? segments : [{text: bz, isDate: false}]
+			},
+			navigateToDate(dateStr) {
+				if(!dateStr) return
+				const parts = dateStr.split('-')
+				if(parts.length !== 3) return
+				const year = parseInt(parts[0])
+				const month = parseInt(parts[1])
+				const day = parseInt(parts[2])
+				const formattedDate = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+				
+				// 跳转日历到目标月份
+				const cal = this.$refs.calendar
+				if(cal) {
+					cal.y = year
+					cal.m = month - 1
+					cal.dates = cal.monthDay(cal.y, cal.m)
+					cal.choose = `${year}-${month}-${day}`
+				}
+				
+				this.time = formattedDate
+				this.getDetail(formattedDate)
+				
+				// 如果月份变了，需要重新加载该月数据
+				if(this.currentMonth !== month) {
+					this.getList(month, year)
+				}
 			}
 		}
 	}
@@ -447,6 +520,7 @@
 			color: #333;
 			white-space: pre-wrap;
 			word-break: break-word;
+			line-height: 1.6;
 		}
 		.date{
 			font-size: 40rpx;
@@ -477,6 +551,7 @@
 		margin: 16rpx 0;
 		box-shadow: 0 0 8rpx 5rpx rgba(0, 0, 0, 0.06);
 		border-left: 10rpx solid #8b5cf6;
+		position: relative;
 		&.today{
 			border-left: 10rpx solid #8bf5ee;
 		background:linear-gradient(135deg, rgba(159, 255, 255, 0.3) 0%, rgba(143, 51, 248, 0.2) 80% ,rgba(143, 51, 248, 0.4) 90%, rgba(143, 51, 248, 0.8) 95%, rgba(143, 51, 248, .9) 100%);
@@ -499,6 +574,10 @@
 			color: #718096;
 			line-height: 1.6;
 		}
+	}
+	.event-card-hover {
+		opacity: 0.85;
+		transform: scale(0.98);
 	}
 	.displayText{
 		font-weight: 400;
@@ -573,6 +652,42 @@
 		align-items: center;
 		font-size: 20px;
 		color: #999;
+	}
+	.inline-date {
+		color: #4facfe;
+		background: rgba(79, 172, 254, 0.1);
+		padding: 2rpx 12rpx;
+		border-radius: 8rpx;
+		border: 1rpx solid rgba(79, 172, 254, 0.3);
+		font-size: 28rpx;
+		margin: 0 4rpx;
+	}
+	.related-dates {
+		margin-top: 16rpx;
+		padding-top: 16rpx;
+		border-top: 1rpx dashed rgba(139, 92, 246, 0.2);
+		
+		.related-dates-label {
+			font-size: 24rpx;
+			color: #8b5cf6;
+			margin-bottom: 12rpx;
+			display: block;
+		}
+		
+		.related-dates-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12rpx;
+		}
+		
+		.related-date-tag {
+			font-size: 24rpx;
+			color: #8b5cf6;
+			background: rgba(139, 92, 246, 0.1);
+			padding: 6rpx 16rpx;
+			border-radius: 20rpx;
+			border: 1rpx solid rgba(139, 92, 246, 0.25);
+		}
 	}
 	.imgs{
 		display: flex;

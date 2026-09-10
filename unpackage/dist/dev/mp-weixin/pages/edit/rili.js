@@ -10,29 +10,47 @@ const _sfc_main = {
         bz: "",
         date: "",
         imgurl: "",
-        type: ""
+        type: "",
+        relatedDates: []
       },
       search: {
         date: ""
       },
       searchDatePicker: "",
       formDatePicker: "",
+      relatedDatePicker: "",
       customGreeting: {
         title: ""
       },
       userInfo: null
     };
   },
-  onLoad() {
+  onLoad(options) {
     const userInfo = common_vendor.index.getStorageSync("userInfo");
     this.userInfo = JSON.parse(userInfo);
+    if (options.itemData) {
+      try {
+        const item = JSON.parse(decodeURIComponent(options.itemData));
+        this.editInfo(item);
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:235", "解析编辑数据失败:", e);
+      }
+    }
   },
   methods: {
     isCalendarPermission(type) {
       return common_js_permission.hasCalendarPermission(this.userInfo, type);
     },
     editInfo(data) {
-      this.formData = { ...data };
+      this.formData = {
+        _id: data._id || "",
+        title: data.title || "",
+        bz: data.bz || "",
+        date: data.date || "",
+        imgurl: data.imgurl || "",
+        type: data.type || ""
+      };
+      this.formData.relatedDates = data.relatedDates ? typeof data.relatedDates === "string" ? data.relatedDates.split(",").filter((d) => d) : Array.isArray(data.relatedDates) ? data.relatedDates : [] : [];
       this.formDatePicker = data.date ? this.formatToPicker(data.date) : "";
     },
     formatToPicker(dateStr) {
@@ -59,6 +77,53 @@ const _sfc_main = {
     },
     onFormDateChange() {
       this.formData.date = this.formatDate(this.formDatePicker);
+    },
+    onRelatedDateChange() {
+      if (!this.relatedDatePicker)
+        return;
+      const date = this.formatToPicker(this.relatedDatePicker);
+      if (date && !this.formData.relatedDates.includes(date)) {
+        this.formData.relatedDates.push(date);
+      }
+      this.relatedDatePicker = "";
+    },
+    removeRelatedDate(index) {
+      this.formData.relatedDates.splice(index, 1);
+    },
+    getBzInlineDates() {
+      if (!this.formData.bz)
+        return [];
+      const regex = /【(\d{4}-\d{1,2}-\d{1,2})】/g;
+      const dates = [];
+      let match;
+      while ((match = regex.exec(this.formData.bz)) !== null) {
+        if (this.isValidDate(match[1]) && !dates.includes(match[1])) {
+          dates.push(match[1]);
+        }
+      }
+      return dates.filter((d) => !this.formData.relatedDates.includes(d));
+    },
+    extractBzDate(date) {
+      if (!this.formData.relatedDates.includes(date)) {
+        this.formData.relatedDates.push(date);
+      }
+    },
+    isValidDate(dateStr) {
+      if (!dateStr)
+        return false;
+      const parts = dateStr.split("-");
+      if (parts.length !== 3)
+        return false;
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      const day = parseInt(parts[2]);
+      if (month < 1 || month > 12)
+        return false;
+      const daysInMonth = new Date(year, month, 0).getDate();
+      if (day < 1 || day > daysInMonth)
+        return false;
+      const d = new Date(dateStr.replace(/-/g, "/"));
+      return !isNaN(d.getTime());
     },
     add_customGreeting() {
       if (!this.customGreeting.title && !this.customGreeting.bgcolor) {
@@ -90,7 +155,7 @@ const _sfc_main = {
           content: `修改数据失败`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:255", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:350", err);
       });
     },
     async setImg() {
@@ -119,7 +184,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      let params = { ...this.formData, add_czr: this.userInfo._id };
+      let params = { ...this.formData, relatedDates: this.formData.relatedDates.join(","), add_czr: this.userInfo._id };
       common_vendor._r.callFunction({
         name: "rili-add",
         data: {
@@ -139,7 +204,7 @@ const _sfc_main = {
           content: `添加数据失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:304", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:399", err);
       });
     },
     remove(id) {
@@ -166,7 +231,7 @@ const _sfc_main = {
           content: `删除失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:332", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:427", err);
       });
     },
     async update() {
@@ -188,7 +253,7 @@ const _sfc_main = {
       common_vendor.index.showLoading({
         title: "处理中..."
       });
-      let params = { ...this.formData, update_czr: this.userInfo._id };
+      let params = { ...this.formData, relatedDates: this.formData.relatedDates.join(","), update_czr: this.userInfo._id };
       common_vendor._r.callFunction({
         name: "rili-add",
         data: {
@@ -209,7 +274,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:376", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:471", err);
       });
     },
     submit(type) {
@@ -237,17 +302,19 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:406", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:501", err);
       });
     },
     clearForm() {
       delete this.formData._id;
       this.formDatePicker = "";
       this.searchDatePicker = "";
+      this.relatedDatePicker = "";
       this.formData.date = "";
       this.formData.title = "";
       this.formData.bz = "";
       this.formData.imgurl = "";
+      this.formData.relatedDates = [];
       if (this.$refs.imageUpload) {
         this.$refs.imageUpload.clearImages();
       }
@@ -295,9 +362,9 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     k: $data.formData.bz,
     l: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "22"),
     m: $data.formData.type,
-    n: common_vendor.o(($event) => $data.formData.type = $event.detail.value, "7d"),
+    n: common_vendor.o(($event) => $data.formData.type = $event.detail.value, "f5"),
     o: $data.formData.imgurl,
-    p: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "a9"),
+    p: common_vendor.o(($event) => $data.formData.imgurl = $event.detail.value, "5f"),
     q: common_vendor.sr("imageUpload", "7559c173-2"),
     r: common_vendor.p({
       title: "上传图片",
@@ -306,20 +373,47 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       uploadPath: "rili",
       modelValue: $data.formData.imgurl
     }),
-    s: $data.formData._id
-  }, $data.formData._id ? common_vendor.e({
-    t: common_vendor.o(($event) => $options.submit("update"), "8d"),
-    v: $options.isCalendarPermission("del")
-  }, $options.isCalendarPermission("del") ? {
-    w: common_vendor.o(($event) => $options.remove($data.formData._id), "4b")
+    s: common_vendor.o($options.onRelatedDateChange, "ee"),
+    t: common_vendor.o(($event) => $data.relatedDatePicker = $event, "ae"),
+    v: common_vendor.p({
+      type: "date",
+      placeholder: "选择日期添加",
+      modelValue: $data.relatedDatePicker
+    }),
+    w: $data.formData.relatedDates.length
+  }, $data.formData.relatedDates.length ? {
+    x: common_vendor.f($data.formData.relatedDates, (d, i, i0) => {
+      return {
+        a: common_vendor.t(d),
+        b: common_vendor.o(($event) => $options.removeRelatedDate(i), i),
+        c: i
+      };
+    })
   } : {}, {
-    x: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "d8")
+    y: $options.getBzInlineDates().length
+  }, $options.getBzInlineDates().length ? {
+    z: common_vendor.f($options.getBzInlineDates(), (d, i, i0) => {
+      return {
+        a: common_vendor.t(d),
+        b: i,
+        c: common_vendor.o(($event) => $options.extractBzDate(d), i)
+      };
+    })
+  } : {}, {
+    A: $data.formData._id
+  }, $data.formData._id ? common_vendor.e({
+    B: common_vendor.o(($event) => $options.submit("update"), "fc"),
+    C: $options.isCalendarPermission("del")
+  }, $options.isCalendarPermission("del") ? {
+    D: common_vendor.o(($event) => $options.remove($data.formData._id), "15")
+  } : {}, {
+    E: common_vendor.o((...args) => $options.clearForm && $options.clearForm(...args), "6e")
   }) : {
-    y: common_vendor.o(($event) => $options.submit("add"), "be")
+    F: common_vendor.o(($event) => $options.submit("add"), "93")
   }, {
-    z: $data.customGreeting.title,
-    A: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "60"),
-    B: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "5d")
+    G: $data.customGreeting.title,
+    H: common_vendor.o(($event) => $data.customGreeting.title = $event.detail.value, "06"),
+    I: common_vendor.o((...args) => $options.add_customGreeting && $options.add_customGreeting(...args), "70")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

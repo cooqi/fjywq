@@ -14,7 +14,7 @@
 		
 		<!-- 分类筛选 -->
 		<view class="filter-box">
-			<scroll-view class="filter-scroll" scroll-x>
+			<view class="filter-wrap">
 				<view class="filter-item" 
 					:class="{active: currentType === item.value}" 
 					v-for="(item, index) in typeList" 
@@ -22,7 +22,7 @@
 					@click="switchType(item.value)">
 					{{item.label}}
 				</view>
-			</scroll-view>
+			</view>
 		</view>
 		
 		<!-- 记录列表 -->
@@ -59,9 +59,10 @@
 					{ label: '全部', value: 'all' },
 					{ label: '音乐节', value: '音乐节' },
 					{ label: '演唱会', value: '演唱会' },
+					{ label: '见面会', value: '见面会' },
+					{ label: '商务', value: '商务' },
 					{ label: '周边', value: '周边' },
 					{ label: '专辑', value: '专辑' },
-					{ label: '商务', value: '商务' },
 					{ label: '其他', value: '其他' }
 				],
 				currentType: 'all',
@@ -258,15 +259,13 @@
 .filter-box {
 	margin-bottom: 20rpx;
 	
-	.filter-scroll {
-		white-space: nowrap;
-		
+	.filter-wrap {
+		display: flex;
+		flex-wrap: wrap;
 	}
 	
 	.filter-item {
-		display: inline-block;
 		padding: 10rpx 24rpx;
-		
 		background: #fff;
 		border-radius: 32rpx;
 		font-size: 24rpx;

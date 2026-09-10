@@ -5,7 +5,7 @@ const _sfc_main = {
     return {
       isEdit: false,
       recordId: "",
-      typeList: ["音乐节", "演唱会", "周边", "专辑", "商务", "其他"],
+      typeList: ["音乐节", "演唱会", "见面会", "商务", "周边", "专辑", "其他"],
       concertList: [],
       // 演唱会/音乐节列表
       concertIndex: -1,
@@ -81,6 +81,7 @@ const _sfc_main = {
       const iconMap = {
         "音乐节": "🎵",
         "演唱会": "🎤",
+        "见面会": "🤝",
         "周边": "🧸",
         "专辑": "💿",
         "商务": "💼",
@@ -92,6 +93,7 @@ const _sfc_main = {
       const placeholderMap = {
         "音乐节": "如：迷笛音乐节 - 连云港",
         "演唱会": "如：某某演唱会",
+        "见面会": "如：某某见面会",
         "周边": "如：涂鸦森林黑胶",
         "专辑": "如：专辑名称",
         "商务": "如：ELLEMEN杂志",
@@ -104,7 +106,7 @@ const _sfc_main = {
         this.clearFormData();
       }
       this.formData.payType = type;
-      if (type === "音乐节" || type === "演唱会") {
+      if (type === "音乐节" || type === "演唱会" || type === "见面会") {
         this.loadConcertList();
       }
     },
@@ -177,7 +179,7 @@ const _sfc_main = {
               displayName
             };
           });
-          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:405", "演唱会列表:", this.concertList);
+          common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:407", "演唱会列表:", this.concertList);
         } else {
           common_vendor.index.showToast({
             title: res.result.message || "加载失败",
@@ -185,7 +187,7 @@ const _sfc_main = {
           });
         }
       }).catch((err) => {
-        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:413", "加载演唱会列表失败", err);
+        common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:415", "加载演唱会列表失败", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -210,11 +212,11 @@ const _sfc_main = {
         this.formData.payName = this.selectedConcert.displayName;
         this.formData.adress = this.selectedConcert.Province + this.selectedConcert.address || "";
         this.formData.concertID = this.selectedConcert._id || "";
-        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:443", "选中的演唱会:", this.selectedConcert);
+        common_vendor.index.__f__("log", "at pages/payRecord/edit.vue:445", "选中的演唱会:", this.selectedConcert);
       }
     },
     calculateTotal() {
-      if (this.formData.payType === "音乐节" || this.formData.payType === "演唱会") {
+      if (this.formData.payType === "音乐节" || this.formData.payType === "演唱会" || this.formData.payType === "见面会") {
         const payPrice = parseFloat(this.formData.payPrice) || 0;
         const transportation = parseFloat(this.formData.TransportationExpenses) || 0;
         const hotel = parseFloat(this.formData.HotelExpenses) || 0;
@@ -272,7 +274,7 @@ const _sfc_main = {
             isEntry: data.isEntry || "",
             SeatNumber: data.SeatNumber || ""
           };
-          if (data.payType === "音乐节" || data.payType === "演唱会") {
+          if (data.payType === "音乐节" || data.payType === "演唱会" || data.payType === "见面会") {
             await this.loadConcertList();
             let matchedIndex = -1;
             if (data.concertID) {
@@ -307,10 +309,10 @@ const _sfc_main = {
         });
         return;
       }
-      if (this.formData.payType === "音乐节" || this.formData.payType === "演唱会") {
+      if (this.formData.payType === "音乐节" || this.formData.payType === "演唱会" || this.formData.payType === "见面会") {
         if (!this.selectedConcert) {
           common_vendor.index.showModal({
-            content: "请选择演唱会/音乐节场次",
+            content: "请选择演唱会/音乐节/见面会场次",
             showCancel: false
           });
           return;
@@ -458,7 +460,7 @@ const _sfc_main = {
             resolve(false);
           }
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:716", "检查重复记录失败", err);
+          common_vendor.index.__f__("error", "at pages/payRecord/edit.vue:718", "检查重复记录失败", err);
           resolve(false);
         });
       });
@@ -487,10 +489,10 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     }),
     b: $data.isEdit ? 1 : "",
-    c: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
-  }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? common_vendor.e({
+    c: ["音乐节", "演唱会", "见面会"].includes($data.formData.payType)
+  }, ["音乐节", "演唱会", "见面会"].includes($data.formData.payType) ? common_vendor.e({
     d: common_vendor.t($data.selectedConcert ? $data.selectedConcert.displayName : "请选择演唱会/音乐节"),
-    e: common_vendor.o((...args) => $options.onConcertChange && $options.onConcertChange(...args), "fe"),
+    e: common_vendor.o((...args) => $options.onConcertChange && $options.onConcertChange(...args), "f4"),
     f: $data.concertIndex,
     g: $data.concertList,
     h: $data.selectedConcert
@@ -511,28 +513,28 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     p: common_vendor.t($data.selectedConcert.address || "未设置")
   }) : {}, {
     q: $data.formData.isEntry === "1" ? 1 : "",
-    r: common_vendor.o(($event) => $options.selectEntry("1"), "39"),
+    r: common_vendor.o(($event) => $options.selectEntry("1"), "c5"),
     s: $data.formData.isEntry === "0" ? 1 : "",
-    t: common_vendor.o(($event) => $options.selectEntry("0"), "32"),
+    t: common_vendor.o(($event) => $options.selectEntry("0"), "09"),
     v: $data.formData.isEntry === "1"
   }, $data.formData.isEntry === "1" ? {
     w: $data.formData.SeatNumber,
-    x: common_vendor.o(($event) => $data.formData.SeatNumber = $event.detail.value, "2a")
+    x: common_vendor.o(($event) => $data.formData.SeatNumber = $event.detail.value, "ea")
   } : {}) : {}, {
-    y: $data.formData.payType !== "音乐节" && $data.formData.payType !== "演唱会"
-  }, $data.formData.payType !== "音乐节" && $data.formData.payType !== "演唱会" ? {
+    y: $data.formData.payType !== "音乐节" && $data.formData.payType !== "演唱会" && $data.formData.payType !== "见面会"
+  }, $data.formData.payType !== "音乐节" && $data.formData.payType !== "演唱会" && $data.formData.payType !== "见面会" ? {
     z: $options.getPlaceholder(),
     A: $data.formData.payName,
-    B: common_vendor.o(($event) => $data.formData.payName = $event.detail.value, "b1")
+    B: common_vendor.o(($event) => $data.formData.payName = $event.detail.value, "8a")
   } : {}, {
-    C: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
-  }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? {
+    C: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" || $data.formData.payType === "见面会"
+  }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" || $data.formData.payType === "见面会" ? {
     D: common_vendor.o([($event) => $data.formData.regular = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "95"),
     E: $data.formData.regular,
     F: common_vendor.o([($event) => $data.formData.payNum = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "59"),
     G: $data.formData.payNum,
     H: $data.formData.payPrice,
-    I: common_vendor.o(($event) => $data.formData.payPrice = $event.detail.value, "18"),
+    I: common_vendor.o(($event) => $data.formData.payPrice = $event.detail.value, "96"),
     J: common_vendor.o([($event) => $data.formData.TransportationExpenses = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "02"),
     K: $data.formData.TransportationExpenses,
     L: common_vendor.o([($event) => $data.formData.HotelExpenses = $event.detail.value, (...args) => $options.calculateTotal && $options.calculateTotal(...args)], "51"),
@@ -546,19 +548,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     S: $data.formData.payNum
   }, {
     T: common_vendor.t($data.formData.payAmount),
-    U: common_vendor.o(($event) => $data.formData.payTime = $event, "da"),
+    U: common_vendor.o(($event) => $data.formData.payTime = $event, "48"),
     V: common_vendor.p({
       type: "date",
       placeholder: "请选择标时间",
       modelValue: $data.formData.payTime
     }),
-    W: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会"
-  }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" ? {
+    W: $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" || $data.formData.payType === "见面会"
+  }, $data.formData.payType === "音乐节" || $data.formData.payType === "演唱会" || $data.formData.payType === "见面会" ? {
     X: $data.formData.adress,
-    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "34")
+    Y: common_vendor.o(($event) => $data.formData.adress = $event.detail.value, "2f")
   } : {}, {
     Z: $data.formData.sdUrl,
-    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "fa"),
+    aa: common_vendor.o(($event) => $data.formData.sdUrl = $event.detail.value, "bf"),
     ab: common_vendor.sr("imageUpload", "eccb62d4-1"),
     ac: common_vendor.p({
       title: "订单截图",
@@ -568,12 +570,12 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       modelValue: $data.formData.imgs
     }),
     ad: $data.formData.bz,
-    ae: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "75"),
+    ae: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "67"),
     af: common_vendor.t($data.isEdit ? "更新记录" : "保存记录"),
-    ag: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "b7"),
+    ag: common_vendor.o((...args) => $options.saveRecord && $options.saveRecord(...args), "92"),
     ah: $data.isEdit
   }, $data.isEdit ? {
-    ai: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "fa")
+    ai: common_vendor.o((...args) => $options.deleteRecord && $options.deleteRecord(...args), "57")
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
