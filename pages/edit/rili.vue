@@ -459,7 +459,6 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 						content: `更新成功`,
 						showCancel: false
 					})
-					this.getList()
 					this.clearForm()
 					//console.log(res)
 				}).catch((err) => {

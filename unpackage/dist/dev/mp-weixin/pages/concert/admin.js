@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_js_permission = require("../../common/js/permission.js");
 const _sfc_main = {
   data() {
     return {
@@ -45,7 +46,9 @@ const _sfc_main = {
         "广西",
         "西藏",
         "宁夏",
-        "新疆"
+        "新疆",
+        "香港",
+        "澳门"
       ],
       provinceIndex: -1,
       concertList: [],
@@ -67,11 +70,19 @@ const _sfc_main = {
         address: "",
         playlist: "",
         bz: ""
-      }
+      },
+      userInfo: {},
+      canEditCalendar: false
     };
   },
   onLoad() {
     this.loadData();
+    try {
+      const userInfo = common_vendor.index.getStorageSync("userInfo");
+      this.userInfo = JSON.parse(userInfo);
+      this.canEditCalendar = common_js_permission.hasCalendarPermission(this.userInfo, "add") || common_js_permission.hasCalendarPermission(this.userInfo, "edit");
+    } catch (e) {
+    }
   },
   onPullDownRefresh() {
     this.page = 1;
@@ -124,7 +135,7 @@ const _sfc_main = {
           this.loading = false;
           common_vendor.index.hideLoading();
           common_vendor.index.stopPullDownRefresh();
-          common_vendor.index.__f__("error", "at pages/concert/admin.vue:260", "加载失败", err);
+          common_vendor.index.__f__("error", "at pages/concert/admin.vue:268", "加载失败", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -229,7 +240,7 @@ const _sfc_main = {
               },
               fail: (err) => {
                 common_vendor.index.hideLoading();
-                common_vendor.index.__f__("error", "at pages/concert/admin.vue:377", "删除失败", err);
+                common_vendor.index.__f__("error", "at pages/concert/admin.vue:385", "删除失败", err);
                 common_vendor.index.showToast({
                   title: "删除失败",
                   icon: "none"
@@ -281,7 +292,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           common_vendor.index.hideLoading();
-          common_vendor.index.__f__("error", "at pages/concert/admin.vue:434", "保存失败", err);
+          common_vendor.index.__f__("error", "at pages/concert/admin.vue:442", "保存失败", err);
           common_vendor.index.showToast({
             title: "保存失败",
             icon: "none"
@@ -301,6 +312,12 @@ const _sfc_main = {
     // 关闭弹窗
     closeDialog() {
       this.$refs.popup.close();
+    },
+    // 跳转详情
+    goDetail(item) {
+      common_vendor.index.navigateTo({
+        url: "/pages/concert/detail?id=" + item._id
+      });
     }
   }
 };
@@ -316,75 +333,78 @@ if (!Math) {
 }
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: common_vendor.o((...args) => $options.showAddDialog && $options.showAddDialog(...args), "88"),
-    b: common_vendor.t($data.typeList[$data.typeIndex].label),
-    c: common_vendor.o((...args) => $options.onTypeChange && $options.onTypeChange(...args), "b7"),
-    d: $data.typeIndex,
-    e: $data.typeList,
-    f: common_vendor.o((...args) => $options.handleSearch && $options.handleSearch(...args), "50"),
-    g: $data.searchKeyword,
-    h: common_vendor.o(($event) => $data.searchKeyword = $event.detail.value, "79"),
-    i: common_vendor.o((...args) => $options.handleSearch && $options.handleSearch(...args), "ff"),
-    j: common_vendor.t($data.totalCount),
-    k: common_vendor.f($data.concertList, (item, k0, i0) => {
+    a: $data.canEditCalendar
+  }, $data.canEditCalendar ? {
+    b: common_vendor.o((...args) => $options.showAddDialog && $options.showAddDialog(...args), "08")
+  } : {}, {
+    c: common_vendor.t($data.typeList[$data.typeIndex].label),
+    d: common_vendor.o((...args) => $options.onTypeChange && $options.onTypeChange(...args), "db"),
+    e: $data.typeIndex,
+    f: $data.typeList,
+    g: common_vendor.o((...args) => $options.handleSearch && $options.handleSearch(...args), "60"),
+    h: $data.searchKeyword,
+    i: common_vendor.o(($event) => $data.searchKeyword = $event.detail.value, "1a"),
+    j: common_vendor.o((...args) => $options.handleSearch && $options.handleSearch(...args), "33"),
+    k: common_vendor.t($data.totalCount),
+    l: common_vendor.f($data.concertList, (item, k0, i0) => {
       return common_vendor.e({
         a: common_vendor.t(item.type),
-        b: common_vendor.n($options.getTypeClass(item.type)),
+        b: common_vendor.n($options.getTypeClass(item.type))
+      }, $data.canEditCalendar ? {
         c: common_vendor.o(($event) => $options.editConcert(item), item._id),
-        d: common_vendor.o(($event) => $options.deleteConcert(item), item._id),
+        d: common_vendor.o(($event) => $options.deleteConcert(item), item._id)
+      } : {}, {
         e: common_vendor.t(item.ychTheme || "未设置"),
         f: common_vendor.t(item.yhcTheme || "未设置"),
         g: common_vendor.t(item.Session || "未设置"),
         h: common_vendor.t(item.time || "未设置"),
         i: common_vendor.t(item.address || "未设置"),
-        j: item.playlist
-      }, item.playlist ? {
-        k: common_vendor.t(item.playlist)
-      } : {}, {
-        l: item.bz
+        j: item.bz
       }, item.bz ? {
-        m: common_vendor.t(item.bz)
+        k: common_vendor.t(item.bz)
       } : {}, {
-        n: item._id
+        l: item._id,
+        m: common_vendor.o(($event) => $options.goDetail(item), item._id)
       });
     }),
-    l: $data.concertList.length === 0 && !$data.loading
+    m: $data.canEditCalendar,
+    n: $data.concertList.length === 0 && !$data.loading
   }, $data.concertList.length === 0 && !$data.loading ? {} : {}, {
-    m: $data.hasMore && $data.concertList.length > 0
+    o: $data.hasMore && $data.concertList.length > 0
   }, $data.hasMore && $data.concertList.length > 0 ? {
-    n: common_vendor.o((...args) => $options.loadMore && $options.loadMore(...args), "da")
+    p: common_vendor.o((...args) => $options.loadMore && $options.loadMore(...args), "ad")
   } : {}, {
-    o: common_vendor.t($data.editMode ? "编辑" : "添加"),
-    p: common_vendor.t($data.typeList[$data.formTypeIndex].label),
-    q: common_vendor.o((...args) => $options.onFormTypeChange && $options.onFormTypeChange(...args), "d0"),
-    r: $data.formTypeIndex,
-    s: $data.typeList,
-    t: $data.formData.ychTheme,
-    v: common_vendor.o(($event) => $data.formData.ychTheme = $event.detail.value, "f4"),
-    w: $data.formData.yhcTheme,
-    x: common_vendor.o(($event) => $data.formData.yhcTheme = $event.detail.value, "ae"),
-    y: $data.formData.Session,
-    z: common_vendor.o(($event) => $data.formData.Session = $event.detail.value, "50"),
-    A: common_vendor.o(($event) => $data.formData.time = $event, "0e"),
-    B: common_vendor.p({
+    q: common_vendor.t($data.editMode ? "编辑" : "添加"),
+    r: common_vendor.t($data.typeList[$data.formTypeIndex].label),
+    s: common_vendor.o((...args) => $options.onFormTypeChange && $options.onFormTypeChange(...args), "92"),
+    t: $data.formTypeIndex,
+    v: $data.typeList,
+    w: $data.formData.ychTheme,
+    x: common_vendor.o(($event) => $data.formData.ychTheme = $event.detail.value, "1a"),
+    y: $data.formData.yhcTheme,
+    z: common_vendor.o(($event) => $data.formData.yhcTheme = $event.detail.value, "b5"),
+    A: $data.formData.Session,
+    B: common_vendor.o(($event) => $data.formData.Session = $event.detail.value, "d0"),
+    C: common_vendor.o(($event) => $data.formData.time = $event, "f0"),
+    D: common_vendor.p({
       type: "datetime",
       placeholder: "请选择时间",
       modelValue: $data.formData.time
     }),
-    C: common_vendor.t($data.provinceList[$data.provinceIndex] || "请选择省份"),
-    D: common_vendor.o((...args) => $options.onProvinceChange && $options.onProvinceChange(...args), "9a"),
-    E: $data.provinceIndex,
-    F: $data.provinceList,
-    G: $data.formData.address,
-    H: common_vendor.o(($event) => $data.formData.address = $event.detail.value, "09"),
-    I: $data.formData.playlist,
-    J: common_vendor.o(($event) => $data.formData.playlist = $event.detail.value, "f0"),
-    K: $data.formData.bz,
-    L: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "31"),
-    M: common_vendor.o((...args) => $options.closeDialog && $options.closeDialog(...args), "d8"),
-    N: common_vendor.o((...args) => $options.submitForm && $options.submitForm(...args), "7a"),
-    O: common_vendor.sr("popup", "6fbbadc0-0"),
-    P: common_vendor.p({
+    E: common_vendor.t($data.provinceList[$data.provinceIndex] || "请选择省份"),
+    F: common_vendor.o((...args) => $options.onProvinceChange && $options.onProvinceChange(...args), "c2"),
+    G: $data.provinceIndex,
+    H: $data.provinceList,
+    I: $data.formData.address,
+    J: common_vendor.o(($event) => $data.formData.address = $event.detail.value, "6f"),
+    K: $data.formData.playlist,
+    L: common_vendor.o(($event) => $data.formData.playlist = $event.detail.value, "f2"),
+    M: $data.formData.bz,
+    N: common_vendor.o(($event) => $data.formData.bz = $event.detail.value, "90"),
+    O: common_vendor.o((...args) => $options.closeDialog && $options.closeDialog(...args), "43"),
+    P: common_vendor.o((...args) => $options.submitForm && $options.submitForm(...args), "ca"),
+    Q: common_vendor.sr("popup", "6fbbadc0-0"),
+    R: common_vendor.p({
       type: "center"
     })
   });

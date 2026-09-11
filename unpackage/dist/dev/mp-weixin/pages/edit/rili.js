@@ -266,7 +266,6 @@ const _sfc_main = {
           content: `更新成功`,
           showCancel: false
         });
-        this.getList();
         this.clearForm();
       }).catch((err) => {
         common_vendor.index.hideLoading();
@@ -274,7 +273,7 @@ const _sfc_main = {
           content: `更新操作执行失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:471", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:470", err);
       });
     },
     submit(type) {
@@ -302,7 +301,7 @@ const _sfc_main = {
           content: `查询失败，错误信息为：${err.message}`,
           showCancel: false
         });
-        common_vendor.index.__f__("error", "at pages/edit/rili.vue:501", err);
+        common_vendor.index.__f__("error", "at pages/edit/rili.vue:500", err);
       });
     },
     clearForm() {

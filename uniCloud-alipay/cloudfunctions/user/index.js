@@ -119,6 +119,9 @@ exports.main = async (event, context) => {
 		  if (event.role !== undefined) {
 			  updateData.role = event.role
 		  }
+		  if (event.Province !== undefined) {
+			  updateData.Province = event.Province
+		  }
 		  const res_update = await pro_user.doc(event._id).update(updateData)  
 		  const res_update_val = await uniCloud.callFunction({
 			  name: 'user',  

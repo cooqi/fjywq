@@ -23,9 +23,9 @@
 		</view>
 		
 		<view v-if="current === 0" class="today">
-			<view class="date">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
-			<view v-for="item in dayInfo" :key="item._id" class="event-card today" hover-class="event-card-hover">
-				<view :class="['title','title_'+item.type]"  @click="editItem(item)">
+			<view class="date" @click.stop="navigateToDate(time)">{{time}}<text class="displayText" v-if="dayText">{{dayText}}</text></view>
+			<view v-for="item in dayInfo" :key="item._id" class="event-card today" @click="navigateToDate(item.date)">
+				<view :class="['title','title_'+item.type]"  @click.stop="editItem(item)">
 					<text v-if="item.type == 2" class="lollipop-icon">🍭</text>
 					{{item.title}}
 				</view>
@@ -48,8 +48,8 @@
 			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员，但你不一定联系得上</view>
 		</view>
 		<view v-if="current === 1" class="about">
-			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card " hover-class="event-card-hover" >
-				<view class="date" v-if="item.date">
+			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card "  >
+				<view class="date" v-if="item.date" @click.stop="navigateToDate(item.date)">
 					<text v-for="(t,i) in setArr(item.date)" :key="i" ><text :class="'t'+i">{{t}}</text><text v-show="i!=2">-</text></text>
 					<text v-show="item.distanceInfo.displayText" class="displayText">{{item.distanceInfo.displayText}}</text>
 				</view>
@@ -438,7 +438,7 @@
 				}
 				return segments.length ? segments : [{text: bz, isDate: false}]
 			},
-			navigateToDate(dateStr) {
+			async navigateToDate(dateStr) {
 				if(!dateStr) return
 				const parts = dateStr.split('-')
 				if(parts.length !== 3) return
@@ -457,12 +457,12 @@
 				}
 				
 				this.time = formattedDate
-				this.getDetail(formattedDate)
 				
-				// 如果月份变了，需要重新加载该月数据
+				// 如果月份变了，需要先重新加载该月数据，再展示详情
 				if(this.currentMonth !== month) {
-					this.getList(month, year)
+					await this.getList(month, year)
 				}
+				this.getDetail(formattedDate)
 			}
 		}
 	}

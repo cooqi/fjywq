@@ -43,7 +43,7 @@
 				<view class="block-title">数据统计规则</view>
 				<view class="block-content">
 					<view>「日历」上的粉色标记是管理员/维护人员亲自见证过的糖，大家放心食用；</view>
-					<view>「足迹」统计演出日期在今天及以前的已参加场次；</view>
+					<view>「足迹」统计演出日期在今天及以前的已参加场次；统计目前只到省份；统计数据来源是记账，没有记账产生，不产生足迹；</view>
 				</view>
 			</view>
 

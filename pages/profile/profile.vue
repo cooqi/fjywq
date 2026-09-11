@@ -19,6 +19,7 @@
                         <view class="user-nick-name" @click="editField('nickName')">{{userInfo.nickName || '杯杯儿'}}</view>
                         <view class="archive-value" @click="editField('loveType')">{{profileData.loveType || '未设置'}}</view>
                         <view class="archive-value" @click="editField('joinTime')">入坑时间：{{profileData.joinTime || '未设置'}}{{joinDays > 0 ? `（${joinDays}天）` : ''}}</view>
+                        <view class="archive-value" @click="editField('Province')">所在地：{{profileData.Province || '未设置'}}</view>
                     </view>
 				</view>
                 
@@ -58,8 +59,8 @@
 			
 			<!-- 其他信息 -->
 			<view class="info-box">
-				<view class="info-item" @click="goToConcertAdmin"  v-if="canManageConcert">
-					<view class="info-text">演唱会/音乐节管理</view>
+				<view class="info-item" @click="goToConcertAdmin">
+					<view class="info-text">演唱会/音乐节/见面会</view>
 				</view>
 				<view class="info-item" @click="showAbout">
 					<view class="info-text">关于我们</view>
@@ -68,6 +69,21 @@
 			
 			<!-- 版本号 -->
 			<view class="version">v19.27.69</view>
+		</view>
+		<!-- 省份选择弹窗 -->
+		<view class="province-mask" v-if="showProvincePopup" @click="showProvincePopup = false"></view>
+		<view class="province-popup" v-if="showProvincePopup">
+			<view class="province-popup-title">选择所在省份</view>
+			<scroll-view scroll-y class="province-scroll">
+				<view 
+					class="province-option" 
+					v-for="(item, idx) in provinceList" 
+					:key="idx"
+					@click="selectProvince(item)"
+				>
+					{{item}}
+				</view>
+			</scroll-view>
 		</view>
 	</view>
 </template>
@@ -82,13 +98,16 @@
 				profileData: {
 					joinTime: '',
 					loveType: '宇青99',
-					wxid: ''
+					wxid: '',
+					Province: ''
 				},
 				meetCount: 0,
 				firstMeetInfo: '',
 				todoCount: 0,
 				joinDays: 0, // 入坑天数
 				canManageConcert: false, // 是否有演唱会管理权限
+				showProvincePopup: false, // 省份选择弹窗
+				provinceList: ['北京','天津','上海','重庆','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','内蒙古','广西','西藏','宁夏','新疆','香港','澳门','台湾'],
 				// 编辑表单数据
 				editForm: {
 					nickName: '',
@@ -206,6 +225,7 @@
 							this.profileData.joinTime = res.result.startTime || ''
 							this.profileData.loveType = res.result.loveType || '宇青99'
 							this.profileData.wxid = res.result.wxid || ''
+							this.profileData.Province = res.result.Province || ''
 							
 							// 计算入坑天数
 							if (res.result.startTime) {
@@ -261,6 +281,9 @@
 						currentValue = this.profileData.joinTime || ''
 						placeholder = '请输入入坑时间，如：2020-01-01'
 						break
+					case 'Province':
+						this.showProvincePopup = true
+						return
 				}
 				
 				uni.showModal({
@@ -272,11 +295,11 @@
 						if (res.confirm && res.content) {
 							const newValue = res.content.trim()
 							if (field === 'nickName') {
-								this.updateUserInfo(newValue, undefined, undefined, undefined)
+								this.updateUserInfo(newValue, undefined, undefined, undefined, undefined)
 							} else if (field === 'loveType') {
-								this.updateUserInfo(undefined, undefined, newValue, undefined)
+								this.updateUserInfo(undefined, undefined, newValue, undefined, undefined)
 							} else if (field === 'joinTime') {
-								this.updateUserInfo(undefined, newValue, undefined, undefined)
+								this.updateUserInfo(undefined, newValue, undefined, undefined, undefined)
 							}
 						}
 					}
@@ -299,7 +322,12 @@
 					url: `/pages/profile/edit?nickName=${encodeURIComponent(this.editForm.nickName)}&startTime=${encodeURIComponent(this.editForm.startTime)}&loveType=${encodeURIComponent(this.editForm.loveType)}&wxid=${encodeURIComponent(this.editForm.wxid)}`
 				})
 			},
-			updateUserInfo(newNickName, newStartTime, newLoveType, newWxid) {
+			// 选择省份
+			selectProvince(name) {
+				this.showProvincePopup = false
+				this.updateUserInfo(undefined, undefined, undefined, undefined, name)
+			},
+			updateUserInfo(newNickName, newStartTime, newLoveType, newWxid, newProvince) {
 				uni.showLoading({ title: '保存中...' })
 				uniCloud.callFunction({
 					name: 'user',
@@ -313,7 +341,8 @@
 						},
 						startTime: newStartTime !== undefined ? newStartTime : this.profileData.joinTime,
 						loveType: newLoveType !== undefined ? newLoveType : this.profileData.loveType,
-						wxid: newWxid !== undefined ? newWxid : this.profileData.wxid
+						wxid: newWxid !== undefined ? newWxid : this.profileData.wxid,
+						Province: newProvince !== undefined ? newProvince : this.profileData.Province
 					}
 				}).then((res) => {
 					uni.hideLoading()
@@ -331,7 +360,10 @@
 						if (newWxid !== undefined) {
 							this.profileData.wxid = newWxid
 						}
-											
+						if (newProvince !== undefined) {
+							this.profileData.Province = newProvince
+						}
+															
 						// 更新本地存储
 						const userInfo = uni.getStorageSync('userInfo')
 						if (userInfo) {
@@ -340,6 +372,7 @@
 							if (newStartTime !== undefined) userObj.startTime = newStartTime
 							if (newLoveType !== undefined) userObj.loveType = newLoveType
 							if (newWxid !== undefined) userObj.wxid = newWxid
+							if (newProvince !== undefined) userObj.Province = newProvince
 							uni.setStorageSync('userInfo', JSON.stringify(userObj))
 						}
 											
@@ -733,5 +766,56 @@
 	font-size: 24rpx;
 	color: #999;
 	padding: 40rpx 0;
+}
+
+/* 省份选择弹窗 */
+.province-mask {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 998;
+}
+
+.province-popup {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 600rpx;
+	max-height: 800rpx;
+	background: #fff;
+	border-radius: 24rpx;
+	z-index: 999;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.province-popup-title {
+	text-align: center;
+	font-size: 32rpx;
+	font-weight: bold;
+	padding: 30rpx 0;
+	border-bottom: 1rpx solid #eee;
+	color: #333;
+}
+
+.province-scroll {
+	max-height: 700rpx;
+}
+
+.province-option {
+	padding: 24rpx 40rpx;
+	font-size: 30rpx;
+	color: #333;
+	text-align: center;
+	border-bottom: 1rpx solid #f5f5f5;
+}
+
+.province-option:active {
+	background: #f0f0f0;
 }
 </style>

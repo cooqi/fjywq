@@ -321,7 +321,7 @@ const _sfc_main = {
       }
       return segments.length ? segments : [{ text: bz, isDate: false }];
     },
-    navigateToDate(dateStr) {
+    async navigateToDate(dateStr) {
       if (!dateStr)
         return;
       const parts = dateStr.split("-");
@@ -339,10 +339,10 @@ const _sfc_main = {
         cal.choose = `${year}-${month}-${day}`;
       }
       this.time = formattedDate;
-      this.getDetail(formattedDate);
       if (this.currentMonth !== month) {
-        this.getList(month, year);
+        await this.getList(month, year);
       }
+      this.getDetail(formattedDate);
     }
   }
 };
@@ -386,7 +386,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $data.dayText ? {
     l: common_vendor.t($data.dayText)
   } : {}, {
-    m: common_vendor.f($data.dayInfo, (item, k0, i0) => {
+    m: common_vendor.o(($event) => $options.navigateToDate($data.time), "6e"),
+    n: common_vendor.f($data.dayInfo, (item, k0, i0) => {
       return common_vendor.e({
         a: item.type == 2
       }, item.type == 2 ? {} : {}, {
@@ -429,14 +430,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         k: common_vendor.o(() => {
         }, item._id)
       } : {}, {
-        l: item._id
+        l: item._id,
+        m: common_vendor.o(($event) => $options.navigateToDate(item.date), item._id)
       });
     }),
-    n: !$data.dayInfo.length
+    o: !$data.dayInfo.length
   }, !$data.dayInfo.length ? {} : {}) : {}, {
-    o: $data.current === 1
+    p: $data.current === 1
   }, $data.current === 1 ? common_vendor.e({
-    p: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
+    q: common_vendor.f($data.dayAboutInfo, (item, k0, i0) => {
       return common_vendor.e({
         a: item.date
       }, item.date ? {
@@ -449,14 +451,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           };
         }),
         c: common_vendor.t(item.distanceInfo.displayText),
-        d: item.distanceInfo.displayText
+        d: item.distanceInfo.displayText,
+        e: common_vendor.o(($event) => $options.navigateToDate(item.date), item._id)
       } : {}, {
-        e: item.type == 2
+        f: item.type == 2
       }, item.type == 2 ? {} : {}, {
-        f: common_vendor.t(item.title),
-        g: common_vendor.n("title_" + item.type),
-        h: common_vendor.o(($event) => $options.editItem(item), item._id),
-        i: common_vendor.f($options.parseBz(item.bz), (seg, si, i1) => {
+        g: common_vendor.t(item.title),
+        h: common_vendor.n("title_" + item.type),
+        i: common_vendor.o(($event) => $options.editItem(item), item._id),
+        j: common_vendor.f($options.parseBz(item.bz), (seg, si, i1) => {
           return common_vendor.e({
             a: seg.isDate
           }, seg.isDate ? {
@@ -468,45 +471,45 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
             f: "t-" + si
           });
         }),
-        j: item.relatedDates
+        k: item.relatedDates
       }, item.relatedDates ? {
-        k: common_vendor.f(item.relatedDates.split(","), (d, di, i1) => {
+        l: common_vendor.f(item.relatedDates.split(","), (d, di, i1) => {
           return {
             a: common_vendor.t(d),
             b: di,
             c: common_vendor.o(($event) => $options.navigateToDate(d), di)
           };
         }),
-        l: common_vendor.o(() => {
+        m: common_vendor.o(() => {
         }, item._id)
       } : {}, {
-        m: item.imgurl
+        n: item.imgurl
       }, item.imgurl ? {
-        n: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
+        o: common_vendor.f(item.imgurl.split(";"), (img, index, i1) => {
           return {
             a: common_vendor.o(($event) => $options.preImg(item.imgurl, index), index),
             b: index,
             c: img
           };
         }),
-        o: common_vendor.o(() => {
+        p: common_vendor.o(() => {
         }, item._id)
       } : {}, {
-        p: item._id
+        q: item._id
       });
     }),
-    q: !$data.dayAboutInfo.length
+    r: !$data.dayAboutInfo.length
   }, !$data.dayAboutInfo.length ? {} : {}) : {}, {
-    r: $data.canEditCalendar
+    s: $data.canEditCalendar
   }, $data.canEditCalendar ? {
-    s: common_vendor.o((...args) => $options.edit && $options.edit(...args), "85")
+    t: common_vendor.o((...args) => $options.edit && $options.edit(...args), "ac")
   } : {}, {
-    t: common_vendor.p({
+    v: common_vendor.p({
       type: "search",
       size: "24",
       color: "#fff"
     }),
-    v: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "85")
+    w: common_vendor.o((...args) => $options.toSearch && $options.toSearch(...args), "10")
   });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);

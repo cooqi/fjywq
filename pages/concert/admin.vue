@@ -1,7 +1,7 @@
 <template>
 	<view class="page-container">
 		<!-- 操作按钮区 -->
-		<view class="action-box">
+		<view class="action-box" v-if="canEditCalendar">
 			<button class="add-btn" @click="showAddDialog">+ 添加演唱会/音乐节</button>
 		</view>
 		
@@ -34,10 +34,11 @@
 				class="concert-item"
 				v-for="item in concertList"
 				:key="item._id"
+				@click="goDetail(item)"
 			>
 				<view class="item-header">
 					<view class="item-type" :class="getTypeClass(item.type)">{{item.type}}</view>
-					<view class="item-actions">
+					<view class="item-actions" v-if="canEditCalendar">
 						<view class="action-btn edit" @click="editConcert(item)">编辑</view>
 						<view class="action-btn delete" @click="deleteConcert(item)">删除</view>
 					</view>
@@ -63,10 +64,6 @@
 					<view class="item-row">
 						<text class="label">地址：</text>
 						<text class="value">{{item.address || '未设置'}}</text>
-					</view>
-					<view class="item-row" v-if="item.playlist">
-						<text class="label">歌单：</text>
-						<text class="value">{{item.playlist}}</text>
 					</view>
 					<view class="item-row" v-if="item.bz">
 						<text class="label">备注：</text>
@@ -155,6 +152,7 @@
 </template>
 
 <script>
+import { hasCalendarPermission } from '@/common/js/permission.js'
 	export default {
 		data() {
 			return {
@@ -174,7 +172,7 @@
 					'江苏', '浙江', '安徽', '福建', '江西', '山东',
 					'河南', '湖北', '湖南', '广东', '海南',
 					'四川', '贵州', '云南', '陕西', '甘肃', '青海',
-					'台湾', '内蒙古', '广西', '西藏', '宁夏', '新疆'
+					'台湾', '内蒙古', '广西', '西藏', '宁夏', '新疆', '香港', '澳门'
 				],
 				provinceIndex: -1,
 				concertList: [],
@@ -197,11 +195,21 @@
 					address: '',
 					playlist: '',
 					bz: ''
-				}
+				},
+				userInfo: {},
+				canEditCalendar: false
 			}
 		},
 		onLoad() {
 			this.loadData()
+			try {
+				const userInfo = uni.getStorageSync('userInfo');
+				this.userInfo=JSON.parse(userInfo)
+				// 检查日历编辑权限
+				this.canEditCalendar = hasCalendarPermission(this.userInfo, 'add') || hasCalendarPermission(this.userInfo, 'edit')
+			} catch (e) {
+				// error
+			}
 		},
 		onPullDownRefresh() {
 			this.page = 1
@@ -453,6 +461,13 @@
 			// 关闭弹窗
 			closeDialog() {
 				this.$refs.popup.close()
+			},
+			
+			// 跳转详情
+			goDetail(item) {
+				uni.navigateTo({
+					url: '/pages/concert/detail?id=' + item._id
+				})
 			}
 		}
 	}
@@ -556,6 +571,12 @@
 		padding: 24rpx;
 		margin-bottom: 20rpx;
 		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+		position: relative;
+		
+		&:active {
+			background: #f8f8f8;
+			transform: scale(0.99);
+		}
 		
 		.item-header {
 			display: flex;

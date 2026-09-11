@@ -105,6 +105,11 @@
   padding: 24rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+.list-box .concert-item:active {
+  background: #f8f8f8;
+  transform: scale(0.99);
 }
 .list-box .concert-item .item-header {
   display: flex;

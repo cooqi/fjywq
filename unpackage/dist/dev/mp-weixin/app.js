@@ -24,6 +24,8 @@ if (!Math) {
   "./pages/profile/edit.js";
   "./pages/profile/about.js";
   "./pages/concert/admin.js";
+  "./pages/concert/detail.js";
+  "./pages/footprint/detail.js";
   "./pages/footprint/footprint.js";
 }
 const _sfc_main = {

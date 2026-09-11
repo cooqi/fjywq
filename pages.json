@@ -178,6 +178,22 @@
 		}
 	},
 	{
+		"path": "pages/concert/detail",
+		"style": {
+			"navigationBarTitleText": "演唱会详情",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/footprint/detail",
+		"style": {
+			"navigationBarTitleText": "青宇打卡",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/footprint/footprint",
 		"style": {
 			"navigationBarTitleText": "足迹",

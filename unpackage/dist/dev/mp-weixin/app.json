@@ -22,6 +22,8 @@
     "pages/profile/edit",
     "pages/profile/about",
     "pages/concert/admin",
+    "pages/concert/detail",
+    "pages/footprint/detail",
     "pages/footprint/footprint"
   ],
   "window": {
