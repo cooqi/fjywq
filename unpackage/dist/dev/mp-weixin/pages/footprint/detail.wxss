@@ -141,7 +141,7 @@
 .ticket-main {
   position: relative;
   z-index: 1;
-  padding: 52rpx 68rpx 40rpx;
+  padding: 52rpx 38rpx 40rpx;
   text-align: center;
 }
 .event-row {
@@ -216,7 +216,7 @@
 }
 .info {
   width: 50%;
-  padding: 24rpx 32rpx;
+  padding: 24rpx;
   border-top: 2rpx solid rgba(167, 139, 250, 0.16);
 }
 .info:nth-child(odd) {
@@ -358,6 +358,7 @@
   align-items: center;
   gap: 12rpx;
   margin-top: 16rpx;
+  padding: 24rpx;
 }
 .stub-route .tag {
   color: #8bfae7;

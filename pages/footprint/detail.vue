@@ -57,7 +57,7 @@
 					</view>
 					<view class="info">
 						<text class="info-dt">出发 & 到达</text>
-						<text class="info-dd">{{departureProvince}}
+						<text class="info-dd">{{departureProvince}}-{{ arrivalProvince }}
 							<text class="tag">{{routeTag}}</text>
 						</text>
 					</view>
@@ -82,23 +82,24 @@
 				<view class="stub-left">
 					<text class="stub-label">副券 · 留存纪念</text>
 					<text class="stub-no">NO.<text class="stub-num">{{showIndexStr}}</text></text>
-					<view class="stub-route">
-						<view class="route-arrow">
-							<view class="arrow-circle"></view>
-							<view class="arrow-dash"></view>
-							<view class="arrow-head"></view>
-						</view>
-						<text class="route-text">{{departureProvince}} → {{arrivalCity}}</text>
-						<text class="tag">{{routeTag}}</text>
-					</view>
+					
 				</view>
 				<view class="stub-right">
 					<view class="barcode">
 						<view v-for="(w, i) in barcodeBars" :key="i" class="bar" :style="{width: w + 'rpx'}"></view>
 					</view>
-					<text class="barcode-no">196927QY</text>
+					<text class="barcode-no">192769QY</text>
 				</view>
 			</view>
+			<view class="stub-route">
+						<view class="route-arrow">
+							<view class="arrow-circle"></view>
+							<view class="arrow-dash"></view>
+							<view class="arrow-head"></view>
+						</view>
+						<text class="route-text">{{departureProvince}} → {{ arrivalProvince }}省{{arrivalCity}}</text>
+						<text class="tag">{{routeTag}}</text>
+					</view>
 			
 			<text class="ticket-foot">纪念电子票据 · 仅供收藏留念</text>
 		</view>
@@ -277,7 +278,7 @@ export default {
 			}
 			const sepIdx = city.search(/[·\s（(]/)
 			if (sepIdx > 0) city = city.substring(0, sepIdx)
-			if (city && !city.endsWith('市') && !city.endsWith('县') && !city.endsWith('区')) city += '市'
+			
 			return city
 		},
 		formatDate(timeStr) {
@@ -385,7 +386,7 @@ export default {
 }
 
 // ===== 主券 =====
-.ticket-main { position: relative; z-index: 1; padding: 52rpx 68rpx 40rpx; text-align: center; }
+.ticket-main { position: relative; z-index: 1; padding: 52rpx 38rpx 40rpx; text-align: center; }
 .event-row { display: flex; align-items: center; justify-content: center; margin-bottom: 16rpx; gap: 24rpx; }
 .event-row .rule-line {
 	width: 100rpx; height: 2rpx;
@@ -408,7 +409,7 @@ export default {
 // ===== 信息网格 =====
 .info-grid { display: flex; flex-wrap: wrap; margin: 32rpx 0 0; }
 .info {
-	width: 50%; padding: 24rpx 32rpx;
+	width: 50%; padding: 24rpx ;
 	border-top: 2rpx solid rgba(167,139,250,.16);
 	&:nth-child(odd) { border-right: 2rpx solid rgba(167,139,250,.16); }
 	&:nth-child(-n+2) { border-top: none; }
@@ -464,7 +465,7 @@ export default {
 .stub-label { display: block; font-size: 20rpx; letter-spacing: 4rpx; color: rgba(225,220,255,.66); margin-bottom: 16rpx; }
 .stub-no { display: block; font-size: 48rpx; font-weight: 700; color: #e9e2ff; letter-spacing: 4rpx; }
 .stub-num { color: #67e8f9; }
-.stub-route { display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; 
+.stub-route { display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; padding: 24rpx;
 	.tag{
 		color: #8bfae7;
 	}

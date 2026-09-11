@@ -90,7 +90,7 @@ const _sfc_main = {
         this.departureProvince = this.userInfo.Province || "未设置";
         this.loadAllConcerts();
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/footprint/detail.vue:198", "解析payInfo失败:", e);
+        common_vendor.index.__f__("error", "at pages/footprint/detail.vue:199", "解析payInfo失败:", e);
         this.loading = false;
       }
     } else {
@@ -128,7 +128,7 @@ const _sfc_main = {
         },
         fail: (err) => {
           this.loading = false;
-          common_vendor.index.__f__("error", "at pages/footprint/detail.vue:234", "加载失败", err);
+          common_vendor.index.__f__("error", "at pages/footprint/detail.vue:235", "加载失败", err);
         }
       });
     },
@@ -162,7 +162,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/footprint/detail.vue:266", "加载演唱会列表失败", err);
+          common_vendor.index.__f__("error", "at pages/footprint/detail.vue:267", "加载演唱会列表失败", err);
         }
       });
     },
@@ -215,8 +215,6 @@ const _sfc_main = {
       const sepIdx = city.search(/[·\s（(]/);
       if (sepIdx > 0)
         city = city.substring(0, sepIdx);
-      if (city && !city.endsWith("市") && !city.endsWith("县") && !city.endsWith("区"))
-        city += "市";
       return city;
     },
     formatDate(timeStr) {
@@ -317,17 +315,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     j: common_vendor.t($data.showIndex),
     k: common_vendor.t($data.concert.address || "未知"),
     l: common_vendor.t($data.departureProvince),
-    m: common_vendor.t($options.routeTag),
-    n: common_vendor.t($options.showIndexStr),
-    o: common_vendor.t($data.departureProvince),
-    p: common_vendor.t($options.arrivalCity),
-    q: common_vendor.t($options.routeTag),
-    r: common_vendor.f($options.barcodeBars, (w, i, i0) => {
+    m: common_vendor.t($data.arrivalProvince),
+    n: common_vendor.t($options.routeTag),
+    o: common_vendor.t($options.showIndexStr),
+    p: common_vendor.f($options.barcodeBars, (w, i, i0) => {
       return {
         a: i,
         b: w + "rpx"
       };
-    })
+    }),
+    q: common_vendor.t($data.departureProvince),
+    r: common_vendor.t($data.arrivalProvince),
+    s: common_vendor.t($options.arrivalCity),
+    t: common_vendor.t($options.routeTag)
   } : {}, {
     b: $data.concert
   });
