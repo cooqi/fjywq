@@ -108,7 +108,7 @@
 				totalDistance: 0, // 总里程
 				routeData: [], // 路线数据 [{city, time, lng, lat}]
 				canvasWidth: 680,
-				canvasHeight: 500,
+				canvasHeight: 700,
 				chinaGeo: null, // 中国地图 GeoJSON 数据
 				bgImagePath: '', // 缓存的静态背景图路径
 				isAnimating: false, // 是否正在动画
@@ -488,30 +488,78 @@
 				return R * c
 			},
 			
+			// 根据路线数据计算聚焦视口边界
+			calcViewportBounds() {
+				if (!this.routeData.length) {
+					return { minLng: 73, maxLng: 135, minLat: 18, maxLat: 53 }
+				}
+				let minLng = Infinity, maxLng = -Infinity
+				let minLat = Infinity, maxLat = -Infinity
+				this.routeData.forEach(p => {
+					minLng = Math.min(minLng, p.lng)
+					maxLng = Math.max(maxLng, p.lng)
+					minLat = Math.min(minLat, p.lat)
+					maxLat = Math.max(maxLat, p.lat)
+				})
+				// 添加 20% padding
+				const lngRange = (maxLng - minLng) || 5
+				const latRange = (maxLat - minLat) || 5
+				const padding = 0.25
+				minLng -= lngRange * padding
+				maxLng += lngRange * padding
+				minLat -= latRange * padding
+				maxLat += latRange * padding
+				// 保证最小范围，避免单点时范围过小
+				if (maxLng - minLng < 8) {
+					const c = (minLng + maxLng) / 2
+					minLng = c - 4; maxLng = c + 4
+				}
+				if (maxLat - minLat < 6) {
+					const c = (minLat + maxLat) / 2
+					minLat = c - 3; maxLat = c + 3
+				}
+				return { minLng, maxLng, minLat, maxLat }
+			},
+			
+			// 获取投影函数
+			getProjection(bounds) {
+				const W = this.canvasWidth
+				const H = this.canvasHeight
+				return {
+					bounds: bounds,
+					toX: (lng) => ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * W,
+					toY: (lat) => ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * H
+				}
+			},
+			
 			// 缓存静态背景（背景+网格+地图+水印）为图片
 			cacheStaticBackground(callback) {
 				const ctx = uni.createCanvasContext('routeMap', this)
 				const W = this.canvasWidth
 				const H = this.canvasHeight
-				const toX = (lng) => ((lng - 73) / (135 - 73)) * W
-				const toY = (lat) => ((53 - lat) / (53 - 18)) * H
+				const bounds = this.calcViewportBounds()
+				const proj = this.getProjection(bounds)
+				const toX = proj.toX
+				const toY = proj.toY
 				
 				// 背景
 				ctx.setFillStyle('#e8f8f5')
 				ctx.fillRect(0, 0, W, H)
-				// 网格
+				// 网格（根据视口范围自适应间距）
 				ctx.setStrokeStyle('rgba(100, 140, 160, 0.15)')
 				ctx.setLineWidth(0.5)
-				for (let lng = 80; lng <= 130; lng += 10) {
+				const lngStep = Math.max(1, Math.ceil((bounds.maxLng - bounds.minLng) / 8))
+				const latStep = Math.max(1, Math.ceil((bounds.maxLat - bounds.minLat) / 8))
+				for (let lng = Math.ceil(bounds.minLng); lng <= Math.floor(bounds.maxLng); lng += lngStep) {
 					const x = toX(lng)
 					ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
 				}
-				for (let lat = 20; lat <= 50; lat += 5) {
+				for (let lat = Math.ceil(bounds.minLat); lat <= Math.floor(bounds.maxLat); lat += latStep) {
 					const y = toY(lat)
 					ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
 				}
 				// 地图
-				this.drawChinaMap(ctx, W, H, toX, toY)
+				this.drawChinaMap(ctx, proj)
 				// 水印
 				ctx.setFillStyle('rgba(0,0,0,0.06)')
 				ctx.setFontSize(14)
@@ -541,8 +589,10 @@
 				const ctx = uni.createCanvasContext('routeMap', this)
 				const W = this.canvasWidth
 				const H = this.canvasHeight
-				const toX = (lng) => ((lng - 73) / (135 - 73)) * W
-				const toY = (lat) => ((53 - lat) / (53 - 18)) * H
+				const bounds = this.calcViewportBounds()
+				const proj = this.getProjection(bounds)
+				const toX = proj.toX
+				const toY = proj.toY
 				
 				// === 背景层：优先使用缓存 ===
 				if (this.bgImagePath) {
@@ -552,15 +602,17 @@
 					ctx.fillRect(0, 0, W, H)
 					ctx.setStrokeStyle('rgba(100, 140, 160, 0.15)')
 					ctx.setLineWidth(0.5)
-					for (let lng = 80; lng <= 130; lng += 10) {
+					const gridLngStep = Math.max(1, Math.ceil((bounds.maxLng - bounds.minLng) / 8))
+					const gridLatStep = Math.max(1, Math.ceil((bounds.maxLat - bounds.minLat) / 8))
+					for (let lng = Math.ceil(bounds.minLng); lng <= Math.floor(bounds.maxLng); lng += gridLngStep) {
 						const x = toX(lng)
 						ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
 					}
-					for (let lat = 20; lat <= 50; lat += 5) {
+					for (let lat = Math.ceil(bounds.minLat); lat <= Math.floor(bounds.maxLat); lat += gridLatStep) {
 						const y = toY(lat)
 						ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
 					}
-					this.drawChinaMap(ctx, W, H, toX, toY)
+					this.drawChinaMap(ctx, proj)
 				}
 				
 				// === 动态层：航线弧线 ===
@@ -735,7 +787,7 @@
 			},
 			
 			// 绘制中国地图（基于 GeoJSON）
-			drawChinaMap(ctx, W, H, toX, toY) {
+			drawChinaMap(ctx, proj) {
 				if (!this.chinaGeo || !this.chinaGeo.features) return
 				
 				ctx.setStrokeStyle('rgba(100, 160, 220, 0.4)')
@@ -753,8 +805,8 @@
 							if (ring.length < 3) return
 							ctx.beginPath()
 							ring.forEach((coord, idx) => {
-								const x = toX(coord[0])
-								const y = toY(coord[1])
+								const x = proj.toX(coord[0])
+								const y = proj.toY(coord[1])
 								if (idx === 0) ctx.moveTo(x, y)
 								else ctx.lineTo(x, y)
 							})
@@ -892,7 +944,7 @@
 	
 	.route-canvas {
 		width: 100%;
-		height: 500rpx;
+		height: 700rpx;
 		display: block;
 		border-radius: 16rpx;
 		background: #e8f8f5;

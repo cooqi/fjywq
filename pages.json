@@ -130,6 +130,30 @@
 		}
 	},
 	{
+		"path": "pages/game/qa-exam",
+		"style": {
+			"navigationBarTitleText": "青宇问答",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/qa-result",
+		"style": {
+			"navigationBarTitleText": "考试结果",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/qa-admin",
+		"style": {
+			"navigationBarTitleText": "题库管理",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/payRecord/record",
 		"style": {
 			"navigationBarTitleText": "消费记录",

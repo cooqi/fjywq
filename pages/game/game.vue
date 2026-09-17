@@ -53,6 +53,16 @@
         <view class="arrow">›</view>
       </view>
 
+      <!-- 青宇问答 -->
+      <view class="game-card" @click="goToGame('qa')">
+        <view class="game-icon qa-icon">📝</view>
+        <view class="game-info">
+          <text class="game-name">青宇问答</text>
+          <text class="game-desc">25题限时挑战，测试你对宇青的了解</text>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+
       <!-- 创意画板 -->
       <!-- <view class="game-card" @click="goToGame('draw')">
         <view class="game-icon draw-icon">🎨</view>
@@ -90,7 +100,8 @@ export default {
         'compatibility': '/pages/game/compatibility',
         'match': '/pages/game/match',
         'draw': '/pages/game/draw',
-        'huarongdao': '/pages/game/huarongdao'
+        'huarongdao': '/pages/game/huarongdao',
+        'qa': '/pages/game/qa-exam'
       }
       
       if (routes[gameType]) {
@@ -181,6 +192,10 @@ export default {
 
 .huarongdao-icon {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.qa-icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
 .game-info {

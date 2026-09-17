@@ -1,0 +1,60 @@
+{
+	"bsonType": "object",
+	"required": ["question", "type", "options", "answer", "category", "difficulty"],
+	"permission": {
+		"read": false,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"question": {
+			"bsonType": "string",
+			"description": "题干",
+			"trim": "both"
+		},
+		"type": {
+			"bsonType": "string",
+			"description": "题型：single单选/multiple多选/judge判断",
+			"enum": ["single", "multiple", "judge"]
+		},
+		"category": {
+			"bsonType": "string",
+			"description": "分类"
+		},
+		"difficulty": {
+			"bsonType": "int",
+			"description": "难度 1~5",
+			"minimum": 1,
+			"maximum": 5,
+			"defaultValue": 1
+		},
+		"options": {
+			"bsonType": "array",
+			"description": "选项列表 [{key:'A', value:'...'}]"
+		},
+		"answer": {
+			"bsonType": "array",
+			"description": "正确答案 [\"A\"] 或 [\"A\",\"C\"]"
+		},
+		"analysis": {
+			"bsonType": "string",
+			"description": "解析"
+		},
+		"status": {
+			"bsonType": "int",
+			"description": "0草稿/1启用（进入抽题池）",
+			"defaultValue": 0
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		}
+	}
+}
