@@ -225,6 +225,13 @@ export default {
 		if (userInfo) {
 			this.userInfo = JSON.parse(userInfo)
 		}
+		// 未登录跳转到“我的”页面
+		if (!this.userInfo._id) {
+			uni.showToast({ title: '请先登录', icon: 'none' })
+			setTimeout(() => {
+				uni.switchTab({ url: '/pages/profile/profile' })
+			}, 500)
+		}
 	},
 	onUnload() {
 		this.clearTimer()
