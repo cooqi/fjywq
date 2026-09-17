@@ -1036,7 +1036,7 @@
 	max-height: 75vh;
 	background: #fff;
 	border-radius: 24rpx;
-	z-index: 999;
+	z-index: 99999;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;

@@ -148,7 +148,7 @@ export default {
 			return this.extractCityName(this.concert.address) || this.arrivalProvince
 		},
 		routeTag() {
-			return this.departureProvince === this.arrivalProvince ? '省内奔赴' : '跨省奔赴'
+			return this.departureProvince === this.arrivalProvince ? '省内' : '跨省'
 		},
 		barcodeBars() {
 			const seed = this.showIndex * 7 + 13
@@ -367,7 +367,7 @@ export default {
 		radial-gradient(130% 90% at 88% 100%, rgba(34,211,238,.20) 0%, transparent 55%),
 		linear-gradient(165deg, #2a1852 0%, #1b1038 52%, #160d30 100%);
 	box-shadow: 0 60rpx 120rpx -40rpx rgba(4,2,16,.85), 0 24rpx 56rpx -28rpx rgba(109,40,217,.28);
-	overflow: hidden;
+	
 }
 .ticket-overlay {
 	position: absolute; inset: 0; z-index: 0; pointer-events: none;
@@ -430,9 +430,9 @@ export default {
 	.mid-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: rgba(167,139,250,.45); margin: 0 20rpx; flex: none; }
 	.notch {
 		position: absolute; top: 50%; width: 52rpx; height: 52rpx; border-radius: 50%;
-		transform: translateY(-50%); background: #0f0a26; border: 2rpx solid rgba(167,139,250,.3);
-		&.l { left: -52rpx; }
-		&.r { right: -52rpx; }
+		transform: translateY(-50%); background: #0f0a26; 
+		&.l { left: -72rpx; }
+		&.r { right: -72rpx; }
 	}
 }
 

@@ -92,7 +92,7 @@
 						type="digit"
 						v-model="formData.regular" 
 						placeholder="0.00"
-						@input="calculateTotal" />
+						@input="calculatePayPrice" />
 				</view>
 				<view class="amount-item">
 					<view class="amount-label">数量 </view>
@@ -100,14 +100,15 @@
 						type="number"
 						v-model="formData.payNum" 
 						placeholder="1"
-						@input="calculateTotal" />
+						@input="calculatePayPrice" 
+						 />
 				</view>
 				<view class="amount-item">
 					<view class="amount-label">实付</view>
 					<input class="amount-input" 
 						type="digit"
 						v-model="formData.payPrice" 
-						placeholder="0.00" />
+						placeholder="0.00" @input="calculateTotal"/>
 				</view>
 				<view class="amount-item">
 					<view class="amount-label">交通费 <text class="optional">选填</text></view>
@@ -451,12 +452,19 @@
 					const transportation = parseFloat(this.formData.TransportationExpenses) || 0
 					const hotel = parseFloat(this.formData.HotelExpenses) || 0
 					const other = parseFloat(this.formData.otherExpenses) || 0
-					this.formData.payAmount = (payPrice + transportation + hotel + other).toFixed(2)
+					let payAmount = (payPrice + transportation + hotel + other).toFixed(2)
+					this.$set(this.formData,'payAmount',payAmount)
 				} else {
 					const price = parseFloat(this.formData.payPrice) || 0
 					const num = parseInt(this.formData.payNum) || 1
-					this.formData.payAmount = (price * num).toFixed(2)
+					let payAmount = (price * num).toFixed(2)
+					this.$set(this.formData,'payAmount',payAmount)
 				}
+			},
+			calculatePayPrice(){
+				let payPrice=this.formData.regular * this.formData.payNum
+				this.$set(this.formData,'payPrice',payPrice)
+				this.calculateTotal()
 			},
 			
 			getRecordDetail(id) {

@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "杯杯儿信箱",
-  "enablePullDownRefresh": true,
-  "navigationBarBackgroundColor": "#cff8f5",
-  "usingComponents": {
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
-  }
-}
