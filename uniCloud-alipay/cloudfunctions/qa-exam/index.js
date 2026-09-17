@@ -107,30 +107,33 @@ async function submitExam(userId, event) {
 	const questionIds = record.questions.map(q => q.questionId);
 	const answerRes = await questionsCol
 		.where({ _id: db.command.in(questionIds) })
-		.field({ _id: true, answer: true, analysis: true })
+		.field({ _id: true, type: true, answer: true, analysis: true })
 		.get();
 
 	// 构造答案映射
 	const answerMap = {};
 	answerRes.data.forEach(q => {
-		answerMap[q._id] = { answer: q.answer, analysis: q.analysis };
+		answerMap[q._id] = {
+			type: q.type,
+			answer: Array.isArray(q.answer) ? q.answer : [q.answer],
+			analysis: q.analysis || ''
+		};
 	});
 
 	// 判分
 	let correctCount = 0;
 	const updatedQuestions = record.questions.map(q => {
 		const userAnswer = answers[q.index - 1] || [];
-		const correctAnswer = answerMap[q.questionId]
-			? answerMap[q.questionId].answer
-			: [];
-		const analysis = answerMap[q.questionId]
-			? answerMap[q.questionId].analysis
-			: '';
+		const mapEntry = answerMap[q.questionId] || {};
+		const correctAnswer = mapEntry.answer || [];
+		const analysis = mapEntry.analysis || '';
+		// 优先用快照 type，兜底用数据库 type
+		const qType = q.type || mapEntry.type || 'single';
 
 		// 判分
 		let isCorrect = false;
-		if (q.type === 'fill') {
-			// 填空题：用户输入文本与可接受答案比对（去空格、不区分大小写）
+		if (qType === 'fill') {
+			// 填空题：用户输入文本与任一可接受答案匹配即得分
 			const userInput = Array.isArray(userAnswer) ? (userAnswer[0] || '') : (userAnswer || '');
 			const trimmed = userInput.trim().toLowerCase();
 			isCorrect = trimmed.length > 0 && correctAnswer.some(a => String(a).trim().toLowerCase() === trimmed);
