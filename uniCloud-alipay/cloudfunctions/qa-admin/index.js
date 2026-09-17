@@ -83,8 +83,8 @@ async function add(event) {
 		type,
 		category: category.trim(),
 		difficulty: parseInt(difficulty) || 1,
-		options: formatOptions(options),
-		answer: answer,
+		options: type === 'fill' ? [] : formatOptions(options),
+		answer: type === 'fill' ? answer.map(a => String(a).trim()) : answer,
 		analysis: (analysis || '').trim(),
 		status: status !== undefined ? parseInt(status) : 0,
 		create_date: Date.now()
@@ -116,8 +116,8 @@ async function edit(event) {
 		type,
 		category: category.trim(),
 		difficulty: parseInt(difficulty) || 1,
-		options: formatOptions(options),
-		answer: answer,
+		options: type === 'fill' ? [] : formatOptions(options),
+		answer: type === 'fill' ? answer.map(a => String(a).trim()) : answer,
 		analysis: (analysis || '').trim()
 	};
 	if (status !== undefined) {
@@ -173,41 +173,53 @@ function validateQuestion(data) {
 		return '题干不能为空';
 	}
 
-	if (!['single', 'multiple', 'judge'].includes(type)) {
+	if (!['single', 'multiple', 'judge', 'fill'].includes(type)) {
 		return '题型不合法';
 	}
 
-	if (!options || !Array.isArray(options) || options.length < 2) {
-		return '选项至少需要 2 个';
-	}
-
-	// 检查选项 key 唯一
-	const keys = options.map(o => o.key);
-	if (new Set(keys).size !== keys.length) {
-		return '选项 key 重复';
-	}
-
-	if (!answer || !Array.isArray(answer) || answer.length === 0) {
-		return '正确答案不能为空';
-	}
-
-	// 检查正确答案是选项 key 的子集
-	const validKeys = new Set(keys);
-	for (const a of answer) {
-		if (!validKeys.has(a)) {
-			return '正确答案包含无效选项: ' + a;
+	// 填空题不需要选项，答案直接是文本
+	if (type === 'fill') {
+		if (!answer || !Array.isArray(answer) || answer.length === 0) {
+			return '正确答案不能为空';
 		}
-	}
+		for (const a of answer) {
+			if (!a || !String(a).trim()) {
+				return '填空答案不能为空字符串';
+			}
+		}
+	} else {
+		if (!options || !Array.isArray(options) || options.length < 2) {
+			return '选项至少需要 2 个';
+		}
 
-	// 单选题只能有一个答案
-	if (type === 'single' && answer.length !== 1) {
-		return '单选题只能有一个正确答案';
-	}
+		// 检查选项 key 唯一
+		const keys = options.map(o => o.key);
+		if (new Set(keys).size !== keys.length) {
+			return '选项 key 重复';
+		}
 
-	// 判断题固定两个选项
-	if (type === 'judge') {
-		if (options.length !== 2) {
-			return '判断题必须固定两个选项';
+		if (!answer || !Array.isArray(answer) || answer.length === 0) {
+			return '正确答案不能为空';
+		}
+
+		// 检查正确答案是选项 key 的子集
+		const validKeys = new Set(keys);
+		for (const a of answer) {
+			if (!validKeys.has(a)) {
+				return '正确答案包含无效选项: ' + a;
+			}
+		}
+
+		// 单选题只能有一个答案
+		if (type === 'single' && answer.length !== 1) {
+			return '单选题只能有一个正确答案';
+		}
+
+		// 判断题固定两个选项
+		if (type === 'judge') {
+			if (options.length !== 2) {
+				return '判断题必须固定两个选项';
+			}
 		}
 	}
 

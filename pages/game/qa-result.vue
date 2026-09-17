@@ -65,6 +65,10 @@
 					<text>你的答案：</text>
 					<text class="user-ans">{{formatAnswer(item.userAnswer)}}</text>
 				</view>
+				<view class="wrong-user-answer">
+					<text>正确答案：</text>
+					<text class="correct-ans">{{formatAnswer(item.correctAnswer)}}</text>
+				</view>
 				
 				<view class="wrong-analysis-box" v-if="item.analysis">
 					<text class="analysis-title">💡 解析</text>
@@ -117,7 +121,7 @@ export default {
 	},
 	methods: {
 		typeLabel(type) {
-			const map = { single: '单选', multiple: '多选', judge: '判断' }
+			const map = { single: '单选', multiple: '多选', judge: '判断', fill: '填空' }
 			return map[type] || type
 		},
 		
@@ -361,6 +365,10 @@ export default {
 		background: #e8f5e9;
 		color: #2e7d32;
 	}
+	&.type-fill {
+		background: #fce4ec;
+		color: #ad1457;
+	}
 }
 
 .wrong-question-text {
@@ -423,6 +431,10 @@ export default {
 	
 	.user-ans {
 		color: #c62828;
+	}
+	
+	.correct-ans {
+		color: #2e7d32;
 	}
 }
 

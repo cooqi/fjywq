@@ -127,11 +127,20 @@ async function submitExam(userId, event) {
 			? answerMap[q.questionId].analysis
 			: '';
 
-		// 多选必须完全匹配
-		const isCorrect =
-			Array.isArray(userAnswer) &&
-			userAnswer.length === correctAnswer.length &&
-			userAnswer.slice().sort().join(',') === correctAnswer.slice().sort().join(',');
+		// 判分
+		let isCorrect = false;
+		if (q.type === 'fill') {
+			// 填空题：用户输入文本与可接受答案比对（去空格、不区分大小写）
+			const userInput = Array.isArray(userAnswer) ? (userAnswer[0] || '') : (userAnswer || '');
+			const trimmed = userInput.trim().toLowerCase();
+			isCorrect = trimmed.length > 0 && correctAnswer.some(a => String(a).trim().toLowerCase() === trimmed);
+		} else {
+			// 选择题：多选必须完全匹配
+			isCorrect =
+				Array.isArray(userAnswer) &&
+				userAnswer.length === correctAnswer.length &&
+				userAnswer.slice().sort().join(',') === correctAnswer.slice().sort().join(',');
+		}
 
 		if (isCorrect) correctCount++;
 

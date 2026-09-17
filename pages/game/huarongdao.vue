@@ -231,6 +231,12 @@ export default {
   onUnload() {
     this.clearTimer()
   },
+  onShareAppMessage() {
+    return {
+      title: '宇青青宇全肯定',
+      path: '/pages/game/huarongdao'
+    }
+  },
   methods: {
     // 选择难度
     selectLevel(level) {

@@ -18,8 +18,8 @@
 		},
 		"type": {
 			"bsonType": "string",
-			"description": "题型：single单选/multiple多选/judge判断",
-			"enum": ["single", "multiple", "judge"]
+			"description": "题型：single单选/multiple多选/judge判断/fill填空",
+			"enum": ["single", "multiple", "judge", "fill"]
 		},
 		"category": {
 			"bsonType": "string",
@@ -38,7 +38,7 @@
 		},
 		"answer": {
 			"bsonType": "array",
-			"description": "正确答案 [\"A\"] 或 [\"A\",\"C\"]"
+			"description": "正确答案，选择题 [\"A\"] 或 [\"A\",\"C\"]，填空题 [\"答案1\",\"答案2\"]"
 		},
 		"analysis": {
 			"bsonType": "string",

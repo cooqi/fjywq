@@ -92,7 +92,7 @@ export default {
   onShareAppMessage: function () {
     return {
         title: '宇青青宇全肯定',
-        path: '/pages/game/game'
+        path: '/pages/game/tarot'
     }
     },
     onShareTimeline: function () {

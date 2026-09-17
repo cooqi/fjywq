@@ -69,7 +69,7 @@
 				<view class="question-text">{{currentQuestion.question}}</view>
 				
 				<!-- 选项列表 -->
-				<view class="options-list">
+				<view class="options-list" v-if="currentQuestion.type !== 'fill'">
 					<view 
 						class="option-item"
 						v-for="opt in currentQuestion.options"
@@ -85,15 +85,26 @@
 						<view class="option-check" v-if="isOptionSelected(opt.key)">✓</view>
 					</view>
 				</view>
+				
+				<!-- 填空题输入 -->
+				<view class="fill-input-box" v-if="currentQuestion.type === 'fill'">
+					<input 
+						class="fill-input" 
+						v-model="fillText" 
+						placeholder="请输入答案" 
+						:disabled="isLocked"
+						@confirm="confirmFill"
+					/>
+				</view>
 			</view>
 			
 			<!-- 底部操作 -->
 			<view class="exam-footer">
 				<button 
-					v-if="currentQuestion.type === 'multiple'"
+					v-if="currentQuestion.type === 'multiple' || currentQuestion.type === 'fill'"
 					class="confirm-btn" 
-					:class="{'confirm-disabled': selectedOptions.length === 0}"
-					@click="confirmAnswer"
+					:class="{'confirm-disabled': currentQuestion.type === 'multiple' ? selectedOptions.length === 0 : !fillText.trim()}"
+					@click="currentQuestion.type === 'fill' ? confirmFill() : confirmAnswer()"
 					:disabled="isLocked"
 				>
 					确认答案
@@ -184,6 +195,7 @@ export default {
 			questions: [],
 			currentIndex: 0,
 			selectedOptions: [],
+			fillText: '',
 			isLocked: false,
 			timer: 20,
 			timerInterval: null,
@@ -217,10 +229,21 @@ export default {
 	onUnload() {
 		this.clearTimer()
 	},
+	onShareAppMessage: function () {
+		return {
+			title: '宇青青宇全肯定',
+			path: '/pages/game/qa-exam'
+		}
+	},
+	onShareTimeline: function () {
+		return {
+			title: '宇青青宇全肯定'
+		}
+	},
 	methods: {
 		// 题型标签
 		typeLabel(type) {
-			const map = { single: '单选', multiple: '多选', judge: '判断' }
+			const map = { single: '单选', multiple: '多选', judge: '判断', fill: '填空' }
 			return map[type] || type
 		},
 		
@@ -284,7 +307,11 @@ export default {
 		handleTimeout() {
 			this.isLocked = true
 			// 记录当前答案（空 = 未作答）
-			this.userAnswers[this.currentIndex] = [...this.selectedOptions]
+			if (this.currentQuestion.type === 'fill') {
+				this.userAnswers[this.currentIndex] = this.fillText.trim() ? [this.fillText.trim()] : []
+			} else {
+				this.userAnswers[this.currentIndex] = [...this.selectedOptions]
+			}
 			
 			setTimeout(() => {
 				this.goNextQuestion()
@@ -324,7 +351,7 @@ export default {
 			return this.selectedOptions.includes(key)
 		},
 		
-		// 多选确认
+		// 多选题确认
 		confirmAnswer() {
 			if (this.isLocked || this.selectedOptions.length === 0) return
 			this.isLocked = true
@@ -336,10 +363,23 @@ export default {
 			}, 300)
 		},
 		
+		// 填空题确认
+		confirmFill() {
+			if (this.isLocked || !this.fillText.trim()) return
+			this.isLocked = true
+			this.clearTimer()
+			this.userAnswers[this.currentIndex] = [this.fillText.trim()]
+			
+			setTimeout(() => {
+				this.goNextQuestion()
+			}, 300)
+		},
+		
 		// 进入下一题
 		goNextQuestion() {
 			this.currentIndex++
 			this.selectedOptions = []
+			this.fillText = ''
 			this.isLocked = false
 			
 			if (this.currentIndex >= this.questions.length) {
@@ -680,6 +720,10 @@ export default {
 		background: #e8f5e9;
 		color: #2e7d32;
 	}
+	&.type-fill {
+		background: #fce4ec;
+		color: #ad1457;
+	}
 }
 
 .category-tag {
@@ -759,6 +803,26 @@ export default {
 	color: #667eea;
 	font-weight: bold;
 	margin-left: 12rpx;
+}
+
+/* 填空题输入 */
+.fill-input-box {
+	margin-top: 10rpx;
+}
+
+.fill-input {
+	height: 88rpx;
+	background: #f8f9fa;
+	border: 2rpx solid #e0e0e0;
+	border-radius: 16rpx;
+	padding: 0 24rpx;
+	font-size: 30rpx;
+	color: #333;
+}
+
+.fill-input:focus {
+	border-color: #667eea;
+	background: #fff;
 }
 
 /* 底部操作 */

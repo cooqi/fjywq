@@ -95,11 +95,12 @@
 						<view class="type-opt" :class="{'type-active': formData.type === 'single'}" @click="changeFormType('single')">单选</view>
 						<view class="type-opt" :class="{'type-active': formData.type === 'multiple'}" @click="changeFormType('multiple')">多选</view>
 						<view class="type-opt" :class="{'type-active': formData.type === 'judge'}" @click="changeFormType('judge')">判断</view>
+						<view class="type-opt" :class="{'type-active': formData.type === 'fill'}" @click="changeFormType('fill')">填空</view>
 					</view>
 				</view>
 				
-				<!-- 选项 -->
-				<view class="form-group">
+				<!-- 选项（填空题不需要） -->
+				<view class="form-group" v-if="formData.type !== 'fill'">
 					<text class="form-label">选项 *</text>
 					<view class="options-editor">
 						<view class="option-row" v-for="(opt, idx) in formData.options" :key="idx">
@@ -114,7 +115,8 @@
 				<!-- 正确答案 -->
 				<view class="form-group">
 					<text class="form-label">正确答案 *</text>
-					<view class="answer-selector">
+					<!-- 选择题答案选择 -->
+					<view class="answer-selector" v-if="formData.type !== 'fill'">
 						<view 
 							class="answer-opt"
 							v-for="opt in formData.options"
@@ -125,9 +127,14 @@
 							{{opt.key}}
 						</view>
 					</view>
+					<!-- 填空题答案输入 -->
+					<view v-if="formData.type === 'fill'">
+						<textarea class="form-textarea" v-model="fillAnswerText" placeholder="每行一个可接受的答案" :maxlength="500"></textarea>
+					</view>
 					<text class="form-hint" v-if="formData.type === 'single'">单选只能选一个</text>
 					<text class="form-hint" v-if="formData.type === 'multiple'">多选可选多个</text>
-					<text class="form-hint" v-if="formData.type === 'judge'">判断选 T 或 F</text>
+					<text class="form-hint" v-if="formData.type === 'judge'">判断选 A 或 B</text>
+					<text class="form-hint" v-if="formData.type === 'fill'">可填写多个可接受答案，每行一个</text>
 				</view>
 				
 				<!-- 解析 -->
@@ -189,7 +196,8 @@ export default {
 				{ label: '全部题型', value: '' },
 				{ label: '单选', value: 'single' },
 				{ label: '多选', value: 'multiple' },
-				{ label: '判断', value: 'judge' }
+				{ label: '判断', value: 'judge' },
+				{ label: '填空', value: 'fill' }
 			],
 			filterTypeIndex: 0,
 			statusOptions: [
@@ -219,6 +227,7 @@ export default {
 			isEdit: false,
 			editId: '',
 			isSubmitting: false,
+			fillAnswerText: '',
 			formData: {
 				question: '',
 				type: 'single',
@@ -247,7 +256,7 @@ export default {
 	},
 	methods: {
 		typeLabel(type) {
-			const map = { single: '单选', multiple: '多选', judge: '判断' }
+			const map = { single: '单选', multiple: '多选', judge: '判断', fill: '填空' }
 			return map[type] || type
 		},
 		
@@ -325,6 +334,7 @@ export default {
 		showAddDialog() {
 			this.isEdit = false
 			this.editId = ''
+			this.fillAnswerText = ''
 			this.formData = {
 				question: '',
 				type: 'single',
@@ -348,13 +358,15 @@ export default {
 			this.formData = {
 				question: item.question,
 				type: item.type,
-				options: JSON.parse(JSON.stringify(item.options)),
+				options: JSON.parse(JSON.stringify(item.options || [])),
 				answer: [...item.answer],
 				analysis: item.analysis || '',
 				category: item.category || '',
 				difficulty: item.difficulty || 1,
 				status: item.status
 			}
+			// 填空题：将答案数组转为文本
+			this.fillAnswerText = item.type === 'fill' ? item.answer.join('\n') : ''
 			this.showDialog = true
 		},
 		
@@ -366,11 +378,14 @@ export default {
 		changeFormType(type) {
 			this.formData.type = type
 			this.formData.answer = []
+			this.fillAnswerText = ''
 			if (type === 'judge') {
 				this.formData.options = [
-					{ key: 'T', value: '正确' },
-					{ key: 'F', value: '错误' }
+					{ key: 'A', value: '正确' },
+					{ key: 'B', value: '错误' }
 				]
+			} else if (type === 'fill') {
+				this.formData.options = []
 			} else {
 				this.formData.options = [
 					{ key: 'A', value: '' },
@@ -420,10 +435,17 @@ export default {
 			if (!this.formData.question.trim()) {
 				return uni.showToast({ title: '题干不能为空', icon: 'none' })
 			}
-			if (this.formData.options.some(o => !o.value.trim())) {
+			if (this.formData.type !== 'fill' && this.formData.options.some(o => !o.value.trim())) {
 				return uni.showToast({ title: '选项内容不能为空', icon: 'none' })
 			}
-			if (this.formData.answer.length === 0) {
+			// 填空题：将文本转换为答案数组
+			if (this.formData.type === 'fill') {
+				const fillAnswers = this.fillAnswerText.split('\n').map(s => s.trim()).filter(s => s)
+				if (fillAnswers.length === 0) {
+					return uni.showToast({ title: '请填写至少一个可接受答案', icon: 'none' })
+				}
+				this.formData.answer = fillAnswers
+			} else if (this.formData.answer.length === 0) {
 				return uni.showToast({ title: '请选择正确答案', icon: 'none' })
 			}
 			if (!this.formData.category.trim()) {
@@ -628,6 +650,7 @@ export default {
 	&.type-single { background: #e3f2fd; color: #1976D2; }
 	&.type-multiple { background: #fff3e0; color: #e65100; }
 	&.type-judge { background: #e8f5e9; color: #2e7d32; }
+	&.type-fill { background: #fce4ec; color: #ad1457; }
 }
 
 .q-status {
