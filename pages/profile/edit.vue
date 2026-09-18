@@ -40,7 +40,7 @@
 			</view>
 			
 			<!-- 微信号 -->
-			<view class="form-item">
+			<!-- <view class="form-item">
 				<view class="form-label">微信号</view>
 				<input 
 					class="form-input" 
@@ -48,7 +48,7 @@
 					placeholder="请输入微信号"
 					maxlength="30"
 				/>
-			</view>
+			</view> -->
 		</view>
 		
 		<!-- 保存按钮 -->

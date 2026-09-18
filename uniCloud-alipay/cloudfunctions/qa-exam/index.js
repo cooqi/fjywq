@@ -264,8 +264,18 @@ async function getWrongQuestions(userId) {
 						category: q.category,
 						difficulty: q.difficulty,
 						options: q.options,
-						correctAnswer: q.correctAnswer || [],
-						userAnswer: q.userAnswer || [],
+						correctAnswer: (q.options && q.options.length > 0)
+							? (q.correctAnswer || []).map(key => {
+								const opt = q.options.find(o => o.key === key);
+								return opt ? key + ' ' + opt.value : key;
+							})
+							: (q.correctAnswer || []),
+						userAnswer: (q.userAnswer && q.userAnswer.length > 0)
+							? q.userAnswer.map(key => {
+								const opt = q.options.find(o => o.key === key);
+								return opt ? key + ' ' + opt.value : key;
+							})
+							: (q.userAnswer || []),
 						analysis: q.analysis || '',
 						wrongCount: 0,
 						lastWrongDate: record.create_date

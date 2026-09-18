@@ -801,6 +801,7 @@ export default {
 	flex: 1;
 	padding: 24rpx 32rpx;
 	overflow-y: auto;
+	    box-sizing: border-box;
 }
 
 /* 表单 */
