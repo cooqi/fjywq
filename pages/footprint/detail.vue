@@ -16,8 +16,8 @@
 				<view class="rule-line"></view>
 				<view class="diamond"></view>
 				<view class="head-text">
-					<text class="head-cn">纪念电子票据</text>
-					<text class="head-en">MEMORIAL TICKET</text>
+					<text class="head-cn">{{concert.img ? concert.ychTheme : '纪念电子票据'}}</text>
+					<text class="head-en">{{concert.ychTheme ? 'ARTIST' : 'PERFORMANCE'}}</text>
 				</view>
 				<view class="diamond"></view>
 				<view class="rule-line"></view>
@@ -25,6 +25,8 @@
 			
 			<!-- 主券 -->
 			<view class="ticket-main">
+				<img :src="concert.img" class="ticket-bg" mode="widthFix" v-if="concert.img"/>
+				<view class="main-info" v-else>
 				<view class="event-row">
 					<view class="rule-line short"></view>
 					<text class="event-name">{{concert.ychTheme || concert.type || '演出'}}</text>
@@ -62,6 +64,7 @@
 						</text>
 					</view>
 				</view>
+				</view>
 			</view>
 			
 			<!-- 打孔线 + 印章 -->
@@ -90,6 +93,10 @@
 					</view>
 					<text class="barcode-no">192769QY</text>
 				</view>
+			</view>
+			<view class="stub-user" v-if="concert.img">
+				<text class="artist stub-user-name">{{userInfo.nickName || '杯杯儿'}}</text>
+				<text class="stub-user-time">{{dateYear}}.{{dateMonth}}.{{dateDay}}</text>
 			</view>
 			<view class="stub-route">
 						<view class="route-arrow">
@@ -384,9 +391,10 @@ export default {
 	.head-cn { display: block; font-size: 28rpx; font-weight: 700; letter-spacing: 8rpx; color: #ddd6fe; }
 	.head-en { display: block; font-size: 18rpx; letter-spacing: 8rpx; color: rgba(225,220,255,.66); margin-top: 8rpx; }
 }
-
 // ===== 主券 =====
-.ticket-main { position: relative; z-index: 1; padding: 52rpx 38rpx 40rpx; text-align: center; }
+.ticket-main { position: relative; z-index: 1;  text-align: center; }
+.ticket-bg {  width: 100%; height: auto; }
+.main-info { padding: 52rpx 38rpx 40rpx; }
 .event-row { display: flex; align-items: center; justify-content: center; margin-bottom: 16rpx; gap: 24rpx; }
 .event-row .rule-line {
 	width: 100rpx; height: 2rpx;
@@ -459,13 +467,18 @@ export default {
 // ===== 副券 =====
 .ticket-stub {
 	position: relative; z-index: 1; display: flex; align-items: flex-start;
-	justify-content: space-between; padding: 44rpx 68rpx 40rpx; gap: 32rpx;
+	justify-content: space-between; padding: 30rpx 68rpx; gap: 32rpx;
 }
+.stub-user{
+	display: flex; justify-content: space-between; padding: 0 68rpx ; color: #fff;
+	font-size: 40rpx;font-weight: 700;
+}
+.stub-user-name { font-size: 50rpx;  }
 .stub-left { flex: 1; }
 .stub-label { display: block; font-size: 20rpx; letter-spacing: 4rpx; color: rgba(225,220,255,.66); margin-bottom: 16rpx; }
 .stub-no { display: block; font-size: 48rpx; font-weight: 700; color: #e9e2ff; letter-spacing: 4rpx; }
 .stub-num { color: #67e8f9; }
-.stub-route { display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; padding: 24rpx;
+.stub-route { display: flex; align-items: center; gap: 12rpx; padding: 24rpx;
 	.tag{
 		color: #8bfae7;
 	}

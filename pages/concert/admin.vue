@@ -39,12 +39,22 @@
 				<view class="item-header">
 					<view class="item-type" :class="getTypeClass(item.type)">{{item.type}}</view>
 					<view class="item-actions" v-if="canEditCalendar">
-						<view class="action-btn edit" @click="editConcert(item)">编辑</view>
-						<view class="action-btn delete" @click="deleteConcert(item)">删除</view>
+						<view class="action-btn edit" @click.stop="editConcert(item)">编辑</view>
+						<view class="action-btn delete" @click.stop="deleteConcert(item)">删除</view>
 					</view>
 				</view>
 				
 				<view class="item-content">
+					<view class="item-images" v-if="item.img">
+						<image 
+							class="item-thumb" 
+							v-for="(url, idx) in item.img.split(';').filter(u => u)" 
+							:key="idx" 
+							:src="url" 
+							mode="aspectFill"
+							@click.stop="previewImages(item.img, idx)"
+						/>
+					</view>
 					<view class="item-row">
 						<text class="label">主题：</text>
 						<text class="value">{{item.ychTheme || '未设置'}}</text>
@@ -140,6 +150,16 @@
 						<text class="form-label">备注</text>
 						<textarea class="form-textarea" v-model="formData.bz" placeholder="请输入备注信息" />
 					</view>
+								
+					<view class="form-item">
+						<image-upload 
+							ref="imageUpload"
+							title="现场照片" 
+							:maxCount="3" 
+							uploadPath="concert" 
+							:modelValue="formData.img"
+						/>
+					</view>
 				</view>
 				
 				<view class="dialog-actions">
@@ -153,7 +173,11 @@
 
 <script>
 import { hasCalendarPermission } from '@/common/js/permission.js'
+import imageUpload from '@/components/image-upload/image-upload.vue'
 	export default {
+		components: {
+			imageUpload
+		},
 		data() {
 			return {
 				loading: false,
@@ -194,7 +218,8 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					Province: '',
 					address: '',
 					playlist: '',
-					bz: ''
+					bz: '',
+					img: ''
 				},
 				userInfo: {},
 				canEditCalendar: false
@@ -312,7 +337,8 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					Province: '',
 					address: '',
 					playlist: '',
-					bz: ''
+					bz: '',
+					img: ''
 				}
 				this.formTypeIndex = 1
 				this.provinceIndex = -1
@@ -332,7 +358,8 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					Province: item.Province || '',
 					address: item.address || '',
 					playlist: item.playlist || '',
-					bz: item.bz || ''
+					bz: item.bz || '',
+					img: item.img || ''
 				}
 				
 				// 设置类型索引
@@ -401,7 +428,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			},
 			
 			// 提交表单
-			submitForm() {
+			async submitForm() {
 				if (!this.formData.type) {
 					uni.showToast({
 						title: '请选择类型',
@@ -409,6 +436,11 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					})
 					return
 				}
+				
+				// 处理图片上传
+				const imgResult = await this.$refs.imageUpload.processImages(this.editMode)
+				if (imgResult === null) return // 上传失败，已弹窗
+				this.formData.img = imgResult
 				
 				uni.showLoading({ title: '保存中' })
 				
@@ -467,6 +499,15 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 			goDetail(item) {
 				uni.navigateTo({
 					url: '/pages/concert/detail?id=' + item._id
+				})
+			},
+			
+			// 预览图片
+			previewImages(imgStr, current) {
+				const urls = imgStr.split(';').filter(u => u)
+				uni.previewImage({
+					urls: urls,
+					current: current
 				})
 			}
 		}
@@ -631,6 +672,19 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 		}
 		
 		.item-content {
+			.item-images {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 12rpx;
+				margin-bottom: 16rpx;
+				
+				.item-thumb {
+					width: 120rpx;
+					height: 120rpx;
+					border-radius: 8rpx;
+				}
+			}
+			
 			.item-row {
 				display: flex;
 				margin-bottom: 12rpx;

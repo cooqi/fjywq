@@ -104,6 +104,7 @@ async function add(event) {
 			playlist: data.playlist || '',
 			bz: data.bz || '',
             Province: data.Province || '',
+			img: data.img || '',
 			createTime: Date.now()
 		});
 		
@@ -151,6 +152,8 @@ async function update(event) {
 				address: data.address || '',
 				playlist: data.playlist || '',
 				bz: data.bz || '',
+				Province: data.Province || '',
+				img: data.img || '',
 				updateTime: Date.now()
 			});
 		
