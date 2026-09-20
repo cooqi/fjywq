@@ -32,21 +32,62 @@ exports.main = async (event, context) => {
 	}
 };
 
-// 开始考试：随机抽 25 题
+// 开始考试：随机抽 25 题（优先避开近期已考题目）
 async function startExam(userId) {
-	// 查询所有启用的题目
+	// 查询所有启用的题目（先获取总数，再一次性拉取，避免默认 limit 100 截断）
+	const countRes = await questionsCol.where({ status: 1 }).count();
+	const totalAvailable = countRes.total;
 	const allQuestions = await questionsCol
 		.where({ status: 1 })
+		.limit(totalAvailable)
 		.get();
 
 	if (allQuestions.data.length === 0) {
 		return { code: -1, msg: '题库为空，暂无可用题目' };
 	}
 
-	// 随机抽 25 题（或全部，如果不足 25 题）
 	const total = Math.min(25, allQuestions.data.length);
-	const shuffled = shuffleArray(allQuestions.data);
-	const selected = shuffled.slice(0, total);
+
+	// 获取该用户最近 3 次考试的题目 ID，用于去重
+	const recentRecords = await recordsCol
+		.where({ user_id: userId })
+		.orderBy('create_date', 'desc')
+		.limit(3)
+		.field({ questions: true })
+		.get();
+
+	const recentQuestionIds = new Set();
+	if (recentRecords.data && recentRecords.data.length > 0) {
+		recentRecords.data.forEach(record => {
+			if (record.questions) {
+				record.questions.forEach(q => {
+					if (q.questionId) recentQuestionIds.add(q.questionId);
+				});
+			}
+		});
+	}
+
+	// 将题目分为"未考过"和"已考过"两组
+	const fresh = [];
+	const repeated = [];
+	allQuestions.data.forEach(q => {
+		if (recentQuestionIds.has(q._id)) {
+			repeated.push(q);
+		} else {
+			fresh.push(q);
+		}
+	});
+
+	// 优先从未考过的题目中抽取，不足时再从已考过的题目中补充
+	let selected;
+	if (fresh.length >= total) {
+		selected = shuffleArray(fresh).slice(0, total);
+	} else {
+		const needMore = total - fresh.length;
+		const shuffledRepeated = shuffleArray(repeated);
+		selected = [...fresh, ...shuffledRepeated.slice(0, needMore)];
+		selected = shuffleArray(selected); // 再打乱顺序
+	}
 
 	// 构造题目快照（不含答案和解析，前端答题时不展示）
 	const questionSnapshots = selected.map((q, idx) => ({
