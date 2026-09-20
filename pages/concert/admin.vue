@@ -155,7 +155,7 @@
 						<image-upload 
 							ref="imageUpload"
 							title="现场照片" 
-							:maxCount="3" 
+							:maxCount="1" 
 							uploadPath="concert" 
 							:modelValue="formData.img"
 						/>
