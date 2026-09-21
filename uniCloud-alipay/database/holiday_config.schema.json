@@ -1,0 +1,122 @@
+{
+	"bsonType": "object",
+	"required": ["name", "month"],
+	"permission": {
+		"read": true,
+		"create": "'s_admin' in auth.role || 'admin' in auth.role",
+		"update": "'s_admin' in auth.role || 'admin' in auth.role",
+		"delete": "'s_admin' in auth.role || 'admin' in auth.role"
+	},
+	"properties": {
+		"_id": {
+			"description": "ID"
+		},
+		"name": {
+			"bsonType": "string",
+			"title": "节日名称",
+			"description": "节日名称，如：元旦、春节"
+		},
+		"key": {
+			"bsonType": "string",
+			"title": "唯一标识",
+			"description": "用于CSS类名和主题匹配，如：newYear、spring-festival"
+		},
+		"date_type": {
+			"bsonType": "string",
+			"title": "日期类型",
+			"description": "fixed=固定日期（每年同月同日），range=范围日期（如春节）",
+			"enum": ["fixed", "range"],
+			"defaultValue": "fixed"
+		},
+		"month": {
+			"bsonType": "int",
+			"title": "月份",
+			"description": "节日月份（1-12）",
+			"minimum": 1,
+			"maximum": 12
+		},
+		"day": {
+			"bsonType": "int",
+			"title": "日期",
+			"description": "节日日期（1-31），固定日期类型使用",
+			"minimum": 1,
+			"maximum": 31
+		},
+		"year": {
+			"bsonType": "int",
+			"title": "年份",
+			"description": "范围日期类型的年份，如2026"
+		},
+		"startMonth": {
+			"bsonType": "int",
+			"title": "开始月份",
+			"description": "范围日期类型的开始月份"
+		},
+		"startDay": {
+			"bsonType": "int",
+			"title": "开始日期",
+			"description": "范围日期类型的开始日期"
+		},
+		"endMonth": {
+			"bsonType": "int",
+			"title": "结束月份",
+			"description": "范围日期类型的结束月份"
+		},
+		"endDay": {
+			"bsonType": "int",
+			"title": "结束日期",
+			"description": "范围日期类型的结束日期"
+		},
+		"emoji": {
+			"bsonType": "string",
+			"title": "主Emoji",
+			"description": "节日主表情符号"
+		},
+		"emojiLeft": {
+			"bsonType": "string",
+			"title": "左侧装饰Emoji"
+		},
+		"emojiRight": {
+			"bsonType": "string",
+			"title": "右侧装饰Emoji"
+		},
+		"floatingEmojis": {
+			"bsonType": "array",
+			"title": "飘浮装饰",
+			"description": "飘浮装饰Emoji数组，每项含emoji/left/top/delay/size"
+		},
+		"bannerBg": {
+			"bsonType": "string",
+			"title": "横幅背景",
+			"description": "横幅渐变背景CSS，如linear-gradient(135deg, #ff6b6b, #ee5a24)"
+		},
+		"containerClass": {
+			"bsonType": "string",
+			"title": "背景类名",
+			"description": "页面背景CSS类名，如theme-new-year"
+		},
+		"bgImage": {
+			"bsonType": "string",
+			"title": "背景图片",
+			"description": "背景图片URL，支持云存储fileID或网络图片地址，为空则不显示背景图"
+		},
+		"remark": {
+			"bsonType": "string",
+			"title": "备注",
+			"description": "备注信息，如节日来源、特殊说明等"
+		},
+		"is_active": {
+			"bsonType": "bool",
+			"title": "是否启用",
+			"defaultValue": true
+		},
+		"create_time": {
+			"bsonType": "timestamp",
+			"title": "创建时间"
+		},
+		"update_time": {
+			"bsonType": "timestamp",
+			"title": "更新时间"
+		}
+	}
+}

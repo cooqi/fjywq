@@ -77,20 +77,39 @@
 		</view>
 		
 		<view class="edit" @click="edit" v-if="canEditCalendar">编辑</view>
+		<view class="holiday-admin-btn" @click="toHolidayAdmin" v-if="isAdminUser">🎨</view>
 		<view class="search-btn" @click="toSearch">
 			<uni-icons type="search" size="24" color="#fff"></uni-icons>
 		</view>
 		
 	</view>
+	
+	<!-- 节日祝福弹窗 -->
+	<uni-popup ref="holidayPopup" type="center" :mask-click="true" :safe-area="true">
+		<view class="holiday-popup" v-if="currentHoliday">
+			<view class="holiday-popup-bg" v-if="currentHoliday.bgImage" :style="{backgroundImage: 'url(' + currentHoliday.bgImage + ')'}"></view>
+			<view class="holiday-popup-overlay"></view>
+			<view class="holiday-popup-content">
+				<view class="holiday-popup-emoji">{{currentHoliday.emoji}}</view>
+				<view class="holiday-popup-title">{{currentHoliday.name}}</view>
+				<view class="holiday-popup-deco">
+					<text>{{currentHoliday.emojiLeft}} {{currentHoliday.emojiRight}}</text>
+				</view>
+				<view class="holiday-popup-remark">
+					<text class="remark-text">{{currentHoliday.remark}}</text>
+				</view>
+			</view>
+		</view>
+	</uni-popup>
 
-	</view>
+</view>
 
 </template>
 
 <script>
 	import EmbedCalendar from '../../components/fd-EmbedCalendar/fd-EmbedCalendar.vue'
 	import {processJQLResults} from './rili.js'
-	import { hasCalendarPermission } from '@/common/js/permission.js'
+	import { hasCalendarPermission, isAdmin } from '@/common/js/permission.js'
 	export default {
 		components: {
 		  EmbedCalendar
@@ -113,8 +132,11 @@
 				dayText:'',
 				currentMonth: '',
 				canEditCalendar: false, // 是否有日历编辑权限
+				currentHoliday: null, // 当前节日配置（从数据库获取）
+				isAdminUser: false, // 是否为管理员
 			}
 		},
+		computed: {},
 		onShow() {
 			const userInfo = uni.getStorageSync('userInfo');
 				this.userInfo=JSON.parse(userInfo)
@@ -126,11 +148,13 @@
 			this.time=this.formatDate(new Date())
 			this.getList()
 			this.useCommon()
+			this.getHolidayConfig()
 			try {
 				const userInfo = uni.getStorageSync('userInfo');
 				this.userInfo=JSON.parse(userInfo)
 				// 检查日历编辑权限
 				this.canEditCalendar = hasCalendarPermission(this.userInfo, 'add') || hasCalendarPermission(this.userInfo, 'edit')
+				this.isAdminUser = isAdmin(this.userInfo)
 			} catch (e) {
 				// error
 			}
@@ -139,7 +163,8 @@
 		onPullDownRefresh() {
 			Promise.all([
 				this.getList(this.currentMonth),
-				this.useCommon()
+				this.useCommon(),
+				this.getHolidayConfig()
 			]).finally(() => {
 				uni.stopPullDownRefresh()
 			})
@@ -156,6 +181,18 @@
 				},
 				immediate:true,
 				deep:true
+			},
+			currentHoliday(val) {
+				if(val) {
+					// 数据变化后等待组件渲染完成再打开弹窗
+					this.$nextTick(() => {
+						setTimeout(() => {
+							if(this.$refs.holidayPopup) {
+								this.$refs.holidayPopup.open()
+							}
+						}, 300)
+					})
+				}
 			}
 		},
 		onShareAppMessage: function () {
@@ -170,6 +207,34 @@
 		    }
 		  },
 		methods: {
+			// 从数据库获取今日节日配置
+			getHolidayConfig() {
+				return uniCloud.callFunction({
+					name: 'holiday-config',
+					data: { action: 'getToday' }
+				}).then((res) => {
+					if(res.result.code === 0 && res.result.data) {
+						this.currentHoliday = res.result.data
+					} else {
+						this.currentHoliday = null
+					}
+				}).catch((err) => {
+					console.error('获取节日配置失败:', err)
+					this.currentHoliday = null
+				})
+			},
+			// 关闭节日弹窗
+			closeHolidayPopup() {
+				if(this.$refs.holidayPopup) {
+					this.$refs.holidayPopup.close()
+				}
+			},
+			// 跳转节日装饰管理页
+			toHolidayAdmin() {
+				uni.navigateTo({
+					url: '/pages/rili/holiday-admin'
+				})
+			},
 			edit(){
 				uni.navigateTo({
 					url: '/pages/edit/rili'
@@ -472,7 +537,9 @@
 .page-container {
 	min-height: 100vh;
 	background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%);
-	padding: 1px
+	padding: 1px;
+	position: relative;
+	overflow: hidden;
 }
 
 .calendar {
@@ -613,6 +680,26 @@
 		}
 	}
 	
+	.holiday-admin-btn{
+		position: fixed;
+		right: 10rpx;
+		bottom: 240rpx;
+		border-radius: 50%;
+		width: 80rpx;
+		height: 80rpx;
+		background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+		color: #fff;
+		font-size: 36rpx;
+		line-height: 80rpx;
+		text-align: center;
+		box-shadow: 0 8rpx 24rpx rgba(255, 154, 158, 0.3);
+		transition: all 0.3s ease;
+		
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+	
 	.search-btn{
 		position: fixed;
 		right: 10rpx;
@@ -697,4 +784,91 @@
 			width: 50px;height: 50px;margin: 10px;
 		}
 	}
+
+/* 节日祝福弹窗 */
+.holiday-popup {
+	width: 560rpx;
+	border-radius: 32rpx;
+	text-align: center;
+	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
+	position: relative;
+	overflow: hidden;
+	min-height: 400rpx;
+}
+
+/* 背景图层 */
+.holiday-popup-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	z-index: 1;
+}
+
+/* 半透明遮罩，保证文字可读 */
+.holiday-popup-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.35);
+	z-index: 2;
+}
+
+/* 内容层 */
+.holiday-popup-content {
+	position: relative;
+	z-index: 3;
+	    height: 70vh;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.holiday-popup-emoji {
+	font-size: 100rpx;
+	margin-bottom: 24rpx;
+	animation: holidayBounce 1s ease-in-out infinite;
+}
+
+.holiday-popup-title {
+	font-size: 36rpx;
+	font-weight: 700;
+	color: #fff;
+	margin-bottom: 16rpx;
+	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+}
+
+.holiday-popup-deco {
+	font-size: 40rpx;
+	margin-bottom: 40rpx;
+	opacity: 0.9;
+}
+
+
+.holiday-popup-remark{
+	width: 90%;
+	text-align: center;
+	line-height: 160%;
+	margin: 0 auto;
+	background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+	color: #fff;
+	border-radius: 36rpx;
+	font-size: 28rpx;
+	font-weight: 500;
+	box-shadow: 0 8rpx 24rpx rgba(139, 92, 246, 0.3);
+	padding: 16rpx 32rpx;
+	text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+}
+
+@keyframes holidayBounce {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.1); }
+}
 </style>

@@ -71,6 +71,14 @@
 		}
 	},
 	{
+		"path": "pages/rili/holiday-admin",
+		"style": {
+			"navigationBarTitleText": "节日装饰管理",
+			"enablePullDownRefresh": true,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/edit/notice",
 		"style": {
 			"navigationBarTitleText": "编辑公告",

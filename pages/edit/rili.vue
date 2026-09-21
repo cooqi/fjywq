@@ -93,7 +93,7 @@
 						ref="imageUpload"
 						title="上传图片" 
 						optionalText="优先外链" 
-						maxCount="3"
+						maxCount="9"
 						uploadPath="rili"
 						:modelValue="formData.imgurl"
 					></image-upload>
