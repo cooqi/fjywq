@@ -5,6 +5,16 @@ exports.main = async (event, context) => {
      const { month ,year,search} = event // 从事件参数中获取年份和月份
       
     const allRes  = await collection.orderBy("date", "desc").limit(999).get()
+    // 拼接 imgurl_path + imgurl_upload → imgurl，兼容旧数据
+    const mergeImgurl = (item) => {
+        if (item.imgurl_path !== undefined || item.imgurl_upload !== undefined) {
+            const a = (item.imgurl_path || '').split(';').filter(u => u)
+            const b = (item.imgurl_upload || '').split(';').filter(u => u)
+            item.imgurl = [...new Set([...a, ...b])].join(';')
+        }
+        return item
+    }
+    if (allRes.data) allRes.data = allRes.data.map(mergeImgurl)
     let res=allRes
     if(month && year){
         // 格式化月份和年份，确保比较时一致
@@ -94,5 +104,6 @@ exports.main = async (event, context) => {
         }
     }
     
+    if (res.data) res.data = res.data.map(mergeImgurl)
     return res
 };

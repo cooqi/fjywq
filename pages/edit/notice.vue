@@ -72,7 +72,7 @@
 				</view>
 				<view class="uni-form-item ">
 					<text class="title">图片</text>
-					<textarea class="uni-input form-textarea" name="imgs" v-model="formData.imgs" placeholder="请输入" auto-height maxlength="1000"/>
+					<textarea class="uni-input form-textarea" name="imgs_path" v-model="formData.imgs_path" placeholder="请输入" auto-height maxlength="1000"/>
 				</view>
 				<image-upload 
 					ref="imageUpload"
@@ -80,7 +80,7 @@
 					optionalText="小程序会压缩图片，优先外链" 
 					maxCount="9"
 					uploadPath="notice"
-					:modelValue="formData.imgs"
+					:modelValue="formData.imgs_upload"
 				></image-upload>
 				<view class="uni-form-item ">
 					<text class="title">url</text>
@@ -119,7 +119,8 @@
 					hide:'',
 					is_today_important:'',
 					classType:'',
-					imgs:'',
+					imgs_path:'',
+					imgs_upload:'',
 					url:'',
 					is_countdown: '',
 					is_countdown_date: ''
@@ -158,6 +159,16 @@
 		methods:{
 			editInfo(item){
 				this.formData= {...item};
+				// 兼容旧数据：将 imgs 中的云端URL拆分到 imgs_upload
+				if (!this.formData.imgs_path && !this.formData.imgs_upload && item.imgs) {
+					const urls = item.imgs.split(';').filter(u => u)
+					const manual = urls.filter(u => !u.startsWith('http://') && !u.startsWith('https://'))
+					const uploaded = urls.filter(u => u.startsWith('http://') || u.startsWith('https://'))
+					this.formData.imgs_path = manual.join(';')
+					this.formData.imgs_upload = uploaded.join(';')
+				}
+				if (!this.formData.imgs_path) this.formData.imgs_path = ''
+				if (!this.formData.imgs_upload) this.formData.imgs_upload = ''
 			},
 			async add() {
 				if(!this.formData.title){
@@ -177,7 +188,7 @@
 				const isEdit = !!this.formData._id
 				const imgResult = await this.$refs.imageUpload.processImages(isEdit)
 				if (imgResult !== null) {
-					this.formData.imgs = imgResult
+					this.formData.imgs_upload = imgResult
 				}
 				uni.showLoading({
 					title: '处理中...'
@@ -250,7 +261,7 @@
 				const isEdit = !!this.formData._id
 				const imgResult = await this.$refs.imageUpload.processImages(isEdit)
 				if (imgResult !== null) {
-					this.formData.imgs = imgResult
+					this.formData.imgs_upload = imgResult
 				}
 				let params = {...this.formData,update_czr:this.userInfo._id}
 				uni.showLoading({
@@ -299,7 +310,18 @@
 					}
 				}).then((res) => {
 					uni.hideLoading()
-					this.formData=res.result.data[0] 
+					const data = res.result.data[0]
+					this.formData = {...data}
+					// 兼容旧数据：将 imgs 中的云端URL拆分到 imgs_upload
+					if (!this.formData.imgs_path && !this.formData.imgs_upload && data.imgs) {
+						const urls = data.imgs.split(';').filter(u => u)
+						const manual = urls.filter(u => !u.startsWith('http://') && !u.startsWith('https://'))
+						const uploaded = urls.filter(u => u.startsWith('http://') || u.startsWith('https://'))
+						this.formData.imgs_path = manual.join(';')
+						this.formData.imgs_upload = uploaded.join(';')
+					}
+					if (!this.formData.imgs_path) this.formData.imgs_path = ''
+					if (!this.formData.imgs_upload) this.formData.imgs_upload = '' 
 				}).catch((err) => {
 					uni.hideLoading()
 					uni.showModal({
@@ -343,7 +365,8 @@
 					hide:'',
 					is_today_important:'',
 					classType:'',
-					imgs:'',
+					imgs_path:'',
+					imgs_upload:'',
 					url:'',
 					is_countdown: '',
 					is_countdown_date: ''

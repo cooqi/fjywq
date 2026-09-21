@@ -16,5 +16,16 @@ exports.main = async (event, context) => {
 
 	const res=await collection.where(queryConditions).orderBy("top", "desc").orderBy("is_today_important", "desc").orderBy("_id", "desc").get()
 	
+	// 拼接 imgs_path + imgs_upload → imgs，兼容旧数据
+	const mergeImgs = (item) => {
+		if (item.imgs_path !== undefined || item.imgs_upload !== undefined) {
+			const a = (item.imgs_path || '').split(';').filter(u => u)
+			const b = (item.imgs_upload || '').split(';').filter(u => u)
+			item.imgs = [...new Set([...a, ...b])].join(';')
+		}
+		return item
+	}
+	if (res.data) res.data = res.data.map(mergeImgs)
+	
 	return res
 };

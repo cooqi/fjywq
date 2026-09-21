@@ -2,9 +2,18 @@
 	<view class="section-box">
 		<view class="section-title">{{ title }} <text class="optional">{{ optionalText }}</text></view>
 		<view class="upload-box">
-			<view class="upload-item" v-for="(img, index) in imageList" :key="index">
+			<view 
+				class="upload-item" 
+				:class="{ 'upload-item-placeholder': isDragging && dragIndex === index }" 
+				v-for="(img, index) in imageList" 
+				:key="index"
+				@longpress="onDragStart($event, index)"
+				@touchmove.stop.prevent="onDragMove"
+				@touchend="onDragEnd"
+				:style="getImageItemStyle(index)"
+			>
 				<image class="upload-image" :src="img" mode="aspectFill" @click="previewImage(index)"></image>
-				<view class="upload-delete" @click.stop="deleteImage(index)">×</view>
+				<view class="upload-delete" v-if="!(isDragging && (dragIndex === index || dragTargetIndex === index))" @click.stop="deleteImage(index)">×</view>
 			</view>
 			<view class="upload-add" @click="chooseImage" v-if="imageList.length < maxCount">
 					<text class="upload-add-icon">+</text>
@@ -45,7 +54,17 @@
 			return {
 				imageList: [],
 				cloudDomain: 'https://env-00jy66xyyok3.normal.cloudstatic.cn',
-				canvasId: `compressCanvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+				canvasId: `compressCanvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+				// 拖拽排序相关状态
+				isDragging: false,
+				dragIndex: -1,
+				dragTargetIndex: -1,
+				dragOffsetX: 0,
+				dragOffsetY: 0,
+				dragStartTouchX: 0,
+				dragStartTouchY: 0,
+				dragItemPositions: [],
+				dragJustEnded: false
 			}
 		},
 		watch: {
@@ -165,9 +184,14 @@
 				})
 			},
 			deleteImage(index) {
+				if (this.isDragging) return
 				this.imageList.splice(index, 1)
 			},
 			previewImage(index) {
+				if (this.dragJustEnded) {
+					this.dragJustEnded = false
+					return
+				}
 				uni.previewImage({
 					urls: this.imageList,
 					current: index,
@@ -257,6 +281,98 @@
 			
 			clearImages() {
 				this.imageList = []
+			},
+			// ===== 拖拽排序方法 =====
+			// 统一计算每个格子的视觉样式：拖拽项跟随手指，被占位的项平滑让位
+			getImageItemStyle(index) {
+				if (!this.isDragging || this.dragIndex < 0) return ''
+				const positions = this.dragItemPositions
+				if (index === this.dragIndex) {
+					// 拖拽中的图片：跟随手指 + 浮起效果（无过渡保证跟手）
+					return `transform: translate(${this.dragOffsetX}px, ${this.dragOffsetY}px) scale(1.1); z-index: 100; opacity: 0.9; box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.3); transition: none;`
+				}
+				// 计算让位偏移
+				let dx = 0
+				let dy = 0
+				const s = positions[this.dragIndex]
+				if (this.dragTargetIndex > this.dragIndex && index > this.dragIndex && index <= this.dragTargetIndex) {
+					// 向后拖：中间的元素向前移一位
+					const t = positions[index - 1]
+					dx = t.left - positions[index].left
+					dy = t.top - positions[index].top
+				} else if (this.dragTargetIndex < this.dragIndex && index >= this.dragTargetIndex && index < this.dragIndex) {
+					// 向前拖：中间的元素向后移一位
+					const t = positions[index + 1]
+					dx = t.left - positions[index].left
+					dy = t.top - positions[index].top
+				} else if (index === this.dragTargetIndex && this.dragTargetIndex !== this.dragIndex) {
+					// 目标位置：移到拖拽项的原始位置（补位）
+					dx = s.left - positions[index].left
+					dy = s.top - positions[index].top
+				}
+				if (dx === 0 && dy === 0) return ''
+				return `transform: translate(${dx}px, ${dy}px); z-index: 2; transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);`
+			},
+			onDragStart(e, index) {
+				if (this.imageList.length <= 1) return
+				this.isDragging = true
+				this.dragJustEnded = false
+				this.dragIndex = index
+				this.dragTargetIndex = index
+				const touch = e.touches[0]
+				this.dragStartTouchX = touch.clientX
+				this.dragStartTouchY = touch.clientY
+				this.dragOffsetX = 0
+				this.dragOffsetY = 0
+				// 获取所有图片元素的位置用于碰撞检测
+				const query = uni.createSelectorQuery().in(this)
+				query.selectAll('.upload-item').boundingClientRect()
+				query.exec((res) => {
+					if (res && res[0]) {
+						this.dragItemPositions = res[0]
+					}
+				})
+				uni.vibrateShort()
+			},
+			onDragMove(e) {
+				if (!this.isDragging || this.dragIndex < 0) return
+				const touch = e.touches[0]
+				this.dragOffsetX = touch.clientX - this.dragStartTouchX
+				this.dragOffsetY = touch.clientY - this.dragStartTouchY
+				const positions = this.dragItemPositions
+				if (!positions.length) return
+				// 手指当前位置落在哪个格子，目标索引就是哪里（无需中心点判断，响应更直接）
+				let target = -1
+				for (let i = 0; i < positions.length; i++) {
+					const pos = positions[i]
+					if (touch.clientX >= pos.left && touch.clientX <= pos.right && touch.clientY >= pos.top && touch.clientY <= pos.bottom) {
+						target = i
+						break
+					}
+				}
+				// 只在目标位置真正变化时才更新，避免重渲染抖动
+				if (target !== -1 && target !== this.dragTargetIndex) {
+					this.dragTargetIndex = target
+					uni.vibrateShort()
+				}
+			},
+			onDragEnd() {
+				if (!this.isDragging) return
+				// 松手时才真正调整数组顺序，拖拽过程中数组不变（避免列表重渲染卡顿）
+				if (this.dragTargetIndex !== -1 && this.dragTargetIndex !== this.dragIndex) {
+					const moved = this.imageList.splice(this.dragIndex, 1)[0]
+					this.imageList.splice(this.dragTargetIndex, 0, moved)
+				}
+				this.isDragging = false
+				this.dragIndex = -1
+				this.dragTargetIndex = -1
+				this.dragOffsetX = 0
+				this.dragOffsetY = 0
+				this.dragItemPositions = []
+				this.dragJustEnded = true
+				setTimeout(() => {
+					this.dragJustEnded = false
+				}, 300)
 			}
 		}
 	}
@@ -296,6 +412,7 @@
 			margin-bottom: 16rpx;
 			border-radius: 12rpx;
 			overflow: hidden;
+			will-change: transform;
 
 			.upload-image {
 				width: 100%;
@@ -342,6 +459,12 @@
 				font-size: 20rpx;
 				color: #bbb;
 			}
+		}
+
+		.upload-item-placeholder {
+			opacity: 0.25;
+			border: 2rpx dashed #999;
+			box-sizing: border-box;
 		}
 	}
 </style>

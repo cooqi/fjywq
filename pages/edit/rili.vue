@@ -81,8 +81,8 @@
 					<text class="form-label">图片路径</text>
 					<textarea 
 						class="form-textarea" 
-						name="imgurl" 
-						v-model="formData.imgurl" 
+						name="imgurl_path" 
+						v-model="formData.imgurl_path" 
 						placeholder="请输入图片路径，多个用分号隔开"
 						auto-height
 						maxlength="2000"
@@ -95,8 +95,9 @@
 						optionalText="优先外链" 
 						maxCount="9"
 						uploadPath="rili"
-						:modelValue="formData.imgurl"
-					></image-upload>
+						:modelValue="formData.imgurl_upload"
+					>
+					</image-upload>
 				
 				<view class="form-item">
 					<text class="form-label">关联日期</text>
@@ -208,7 +209,8 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					title:'',
 					bz:'',
 					date:'',
-					imgurl:'',
+					imgurl_path:'',
+					imgurl_upload:'',
 					type:'',
 					relatedDates:[]
 				},
@@ -246,8 +248,17 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 					title: data.title || '',
 					bz: data.bz || '',
 					date: data.date || '',
-					imgurl: data.imgurl || '',
+					imgurl_path: data.imgurl_path || '',
+					imgurl_upload: data.imgurl_upload || '',
 					type: data.type || '',
+				}
+				// 兼容旧数据：将 imgurl 中的云端URL拆分到 imgurl_upload
+				if (!this.formData.imgurl_path && !this.formData.imgurl_upload && data.imgurl) {
+					const urls = data.imgurl.split(';').filter(u => u)
+					const manual = urls.filter(u => !u.startsWith('http://') && !u.startsWith('https://'))
+					const uploaded = urls.filter(u => u.startsWith('http://') || u.startsWith('https://'))
+					this.formData.imgurl_path = manual.join(';')
+					this.formData.imgurl_upload = uploaded.join(';')
 				}
 				this.formData.relatedDates = data.relatedDates ? (typeof data.relatedDates === 'string' ? data.relatedDates.split(',').filter(d=>d) : (Array.isArray(data.relatedDates) ? data.relatedDates : [])) : []
 				this.formDatePicker = data.date ? this.formatToPicker(data.date) : ''
@@ -354,7 +365,7 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				const isEdit = !!this.formData._id
 				const result = await this.$refs.imageUpload.processImages(isEdit)
 				if (result !== null) {
-					this.formData.imgurl = result
+					this.formData.imgurl_upload = result
 				}
 			},
 			async add() {
@@ -510,7 +521,8 @@ import { hasCalendarPermission } from '@/common/js/permission.js'
 				this.formData.date=''
 				this.formData.title=''
 				this.formData.bz=''
-				this.formData.imgurl=''
+				this.formData.imgurl_path=''
+				this.formData.imgurl_upload=''
 				this.formData.relatedDates=[]
 				if (this.$refs.imageUpload) {
 					this.$refs.imageUpload.clearImages()
