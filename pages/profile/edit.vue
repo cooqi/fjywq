@@ -3,7 +3,7 @@
 		<view class="form-box">
 			<!-- 头像 -->
 			<view class="avatar-section">
-				<image class="avatar" src="/static/userImg/baby.png" mode="aspectFill"></image>
+				<image class="avatar" src="/static/userImg/baby.jpg" mode="aspectFill"></image>
 				<view class="avatar-tip">固定头像</view>
 			</view>
 			
@@ -123,7 +123,7 @@
 						open_id: this.userInfo.mp_wx_openid,
 						user_info: {
 							nickName: this.formData.nickName,
-							avatarUrl: '/static/userImg/baby.png'
+							avatarUrl: '/static/userImg/baby.jpg'
 						},
 						startTime: this.formData.startTime,
 						loveType: this.formData.loveType || '宇青99',

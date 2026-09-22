@@ -13,7 +13,7 @@
 		<view class="profile-box" v-else>
 			<!-- 用户信息卡片 -->
 			<view class="user-card">
-				<image class="user-avatar" src="/static/userImg/baby.png" mode="aspectFill"></image>
+				<image class="user-avatar" src="/static/userImg/baby.jpg" mode="aspectFill"></image>
 				<view class="user-info">
 					<view class="user-name">
                         <view class="user-nick-name" @click="editField('nickName')">{{userInfo.nickName || '杯杯儿'}}</view>
@@ -337,7 +337,7 @@
 						open_id: this.userInfo.mp_wx_openid,
 						user_info: {
 							nickName: newNickName || this.userInfo.nickName,
-							avatarUrl: '/static/userImg/baby.png'
+							avatarUrl: '/static/userImg/baby.jpg'
 						},
 						startTime: newStartTime !== undefined ? newStartTime : this.profileData.joinTime,
 						loveType: newLoveType !== undefined ? newLoveType : this.profileData.loveType,
