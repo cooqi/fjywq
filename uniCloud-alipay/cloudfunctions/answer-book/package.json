@@ -1,0 +1,7 @@
+{
+  "name": "answer-book",
+  "version": "1.0.0",
+  "description": "答案之书：加权随机抽取答案、收藏管理",
+  "main": "index.js",
+  "dependencies": {}
+}

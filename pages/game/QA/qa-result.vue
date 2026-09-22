@@ -174,7 +174,7 @@ export default {
 		// 再考一次
 		retryExam() {
 			uni.redirectTo({
-				url: '/pages/game/qa-exam'
+				url: '/pages/game/QA/qa-exam'
 			})
 		},
 		

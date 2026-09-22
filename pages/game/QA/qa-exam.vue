@@ -239,7 +239,7 @@ export default {
 	onShareAppMessage: function () {
 		return {
 			title: '宇青青宇全肯定',
-			path: '/pages/game/qa-exam'
+			path: '/pages/game/QA/qa-exam'
 		}
 	},
 	onShareTimeline: function () {
@@ -415,7 +415,7 @@ export default {
 					if (res.result.code === 0) {
 						const data = res.result.data
 						uni.redirectTo({
-							url: '/pages/game/qa-result?recordId=' + this.recordId +
+							url: '/pages/game/QA/qa-result?recordId=' + this.recordId +
 								'&score=' + data.score +
 								'&correctCount=' + data.correctCount +
 								'&total=' + data.totalQuestions +
@@ -491,7 +491,7 @@ export default {
 		// 查看某次考试详情
 		viewRecord(item) {
 			uni.redirectTo({
-				url: '/pages/game/qa-result?recordId=' + item._id +
+				url: '/pages/game/QA/qa-result?recordId=' + item._id +
 					'&score=' + item.score +
 					'&correctCount=' + item.correct_count +
 					'&total=25' +
@@ -508,7 +508,7 @@ export default {
 		// 进入题库管理
 		goAdmin() {
 			uni.navigateTo({
-				url: '/pages/game/qa-admin'
+				url: '/pages/game/QA/qa-admin'
 			})
 		},
 		

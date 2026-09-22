@@ -63,6 +63,16 @@
         <view class="arrow">›</view>
       </view>
 
+      <!-- 答案之书 -->
+      <view class="game-card" @click="goToGame('answerBook')">
+        <view class="game-icon answer-book-icon">📖</view>
+        <view class="game-info">
+          <text class="game-name">答案之书</text>
+          <text class="game-desc">心中默念问题，翻到属于你的答案</text>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+
       <!-- 创意画板 -->
       <!-- <view class="game-card" @click="goToGame('draw')">
         <view class="game-icon draw-icon">🎨</view>
@@ -101,7 +111,8 @@ export default {
         'match': '/pages/game/match',
         'draw': '/pages/game/draw',
         'huarongdao': '/pages/game/huarongdao',
-        'qa': '/pages/game/qa-exam'
+        'qa': '/pages/game/QA/qa-exam',
+        'answerBook': '/pages/game/answer-book'
       }
       
       if (routes[gameType]) {
@@ -196,6 +207,10 @@ export default {
 
 .qa-icon {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.answer-book-icon {
+  background: linear-gradient(135deg, #4aa8b8 0%, #6f5bd8 100%);
 }
 
 .game-info {

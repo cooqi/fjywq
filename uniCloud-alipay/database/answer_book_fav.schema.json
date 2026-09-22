@@ -1,0 +1,47 @@
+{
+  "bsonType": "object",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "user_id": {
+      "bsonType": "string",
+      "description": "用户ID（uni-id-users _id）"
+    },
+    "answer_id": {
+      "bsonType": "string",
+      "description": "答案ID（answer_book _id）"
+    },
+    "question": {
+      "bsonType": "string",
+      "description": "收藏时的问题快照",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "answer_text": {
+      "bsonType": "string",
+      "description": "答案文本快照",
+      "trim": "both"
+    },
+    "category": {
+      "bsonType": "string",
+      "description": "答案分类标签快照",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "create_date": {
+      "bsonType": "timestamp",
+      "label": "收藏时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    }
+  }
+}

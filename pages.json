@@ -138,7 +138,7 @@
 		}
 	},
 	{
-		"path": "pages/game/qa-exam",
+		"path": "pages/game/QA/qa-exam",
 		"style": {
 			"navigationBarTitleText": "青宇问答",
 			"enablePullDownRefresh": false,
@@ -146,7 +146,7 @@
 		}
 	},
 	{
-		"path": "pages/game/qa-result",
+		"path": "pages/game/QA/qa-result",
 		"style": {
 			"navigationBarTitleText": "考试结果",
 			"enablePullDownRefresh": false,
@@ -154,11 +154,19 @@
 		}
 	},
 	{
-		"path": "pages/game/qa-admin",
+		"path": "pages/game/QA/qa-admin",
 		"style": {
 			"navigationBarTitleText": "题库管理",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/answer-book",
+		"style": {
+			"navigationBarTitleText": "青宇答案之书",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#bfe6ef"
 		}
 	},
 	{

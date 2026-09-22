@@ -1,0 +1,50 @@
+{
+  "bsonType": "object",
+  "required": [],
+  "permission": {
+    "read": true,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "text": {
+      "bsonType": "string",
+      "description": "答案正文（不超过30字，避免绝对指令）",
+      "trim": "both"
+    },
+    "interpretation": {
+      "bsonType": "string",
+      "description": "答案解读（可选，不超过80字）",
+      "trim": "both",
+      "forceDefaultValue": ""
+    },
+    "category": {
+      "bsonType": "string",
+      "description": "分类标签：行动建议/现状确认/感情关系/勇气激励/治愈安慰/方向指引/延迟满足/回顾反思",
+      "trim": "both"
+    },
+    "weight": {
+      "bsonType": "int",
+      "description": "抽取权重，默认1，数值越大越容易被抽中",
+      "minimum": 1,
+      "maximum": 10,
+      "forceDefaultValue": 1
+    },
+    "is_active": {
+      "bsonType": "bool",
+      "description": "是否启用",
+      "forceDefaultValue": true
+    },
+    "create_date": {
+      "bsonType": "timestamp",
+      "label": "创建时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    }
+  }
+}
