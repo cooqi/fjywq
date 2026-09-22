@@ -22,14 +22,7 @@
 						{{item.is_active !== false ? '启用' : '禁用'}}
 					</view>
 				</view>
-				<view class="item-preview">
-					<text class="preview-label">装饰：</text>
-					<text class="preview-emojis">{{item.emojiLeft}} {{item.emojiRight}}</text>
-				</view>
-				<view class="item-remark" v-if="item.remark">
-					<text class="remark-label">备注：</text>
-					<text class="remark-text">{{item.remark}}</text>
-				</view>
+				
 				<view class="item-actions" v-if="isAdminUser">
 					<view class="action-btn edit" @click="editHoliday(item)">编辑</view>
 					<view class="action-btn toggle" @click="toggleActive(item)">
@@ -115,38 +108,17 @@
 						</view>
 					</template>
 					
-					<view class="form-item">
-						<text class="form-label">主Emoji</text>
-						<input class="form-input" v-model="formData.emoji" placeholder="如：🎆" />
-					</view>
-					<view class="form-item">
-						<text class="form-label">左侧装饰Emoji</text>
-						<input class="form-input" v-model="formData.emojiLeft" placeholder="如：🎆" />
-					</view>
-					<view class="form-item">
-						<text class="form-label">右侧装饰Emoji</text>
-						<input class="form-input" v-model="formData.emojiRight" placeholder="如：🎇" />
-					</view>
 					
 					<view class="form-item">
-						<text class="form-label">背景CSS类名</text>
-						<input class="form-input" v-model="formData.containerClass" placeholder="如：theme-new-year" />
-					</view>
-					<view class="form-item">
-						<text class="form-label">横幅背景渐变</text>
-						<input class="form-input" v-model="formData.bannerBg" placeholder="如：linear-gradient(135deg, #ff6b6b, #ee5a24)" />
+						<text class="form-label">视频地址</text>
+						<input class="form-input" v-model="formData.video" placeholder="如：https://xxx.com/xxx.mp4，填写后优先播放视频" />
 					</view>
 					
-					<view class="form-item">
-						<text class="form-label">飘浮装饰（JSON数组）</text>
-						<textarea class="form-textarea" v-model="floatingEmojisStr" :placeholder="emojiPlaceholder" maxlength="9000"/>
-						<view class="gen-btn" @click="generateFloatingEmojis">自动生成默认飘浮装饰</view>
-					</view>
 					
 					<view class="form-item">
 						<image-upload 
 							ref="bgImageUpload"
-							title="背景图片" 
+							title="图片" 
 							optionalText="（选填）"
 							:maxCount="1" 
 							uploadPath="holiday-bg" 
@@ -245,6 +217,7 @@ export default {
 				containerClass: '',
 				bannerBg: '',
 				bgImage: '',
+				video: '',
 				floatingEmojis: [],
 				remark: '',
 				is_active: true
@@ -312,6 +285,7 @@ export default {
 				containerClass: item.containerClass || '',
 				bannerBg: item.bannerBg || '',
 				bgImage: item.bgImage || '',
+				video: item.video || '',
 				floatingEmojis: item.floatingEmojis || [],
 				remark: item.remark || '',
 				is_active: item.is_active !== false

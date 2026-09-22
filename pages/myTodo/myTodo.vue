@@ -8,7 +8,13 @@
 	        </view>
 	    </view>
 	<view class="content">
-		<view v-for="(item,index) in todoList" :key="item.value">
+		<!-- 添加待办 -->
+		<view v-if="userInfo._id" class="add-box">
+			<input class="add-input" type="text" v-model="newTodoTitle" maxlength="30"
+				placeholder="请输入待办内容（未办理最多10条）" placeholder-class="add-placeholder" />
+			<button class="add-btn" type="primary" size="mini" @click="addTodo">添加</button>
+		</view>
+		<view v-for="item in todoList" :key="item.value">
 			<uni-data-checkbox  v-model="todo" max="1" multiple :localdata="[item]" @change="change" >
 				<template #actions>
 					<button class="mini-btn" type="warn" size="mini" @click="del(item)">删除</button>
@@ -32,6 +38,7 @@
 				userInfo:{},
 				todoList:[],
 				originTodoList:[],
+				newTodoTitle:'',
 				
 			}
 		},
@@ -161,6 +168,42 @@
 				    }
 				})
 			},
+			addTodo(){
+				const title=(this.newTodoTitle||'').trim()
+				if(!title){
+					uni.showToast({title:'请输入待办内容',icon:'none'})
+					return
+				}
+				// 未办理数量前端预校验，最多10条
+				const uncompleted=this.originTodoList.filter(item=>item.isComplete==='0').length
+				if(uncompleted>=10){
+					uni.showToast({title:'未办理待办已达10条上限，请先完成后再添加',icon:'none'})
+					return
+				}
+				uni.showLoading({title:'加载中',mask:true});
+				uniCloud.callFunction({
+					name:'user-todo',
+					data:{
+						type:'add',
+						userID:this.userInfo._id,
+						title
+					},
+					success:(res)=>{
+						uni.hideLoading();
+						const r=res.result
+						if(r&&r.code){
+							uni.showToast({title:r.message||'添加失败',icon:'none'})
+							return
+						}
+						this.newTodoTitle=''
+						this.updateList(r.data)
+					},
+					fail:(err)=>{
+						uni.hideLoading();
+						console.log('云函数调用失败',err)
+					}
+				})
+			},
 			del(item){
 				const _this=this
 				uni.showModal({
@@ -214,6 +257,33 @@
 }
 	.content {
 		padding-bottom: 30px;
+		.add-box{
+			display: flex;
+			align-items: center;
+			margin: 10px 10px 15px;
+			padding: 10px;
+			background: rgba(255, 255, 255, 0.7);
+			border-radius: 16rpx;
+			box-shadow: 0 4rpx 16rpx rgba(139, 92, 246, 0.1);
+			.add-input{
+				flex: 1;
+				height: 64rpx;
+				line-height: 64rpx;
+				font-size: 28rpx;
+				padding: 0 20rpx;
+				background: #ffffff;
+				border-radius: 12rpx;
+				border: 1rpx solid #e0d5f7;
+			}
+			.add-btn{
+				margin-left: 16rpx;
+				flex-shrink: 0;
+			}
+		}
+		.add-placeholder{
+			color: #b3a6cc;
+			font-size: 26rpx;
+		}
 		.checklist-box{
 			width: 100%;
 			padding: 10px;

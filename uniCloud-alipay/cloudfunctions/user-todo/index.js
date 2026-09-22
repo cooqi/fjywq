@@ -21,7 +21,13 @@ exports.main = async (event, context) => {
 				}
 				return res
 			}
-			const data=await collection.where({userID:event.userID,taskID:event.taskID}).get()
+			const dupWhere = { userID: event.userID }
+			if (event.taskID) {
+				dupWhere.taskID = event.taskID
+			} else {
+				dupWhere.title = event.title
+			}
+			const data=await collection.where(dupWhere).get()
 			
 			if(data.data.length>=1){
 				res = {
@@ -32,10 +38,10 @@ exports.main = async (event, context) => {
 			}
 			const data2=await collection.where({userID:event.userID,isComplete:'0'}).get()
 			
-			if(data2.data.length>=5){
+			if(data2.data.length>=10){
 				res = {
 					code: 406,
-					message: '你超过5条任务还未完成，请先完成已添加任务后再继续添加'
+					message: '你超过10条任务还未完成，请先完成已添加任务后再继续添加'
 				}
 				return res
 			}
@@ -44,7 +50,7 @@ exports.main = async (event, context) => {
 						  isComplete: '0',
 						  userID:event.userID,
 						  title:event.title,
-						  taskID:event.taskID
+						  taskID:event.taskID|| ''
 			}) 
 		break;
 		

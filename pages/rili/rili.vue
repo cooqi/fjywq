@@ -84,12 +84,13 @@
 		
 	</view>
 	
-	<!-- 节日祝福弹窗 -->
+	<!-- 节日祝福弹窗：有视频优先播视频，其次展示图片，媒体模式下不显示其他信息 -->
 	<uni-popup ref="holidayPopup" type="center" :mask-click="true" :safe-area="true">
 		<view class="holiday-popup" v-if="currentHoliday">
-			<view class="holiday-popup-bg" v-if="currentHoliday.bgImage" :style="{backgroundImage: 'url(' + currentHoliday.bgImage + ')'}"></view>
-			<view class="holiday-popup-overlay"></view>
-			<view class="holiday-popup-content">
+			<video v-if="currentHoliday.video" class="holiday-popup-video" :src="currentHoliday.video"
+				autoplay controls object-fit="contain"></video>
+			<image v-else-if="currentHoliday.bgImage" class="holiday-popup-image" :src="currentHoliday.bgImage" mode="widthFix"></image>
+			<view v-else class="holiday-popup-content">
 				<view class="holiday-popup-emoji">{{currentHoliday.emoji}}</view>
 				<view class="holiday-popup-title">{{currentHoliday.name}}</view>
 				<view class="holiday-popup-deco">
@@ -793,42 +794,33 @@
 	box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
 	position: relative;
 	overflow: hidden;
-	min-height: 400rpx;
 }
 
-/* 背景图层 */
-.holiday-popup-bg {
-	position: absolute;
-	top: 0;
-	left: 0;
+/* 视频优先：固定高度自适应宽度 */
+.holiday-popup-video {
 	width: 100%;
-	height: 100%;
-	background-size: cover;
-	background-position: center;
-	background-repeat: no-repeat;
-	z-index: 1;
+	height: 70vh;
+	display: block;
+	background: #000;
 }
 
-/* 半透明遮罩，保证文字可读 */
-.holiday-popup-overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
+/* 图片直接展示（不再作为背景），高度随宽度自适应 */
+.holiday-popup-image {
 	width: 100%;
-	height: 100%;
-	background: rgba(0, 0, 0, 0.35);
-	z-index: 2;
+	display: block;
 }
 
-/* 内容层 */
+/* 无图无视频时的文字祝福层 */
 .holiday-popup-content {
 	position: relative;
 	z-index: 3;
-	    height: 70vh;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    align-items: center;
+	height: 70vh;
+	min-height: 400rpx;
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	align-items: center;
+	background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 }
 
 .holiday-popup-emoji {

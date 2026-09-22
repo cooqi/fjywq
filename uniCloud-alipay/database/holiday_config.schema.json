@@ -97,8 +97,13 @@
 		},
 		"bgImage": {
 			"bsonType": "string",
-			"title": "背景图片",
-			"description": "背景图片URL，支持云存储fileID或网络图片地址，为空则不显示背景图"
+			"title": "展示图片",
+			"description": "图片URL，支持云存储fileID或网络图片地址；无视频时作为弹窗主体展示"
+		},
+		"video": {
+			"bsonType": "string",
+			"title": "视频地址",
+			"description": "视频URL，支持云存储fileID或网络视频地址；有视频时弹窗优先播放视频"
 		},
 		"remark": {
 			"bsonType": "string",
