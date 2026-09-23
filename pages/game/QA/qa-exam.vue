@@ -137,6 +137,8 @@
 						<view class="record-detail">答对 {{item.correct_count}}/25 题</view>
 					</view>
 					<view class="record-time">{{formatTime(item.create_date)}}</view>
+					  <view class="record-del" @click.stop="deleteRecord(item)">删除</view>
+               
 				</view>
 				<view class="empty-tip" v-if="historyList.length === 0 && !historyLoading">
 					暂无考试记录
@@ -145,7 +147,7 @@
 			
 			<!-- 错题本 -->
 			<view class="wrong-list" v-if="historyTab === 'wrong'">
-				<view class="wrong-item" v-for="(item, idx) in wrongList" :key="idx">
+				<view class="wrong-item" v-for="(item, idx) in wrongList" :key="item.questionId || idx">
 					<view class="wrong-header">
 						<view class="type-tag" :class="'type-' + item.type">{{typeLabel(item.type)}}</view>
 						<text class="wrong-count">错 {{item.wrongCount}} 次</text>
@@ -164,6 +166,9 @@
 					<view class="wrong-analysis" v-if="item.analysis">
 						<text class="analysis-label">解析：</text>
 						<text class="analysis-text">{{item.analysis}}</text>
+					</view>
+					<view class="wrong-footer">
+						<view class="learned-btn" @click="markLearned(item, idx)">✓ 已学会</view>
 					</view>
 				</view>
 				<view class="empty-tip" v-if="wrongList.length === 0 && !wrongLoading">
@@ -523,7 +528,86 @@ export default {
 			const h = String(d.getHours()).padStart(2, '0')
 			const min = String(d.getMinutes()).padStart(2, '0')
 			return `${y}-${m}-${day} ${h}:${min}`
-		}
+		},
+		// 标记错题为已学会
+		markLearned(item, idx) {
+			if (!this.userInfo._id) {
+				uni.showToast({ title: '请先登录', icon: 'none' })
+				return
+			}
+			if (!item.questionId) {
+				uni.showToast({ title: '题目信息缺失', icon: 'none' })
+				return
+			}
+			uni.showModal({
+				title: '提示',
+				content: '确定已掌握这道题？标记后将从错题本移除；若下次再答错，会重新回到错题本。',
+				confirmText: '已学会',
+				confirmColor: '#2e7d32',
+				success: (res) => {
+					if (!res.confirm) return
+					uniCloud.callFunction({
+						name: 'qa-exam',
+						data: {
+							action: 'markLearned',
+							userId: this.userInfo._id,
+							questionId: item.questionId
+						},
+						success: (r) => {
+							if (r.result.code === 0) {
+								// 直接从当前列表中移除，避免重新拉取
+								this.wrongList.splice(idx, 1)
+								uni.showToast({ title: '已标记为学会', icon: 'success' })
+							} else {
+								uni.showToast({ title: r.result.msg || '操作失败', icon: 'none' })
+							}
+						},
+						fail: (err) => {
+							console.error('标记已学会失败:', err)
+							uni.showToast({ title: '网络错误', icon: 'none' })
+						}
+					})
+				}
+			})
+		},
+		 // 删除考试记录（软删除）
+        deleteRecord(item) {
+            if (!this.userInfo._id) {
+                uni.showToast({ title: '请先登录', icon: 'none' })
+                return
+            }
+            uni.showModal({
+                title: '提示',
+                content: '确定删除该考试记录吗？',
+                confirmColor: '#c62828',
+                success: (res) => {
+                    if (!res.confirm) return
+                    this.isLoading = true
+                    uniCloud.callFunction({
+                        name: 'qa-exam',
+                        data: {
+                            action: 'deleteRecord',
+                            userId: this.userInfo._id,
+                            recordId: item._id
+                        },
+                        success: (r) => {
+                            this.isLoading = false
+                            if (r.result.code === 0) {
+                                uni.showToast({ title: '已删除', icon: 'none' })
+                                this.historyList = this.historyList.filter(x => x._id !== item._id)
+                            } else {
+                                uni.showToast({ title: r.result.msg || '删除失败', icon: 'none' })
+                            }
+                        },
+                        fail: (err) => {
+                            this.isLoading = false
+                            console.error('删除记录失败:', err)
+                            uni.showToast({ title: '删除失败', icon: 'none' })
+                        }
+                    })
+                }
+            })
+        },
 	}
 }
 </script>
@@ -1031,5 +1115,46 @@ export default {
 	border-radius: 16rpx;
 	font-size: 28rpx;
 	z-index: 999;
+}
+
+.record-time {
+    font-size: 22rpx;
+    color: #bbb;
+}
+
+.record-del {
+    margin-left: 20rpx;
+    padding: 8rpx 20rpx;
+    font-size: 22rpx;
+    color: #c62828;
+    border: 2rpx solid #ffcdd2;
+    border-radius: 24rpx;
+    flex-shrink: 0;
+    
+    &:active {
+        background: #ffebee;
+    }
+}
+
+/* 错题本底部操作 */
+.wrong-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20rpx;
+    padding-top: 16rpx;
+    border-top: 2rpx dashed #f0f0f0;
+}
+
+.learned-btn {
+    padding: 10rpx 28rpx;
+    font-size: 24rpx;
+    color: #2e7d32;
+    background: #e8f5e9;
+    border: 2rpx solid #a5d6a7;
+    border-radius: 30rpx;
+    
+    &:active {
+        background: #c8e6c9;
+    }
 }
 </style>

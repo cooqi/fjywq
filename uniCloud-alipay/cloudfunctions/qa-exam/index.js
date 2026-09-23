@@ -1,8 +1,10 @@
 'use strict';
 
 const db = uniCloud.database();
+const dbCmd = db.command;
 const questionsCol = db.collection('qa_questions');
 const recordsCol = db.collection('qa_exam_records');
+const learnedCol = db.collection('qa_learned_questions');
 
 exports.main = async (event, context) => {
 	const { action, userId } = event;
@@ -23,6 +25,10 @@ exports.main = async (event, context) => {
 				return await getHistory(userId, event.page, event.pageSize);
 			case 'getWrongQuestions':
 				return await getWrongQuestions(userId);
+			case 'markLearned':
+				return await markLearned(userId, event.questionId);
+			case 'deleteRecord':
+                return await deleteRecord(userId, event.recordId);
 			default:
 				return { code: -1, msg: '未知操作: ' + action };
 		}
@@ -201,6 +207,17 @@ async function submitExam(userId, event) {
 	const score = correctCount * 4; // 每题 4 分
 	const passed = score >= 60;
 
+	// 收集本次答错的题目 ID，用于清除对应的"已学会"标记
+	const wrongQuestionIds = updatedQuestions
+		.filter(q => q.isCorrect === false && q.questionId)
+		.map(q => q.questionId);
+	if (wrongQuestionIds.length > 0) {
+		await learnedCol.where({
+			user_id: userId,
+			question_id: dbCmd.in(wrongQuestionIds)
+		}).remove();
+	}
+
 	// 更新考试记录
 	await recordsCol.doc(recordId).update({
 		questions: updatedQuestions,
@@ -247,25 +264,27 @@ async function getRecord(userId, recordId) {
 // 获取考试历史
 async function getHistory(userId, page, pageSize) {
 	page = page || 1;
-	pageSize = pageSize || 10;
-	const skip = (page - 1) * pageSize;
+    pageSize = pageSize || 10;
+    const skip = (page - 1) * pageSize;
 
-	const countRes = await recordsCol
-		.where({ user_id: userId })
-		.count();
+    const historyWhere = { user_id: userId, is_deleted: db.command.neq(true) };
 
-	const listRes = await recordsCol
-		.where({ user_id: userId })
-		.orderBy('create_date', 'desc')
-		.skip(skip)
-		.limit(pageSize)
-		.field({
-			_id: true,
-			score: true,
-			correct_count: true,
-			passed: true,
-			create_date: true
-		})
+    const countRes = await recordsCol
+        .where(historyWhere)
+        .count();
+
+    const listRes = await recordsCol
+        .where(historyWhere)
+        .orderBy('create_date', 'desc')
+        .skip(skip)
+        .limit(pageSize)
+        .field({
+            _id: true,
+            score: true,
+            correct_count: true,
+            passed: true,
+            create_date: true
+        })
 		.get();
 
 	return {
@@ -283,13 +302,23 @@ async function getHistory(userId, page, pageSize) {
 async function getWrongQuestions(userId) {
 	// 获取用户所有考试记录
 	const recordsRes = await recordsCol
-		.where({ user_id: userId })
-		.orderBy('create_date', 'desc')
-		.get();
+        .where({ user_id: userId, is_deleted: dbCmd.neq(true) })
+        .orderBy('create_date', 'desc')
+        .get();
 
 	if (!recordsRes.data || recordsRes.data.length === 0) {
 		return { code: 0, data: [] };
 	}
+
+	// 获取该用户所有"已学会"的题目 ID，用于过滤
+	const learnedRes = await learnedCol
+		.where({ user_id: userId })
+		.field({ question_id: true })
+		.limit(1000)
+		.get();
+	const learnedSet = new Set(
+		(learnedRes.data || []).map(item => item.question_id).filter(Boolean)
+	);
 
 	// 收集所有错题
 	const wrongMap = {}; // 以 questionId 为 key，保留最新的
@@ -297,6 +326,8 @@ async function getWrongQuestions(userId) {
 		if (!record.questions) return;
 		record.questions.forEach(q => {
 			if (q.isCorrect === false && q.questionId) {
+				// 已学会的题目不再出现在错题本
+				if (learnedSet.has(q.questionId)) return;
 				if (!wrongMap[q.questionId]) {
 					wrongMap[q.questionId] = {
 						questionId: q.questionId,
@@ -328,15 +359,62 @@ async function getWrongQuestions(userId) {
 	});
 
 	const wrongList = Object.values(wrongMap).sort(
-		(a, b) => b.lastWrongDate - a.lastWrongDate
-	);
+        (a, b) => b.lastWrongDate - a.lastWrongDate
+    );
 
 	return {
 		code: 0,
 		data: wrongList
 	};
 }
+// 标记错题为已学会
+async function markLearned(userId, questionId) {
+	if (!questionId) {
+		return { code: -1, msg: '缺少题目ID' };
+	}
 
+	// 已存在则不重复插入
+	const existRes = await learnedCol
+		.where({ user_id: userId, question_id: questionId })
+		.count();
+	if (existRes.total > 0) {
+		return { code: 0, msg: '已标记为学会' };
+	}
+
+	await learnedCol.add({
+		user_id: userId,
+		question_id: questionId,
+		learned_date: Date.now()
+	});
+
+	return { code: 0, msg: '已标记为学会' };
+}
+
+// 删除考试记录（软删除，仅修改状态，不物理删除）
+async function deleteRecord(userId, recordId) {
+    if (!recordId) {
+        return { code: -1, msg: '缺少记录ID' };
+    }
+
+    const recordRes = await recordsCol.doc(recordId).get();
+    if (!recordRes.data || recordRes.data.length === 0) {
+        return { code: -1, msg: '记录不存在' };
+    }
+
+    const record = recordRes.data[0];
+    if (record.user_id !== userId) {
+        return { code: -1, msg: '无权操作此记录' };
+    }
+
+    await recordsCol.doc(recordId).update({
+        is_deleted: true
+    });
+
+    return {
+        code: 0,
+        msg: '删除成功'
+    };
+}
 // 工具：数组洗牌（Fisher-Yates）
 function shuffleArray(arr) {
 	const result = [...arr];

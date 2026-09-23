@@ -1,45 +1,50 @@
 {
-	"bsonType": "object",
-	"required": ["user_id", "questions", "score"],
-	"permission": {
-		"read": false,
-		"create": false,
-		"update": false,
-		"delete": false
-	},
-	"properties": {
-		"_id": {
-			"description": "ID，系统自动生成"
-		},
-		"user_id": {
-			"bsonType": "string",
-			"description": "用户ID"
-		},
-		"questions": {
-			"bsonType": "array",
-			"description": "本次25题快照，含题目+用户答案+是否正确"
-		},
-		"score": {
-			"bsonType": "int",
-			"description": "得分",
-			"defaultValue": 0
-		},
-		"correct_count": {
-			"bsonType": "int",
-			"description": "答对题数",
-			"defaultValue": 0
-		},
-		"passed": {
-			"bsonType": "bool",
-			"description": "是否及格（>=60分）",
-			"defaultValue": false
-		},
-		"create_date": {
-			"bsonType": "timestamp",
-			"description": "考试时间",
-			"forceDefaultValue": {
-				"$env": "now"
-			}
-		}
-	}
+    "bsonType": "object",
+    "required": ["user_id", "questions", "score"],
+    "permission": {
+        "read": false,
+        "create": false,
+        "update": false,
+        "delete": false
+    },
+    "properties": {
+        "_id": {
+            "description": "ID，系统自动生成"
+        },
+        "user_id": {
+            "bsonType": "string",
+            "description": "用户ID"
+        },
+        "questions": {
+            "bsonType": "array",
+            "description": "本次25题快照，含题目+用户答案+是否正确"
+        },
+        "score": {
+            "bsonType": "int",
+            "description": "得分",
+            "defaultValue": 0
+        },
+        "correct_count": {
+            "bsonType": "int",
+            "description": "答对题数",
+            "defaultValue": 0
+        },
+        "passed": {
+            "bsonType": "bool",
+            "description": "是否及格（>=60分）",
+            "defaultValue": false
+        },
+        "is_deleted": {
+            "bsonType": "bool",
+            "description": "是否已删除（软删除标记）",
+            "defaultValue": false
+        },
+        "create_date": {
+            "bsonType": "timestamp",
+            "description": "考试时间",
+            "forceDefaultValue": {
+                "$env": "now"
+            }
+        }
+    }
 }
