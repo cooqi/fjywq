@@ -46,9 +46,7 @@
         </view>
       </view>
       
-      <button class="start-btn" @click="startGame" :disabled="!selectedLevel">
-        开始游戏
-      </button>
+      
     </view>
 
     <!-- 游戏界面 -->
@@ -241,6 +239,7 @@ export default {
     // 选择难度
     selectLevel(level) {
       this.selectedLevel = level
+      this.startGame()
     },
     
     // 开始游戏

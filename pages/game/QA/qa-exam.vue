@@ -128,7 +128,7 @@
 			
 			<!-- 考试记录列表 -->
 			<view class="records-list" v-if="historyTab === 'records'">
-				<view class="record-item" v-for="item in historyList" :key="item._id" @click="viewRecord(item)">
+				<view class="record-item" v-for="item in historyList" :key="item._id" @click="viewRecord(item)" @longpress="deleteRecord(item)">
 					<view class="record-score" :class="{'score-pass': item.passed, 'score-fail': !item.passed}">
 						{{item.score}}分
 					</view>
@@ -137,8 +137,6 @@
 						<view class="record-detail">答对 {{item.correct_count}}/25 题</view>
 					</view>
 					<view class="record-time">{{formatTime(item.create_date)}}</view>
-					  <view class="record-del" @click.stop="deleteRecord(item)">删除</view>
-               
 				</view>
 				<view class="empty-tip" v-if="historyList.length === 0 && !historyLoading">
 					暂无考试记录
@@ -177,7 +175,7 @@
 			</view>
 			
 			<view class="back-btn-box">
-				<button class="back-btn" @click="phase = 'intro'">返回</button>
+				<button class="back-btn" @click="backFromHistory">返回</button>
 			</view>
 		</view>
 		
@@ -225,7 +223,7 @@ export default {
 			return {}
 		}
 	},
-	onLoad() {
+	onLoad(options) {
 		const userInfo = uni.getStorageSync('userInfo')
 		if (userInfo) {
 			this.userInfo = JSON.parse(userInfo)
@@ -236,6 +234,14 @@ export default {
 			setTimeout(() => {
 				uni.switchTab({ url: '/pages/profile/profile' })
 			}, 500)
+			return
+		}
+		// 通过 URL 参数 view=history 直接以历史记录/错题本视图打开新页面实例，
+		// 这样小程序系统返回按钮会自然回到上一个 qa-exam（intro）实例。
+		if (options && options.view === 'history') {
+			this.phase = 'history'
+			this.loadHistory()
+			this.loadWrongQuestions()
 		}
 	},
 	onUnload() {
@@ -444,9 +450,20 @@ export default {
 				uni.showToast({ title: '请先登录', icon: 'none' })
 				return
 			}
-			this.phase = 'history'
-			this.loadHistory()
-			this.loadWrongQuestions()
+			// 新开一个页面实例展示历史/错题本，便于小程序系统返回能回到本页 intro 阶段
+			uni.navigateTo({
+				url: '/pages/game/QA/qa-exam?view=history'
+			})
+		},
+		
+		// 历史页面实例的“返回”按钮：直接回退页面栈
+		backFromHistory() {
+			const pages = getCurrentPages()
+			if (pages && pages.length > 1) {
+				uni.navigateBack()
+			} else {
+				this.phase = 'intro'
+			}
 		},
 		
 		// 加载历史记录
@@ -1120,20 +1137,6 @@ export default {
 .record-time {
     font-size: 22rpx;
     color: #bbb;
-}
-
-.record-del {
-    margin-left: 20rpx;
-    padding: 8rpx 20rpx;
-    font-size: 22rpx;
-    color: #c62828;
-    border: 2rpx solid #ffcdd2;
-    border-radius: 24rpx;
-    flex-shrink: 0;
-    
-    &:active {
-        background: #ffebee;
-    }
 }
 
 /* 错题本底部操作 */

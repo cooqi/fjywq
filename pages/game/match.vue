@@ -15,7 +15,7 @@
         >
           <view class="difficulty-icon">😊</view>
           <text class="difficulty-name">简单</text>
-          <text class="difficulty-desc">14张卡片 · 7对</text>
+          <text class="difficulty-desc">16张卡片 · 8对</text>
           <text class="difficulty-grid">4×4 网格</text>
         </view>
         
@@ -70,9 +70,7 @@
         </view>
       </view>
       
-      <button class="start-btn" @click="startGame" :disabled="!selectedDifficulty">
-        开始游戏
-      </button>
+      
     </view>
 
     <!-- 游戏界面 -->
@@ -139,7 +137,7 @@
               <text class="stat-value">{{ getRating() }}</text>
             </view>
           </view>
-          <button class="play-again-btn" @click="backToMenu">再来一局</button>
+          <button class="play-again-btn" @click="playAgain">再来一局</button>
         </view>
       </view>
 
@@ -161,7 +159,7 @@ export default {
       cards: [],
       flippedCards: [],
       matchedPairs: 0,
-      totalPairs: 7,
+      totalPairs: 8,
       moves: 0,
       time: 0,
       timer: null,
@@ -169,7 +167,7 @@ export default {
       showWinModal: false,
       // 难度配置
       difficultyConfig: {
-        easy: { pairs: 7, grid: '4x4', columns: 4 },
+        easy: { pairs: 8, grid: '4x4', columns: 4 },
         medium: { pairs: 10, grid: '4x5', columns: 4 },
         hard: { pairs: 15, grid: '5x6', columns: 5 },
         ultimate: { pairs: 21, grid: '6x7', columns: 6 },
@@ -231,6 +229,7 @@ export default {
     // 选择难度
     selectDifficulty(difficulty) {
       this.selectedDifficulty = difficulty
+      this.startGame()
     },
     
     // 开始游戏
@@ -359,6 +358,13 @@ export default {
           }
         }
       })
+    },
+    
+    // 胜利弹窗中的"再来一局"：保持当前难度直接重新开局
+    playAgain() {
+      this.clearTimer()
+      this.showWinModal = false
+      this.initGame()
     },
     
     startTimer() {

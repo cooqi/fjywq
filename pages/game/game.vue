@@ -6,81 +6,57 @@
       <!-- 掷圣杯 -->
       <view class="game-card" @click="goToGame('shengbei')">
         <view class="game-icon shengbei-icon">🏺</view>
-        <view class="game-info">
-          <text class="game-name">掷圣杯</text>
-          <text class="game-desc">看看宇宇青青的指示</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">掷圣杯</text>
+        <text class="game-desc">宇宇青青的指示</text>
       </view>
 
       <!-- 塔罗牌 -->
       <view class="game-card" @click="goToGame('tarot')">
         <view class="game-icon tarot-icon">🃏</view>
-        <view class="game-info">
-          <text class="game-name">今日卡牌</text>
-          <text class="game-desc">宇宇青青的神秘卡牌</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">今日卡牌</text>
+        <text class="game-desc">神秘卡牌占卜</text>
       </view>
 
       <!-- 今日合拍度 -->
       <view class="game-card" @click="goToGame('compatibility')">
         <view class="game-icon compatibility-icon">💕</view>
-        <view class="game-info">
-          <text class="game-name">今日合拍度</text>
-          <text class="game-desc">解锁你和YQ的TMI，包含YQ小剧场</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">合拍度</text>
+        <text class="game-desc">YQ 小剧场</text>
       </view>
 
       <!-- 青宇对对碰 -->
       <view class="game-card" @click="goToGame('match')">
         <view class="game-icon match-icon">🎴</view>
-        <view class="game-info">
-          <text class="game-name">宇青对对碰</text>
-          <text class="game-desc">翻牌配对，考验记忆力</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">对对碰</text>
+        <text class="game-desc">翻牌配对记忆</text>
       </view>
 
       <!-- 华容道 -->
       <view class="game-card" @click="goToGame('huarongdao')">
         <view class="game-icon huarongdao-icon">🧩</view>
-        <view class="game-info">
-          <text class="game-name">宇青大逃亡</text>
-          <text class="game-desc">经典益智，帮助宇青逃脱黑子的围剿</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">宇青大逃亡</text>
+        <text class="game-desc">经典益智华容道</text>
       </view>
 
       <!-- 青宇问答 -->
       <view class="game-card" @click="goToGame('qa')">
         <view class="game-icon qa-icon">📝</view>
-        <view class="game-info">
-          <text class="game-name">青宇问答</text>
-          <text class="game-desc">25题限时挑战，测试你对宇青的了解</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">青宇问答</text>
+        <text class="game-desc">25题限时挑战</text>
       </view>
 
       <!-- 答案之书 -->
       <view class="game-card" @click="goToGame('answerBook')">
         <view class="game-icon answer-book-icon">📖</view>
-        <view class="game-info">
-          <text class="game-name">答案之书</text>
-          <text class="game-desc">心中默念问题，翻到属于你的答案</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">答案之书</text>
+        <text class="game-desc">寻找你的答案</text>
       </view>
 
       <!-- 创意画板 -->
       <!-- <view class="game-card" @click="goToGame('draw')">
         <view class="game-icon draw-icon">🎨</view>
-        <view class="game-info">
-          <text class="game-name">创意画板</text>
-          <text class="game-desc">自由绘画，释放你的创意</text>
-        </view>
-        <view class="arrow">›</view>
+        <text class="game-name">创意画板</text>
+        <text class="game-desc">自由绘画</text>
       </view> -->
     </view>
   </view>
@@ -153,32 +129,37 @@ export default {
 
 .game-list {
   margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
 .game-card {
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 15px;
+  padding: 18px 8px;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  min-height: 130px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
 .game-card:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 
 .game-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  margin-right: 15px;
+  font-size: 28px;
+  margin-bottom: 10px;
 }
 
 .shengbei-icon {
@@ -214,26 +195,34 @@ export default {
 }
 
 .game-info {
-  flex: 1;
+  display: none;
 }
 
 .game-name {
   display: block;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  text-align: center;
 }
 
 .game-desc {
   display: block;
-  font-size: 13px;
+  font-size: 11px;
   color: #999;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
 }
 
 .arrow {
-  font-size: 24px;
-  color: #ccc;
-  margin-left: 10px;
+  display: none;
 }
 </style>
