@@ -82,6 +82,11 @@
 
 			<view class="sec-title">快捷入口</view>
 			<view class="quick">
+				<view class="q-item" @click="go('notice')">
+					<text class="q-e">🔔</text>
+					<text v-if="unreadNotices" class="q-badge">{{ unreadNotices > 99 ? '99+' : unreadNotices }}</text>
+					<text class="q-t">消息</text>
+				</view>
 				<view class="q-item" @click="go('chat')"><text class="q-e">💬</text><text class="q-t">聊天</text></view>
 				<view class="q-item" @click="goGated('travel')"><text class="q-e">🎒</text><text class="q-t">旅行</text></view>
 				<view class="q-item" @click="goGated('wardrobe')"><text class="q-e">👒</text><text class="q-t">衣橱</text></view>
@@ -118,6 +123,7 @@ export default {
 			bubble: '',
 			awayText: '',
 			settleText: '',
+			unreadNotices: 0,
 			transientExp: '',
 			transientTimer: null,
 			form: defaultForm(),
@@ -171,6 +177,7 @@ export default {
 						return
 					}
 					this.pet = res.data.pet
+					this.unreadNotices = res.data.unreadNotices || 0
 					if (res.data.statusInfo) { this.$set(this.pet, 'statusHint', res.data.statusInfo.hint) }
 					this.needAdopt = false
 					this.awayText = awayTip(res.data.awayTipBase)
@@ -295,7 +302,8 @@ export default {
 .w-btn.leave { background: #ffd76e; color: #7a5a00; }
 .work-note { font-size: 12px; color: #6a5acd; margin-top: 8px; }
 .quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.q-item { background: #fff; border-radius: 14px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; }
+.q-item { background: #fff; border-radius: 14px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; position: relative; }
+.q-badge { position: absolute; top: 8px; right: 18px; min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: #f5576c; color: #fff; font-size: 10px; text-align: center; }
 .q-e { font-size: 26px; }
 .q-t { font-size: 13px; color: #555; margin-top: 6px; }
 

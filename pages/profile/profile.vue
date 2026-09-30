@@ -156,7 +156,7 @@
 						
 						uni.hideLoading()
 						uni.showModal({
-							content: '获取用户信息失败',
+							content: '暂未登录，登录后开启更多精彩内容',
 							showCancel: false
 						})
 					}
@@ -427,7 +427,7 @@
 						})
 					} else {
 						uni.showToast({
-							title: '获取用户信息失败',
+							title: '暂未登录，登录后开启更多精彩内容',
 							icon: 'none'
 						})
 					}

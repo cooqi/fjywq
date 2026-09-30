@@ -15,6 +15,7 @@ const LOGS = 'beemore_logs'
 const DIARY = 'beemore_diary'
 const FRIENDS = 'beemore_friends'
 const CHAT = 'beemore_chat'
+const NOTICES = 'beemore_notices'
 
 const err = (code, message) => ({ code, message: message || '', data: null })
 const ok = (data, message) => ({ code: 0, message: message || 'ok', data: data || null })
@@ -187,6 +188,9 @@ async function loadAndDecay(userId, now, cfg) {
 	if (pet.mood === 'sick' && newMood === 'recovering') {
 		await addDiary(pet._id, 'recover', '调养好了些，杯蜜进入恢复中 (๑•̀ㅂ•́)و✧', '恢复中')
 	}
+	if (pet.mood === 'recovering' && newMood !== 'recovering' && newMood !== 'sick') {
+		await addDiary(pet._id, 'recover', '杯蜜彻底康复啦，满血复活！(ﾉ>ω<)ﾉ', '已康复')
+	}
 	await db.collection(PETS).doc(pet._id).update(changed)
 	Object.assign(pet, changed)
 	return { pet, prevCalcAt }
@@ -194,6 +198,15 @@ async function loadAndDecay(userId, now, cfg) {
 
 async function addDiary(petId, type, text, title) {
 	await db.collection(DIARY).add({ pet_id: petId, type, title: title || text.slice(0, 8), text, create_date: Date.now() })
+}
+// 写入一条消息通知（接收方为 petId/userId，from 为发起方杯蜜文档）
+async function addNotice({ petId, userId, type, title, text, from, link }) {
+	await db.collection(NOTICES).add({
+		pet_id: petId, user_id: userId, type, title: title || '', text,
+		from_pet: (from && from._id) || '', from_code: (from && from.friendCode) || '',
+		from_name: (from && from.name) || '', from_emoji: (from && from.emoji) || '',
+		link: link || '', read: false, create_date: Date.now()
+	})
 }
 
 exports.main = async (event, context) => {
@@ -220,6 +233,10 @@ exports.main = async (event, context) => {
 			case 'helpFriend': return await helpFriend(event, cfg)
 			case 'addFriend': return await addFriend(event, cfg)
 			case 'friendList': return await friendList(event, cfg)
+			case 'noticeList': return await noticeList(event, cfg)
+			case 'noticeRead': return await noticeRead(event, cfg)
+			case 'acceptFriend': return await acceptFriend(event, cfg)
+			case 'rejectFriend': return await rejectFriend(event, cfg)
 			case 'removeFriend': return await removeFriend(event, cfg)
 			case 'travel': return await travel(event, cfg)
 			case 'travelCheck': return await travelCheck(event, cfg)
@@ -265,7 +282,8 @@ async function getStatus(event, cfg) {
 			lastVisitDate: pet.lastVisitDate, decorUnlocked: pet.decorUnlocked
 		})
 	}
-	return ok({ pet, statusInfo: buildStatusInfo(pet, cfg), awayTipBase: prevCalcAt || now })
+	const unreadRes = await db.collection(NOTICES).where({ pet_id: pet._id, read: false }).count()
+	return ok({ pet, statusInfo: buildStatusInfo(pet, cfg), awayTipBase: prevCalcAt || now, unreadNotices: (unreadRes && unreadRes.total) || 0 })
 }
 
 // ================= 领养 =================
@@ -579,8 +597,10 @@ async function settleWork(event, cfg) {
 	const coin = clamp((pet.coin || 0) + wage, 0, 999999)
 	const happiness = clamp((pet.happiness == null ? 60 : pet.happiness) + moodD, 0, 100)
 	wallet.lastSettleDate = today; wallet.todayWage = wage
-	await db.collection(PETS).doc(pet._id).update({ coin, happiness, wallet })
+	const firstWork = !pet.workStarted
+	await db.collection(PETS).doc(pet._id).update({ coin, happiness, wallet, workStarted: true })
 	await addDiary(pet._id, 'work', text)
+	if (firstWork) await addDiary(pet._id, 'work', `🌟 第一次以${job.name}的身份上岗，迈出独立的一步，赚到 ${wage} 杯蜜币！`, '第一次工作')
 	return ok({ coin, wage, happiness, wallet, text })
 }
 async function applyLeave(event, cfg) {
@@ -686,6 +706,7 @@ async function helpFriend(event, cfg) {
 	const selfHeart = (self.heart || 0) + 1
 	await db.collection(PETS).doc(self._id).update({ daily: self.daily, heart: selfHeart })
 	await addDiary(target._id, 'friend', `好友「${self.name}」来串门送关心，互动值 +5`)
+	await addNotice({ petId: target._id, userId: target.user_id, type: 'heart', title: '收到一份关心', text: `「${self.name}」送了你一份关心 ❤️`, from: self, link: 'friends' })
 	await db.collection(LOGS).add({ pet_id: self._id, action: 'helpFriend', target_pet: target._id, create_date: now })
 	return ok({ heart: selfHeart, targetName: target.name }, '送出了关心 ❤️')
 }
@@ -700,20 +721,72 @@ async function addFriend(event, cfg) {
 	self.status = computeStatus(self, now, cfg)
 	const lock = assertNotLocked(self); if (lock) return lock
 	if (self.friendCode === friendCode) return err(2001, '不能添加自己')
-	if ((self.friends || []).some(f => f.friendCode === friendCode)) return ok({}, '已经是好友啦')
+	if ((self.friends || []).some(f => f.friendCode === friendCode)) return ok({}, '你们已经是好友啦')
 	const targetRes = await db.collection(PETS).where({ friendCode }).limit(1).get()
 	if (!targetRes.data.length) return err(5002, '编号不存在')
-	const friends = (self.friends || []).concat([{ friendCode, name: targetRes.data[0].name, emoji: targetRes.data[0].emoji, since: now }])
-	await db.collection(PETS).doc(self._id).update({ friends })
-	await db.collection(FRIENDS).add({ user_id: userId, pet_id: self._id, friend_code: friendCode, target_pet: targetRes.data[0]._id, create_date: now })
-	return ok({ friends }, '添加好友成功')
+	const target = targetRes.data[0]
+	// 对方此前也申请过我 => 视为已互申请，直接成为好友（省去二次等待）
+	const mutual = await db.collection(FRIENDS).where({ user_id: target.user_id, friend_code: self.friendCode, status: 'pending' }).limit(1).get()
+	if (mutual.data.length) return await acceptFriend({ userId, friendCode: target.friendCode }, cfg)
+	// 查重：我是否已发送过待同意申请
+	const dup = await db.collection(FRIENDS).where({ user_id: userId, friend_code: friendCode, status: 'pending' }).limit(1).get()
+	if (dup.data.length) return ok({ pending: true }, '申请已发送，等待对方同意')
+	await db.collection(FRIENDS).add({ user_id: userId, pet_id: self._id, from_code: self.friendCode, from_name: self.name, from_emoji: self.emoji, friend_code: friendCode, target_pet: target._id, to_name: target.name, to_emoji: target.emoji, status: 'pending', create_date: now })
+	await addNotice({ petId: target._id, userId: target.user_id, type: 'friend_apply', title: '新的好友申请', text: `「${self.name}」申请加你为好友，快去同意吧～`, from: self, link: 'friends' })
+	return ok({ pending: true }, '已发送好友申请，等待对方同意')
 }
 async function friendList(event) {
 	const { userId } = event
 	if (!userId) return err(1001)
 	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
 	if (!selfRes.data.length) return err(5002)
-	return ok({ friendCode: selfRes.data[0].friendCode, friends: selfRes.data[0].friends || [] })
+	const self = selfRes.data[0]
+	// 收到待我同意的申请（对方发起，friend_code 是我的编码）
+	const inRes = await db.collection(FRIENDS).where({ friend_code: self.friendCode, status: 'pending' }).orderBy('create_date', 'desc').limit(50).get()
+	const incoming = inRes.data.map(r => ({ friendCode: r.from_code, name: r.from_name, emoji: r.from_emoji }))
+	// 我发出、等待对方同意的申请
+	const outRes = await db.collection(FRIENDS).where({ user_id: userId, status: 'pending' }).orderBy('create_date', 'desc').limit(50).get()
+	const outgoing = outRes.data.map(r => ({ friendCode: r.friend_code, name: r.to_name, emoji: r.to_emoji }))
+	return ok({ friendCode: self.friendCode, friends: self.friends || [], incoming, outgoing })
+}
+async function acceptFriend(event, cfg) {
+	const { userId, friendCode } = event // friendCode = 申请方的编码
+	if (!userId) return err(1001)
+	if (!friendCode) return err(2001)
+	const now = Date.now()
+	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
+	if (!selfRes.data.length) return err(5002)
+	const self = selfRes.data[0]
+	const reqRes = await db.collection(FRIENDS).where({ friend_code: self.friendCode, from_code: friendCode, status: 'pending' }).limit(1).get()
+	if (!reqRes.data.length) return err(5002, '没有待处理的好友申请')
+	const req = reqRes.data[0]
+	const aRes = await db.collection(PETS).doc(req.pet_id).get()
+	const a = aRes.data && aRes.data[0]
+	if (!a) return err(5002, '申请方不存在')
+	// 双方互写好友列表
+	const aFriends = (a.friends || []).slice()
+	if (!aFriends.some(f => f.friendCode === self.friendCode)) aFriends.push({ friendCode: self.friendCode, name: self.name, emoji: self.emoji, since: now })
+	const myFriends = (self.friends || []).slice()
+	if (!myFriends.some(f => f.friendCode === a.friendCode)) myFriends.push({ friendCode: a.friendCode, name: a.name, emoji: a.emoji, since: now })
+	await db.collection(PETS).doc(a._id).update({ friends: aFriends })
+	await db.collection(PETS).doc(self._id).update({ friends: myFriends })
+	// 删除彼此之间的待处理申请（双向都清）
+	await db.collection(FRIENDS).where({ status: 'pending', user_id: a.user_id, friend_code: self.friendCode }).remove()
+	await db.collection(FRIENDS).where({ status: 'pending', user_id: self.user_id, friend_code: a.friendCode }).remove()
+	// 双方日记留痕
+	await addDiary(self._id, 'friend', `和「${a.name}」成为好友啦 🎉`)
+	await addDiary(a._id, 'friend', `和「${self.name}」成为好友啦 🎉`)
+	return ok({ friends: myFriends }, `已和「${a.name}」成为好友`)
+}
+async function rejectFriend(event) {
+	const { userId, friendCode } = event
+	if (!userId) return err(1001)
+	if (!friendCode) return err(2001)
+	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
+	if (!selfRes.data.length) return err(5002)
+	const self = selfRes.data[0]
+	await db.collection(FRIENDS).where({ friend_code: self.friendCode, from_code: friendCode, status: 'pending' }).remove()
+	return ok({}, '已拒绝该申请')
 }
 async function removeFriend(event) {
 	const { userId, friendCode } = event
@@ -722,11 +795,49 @@ async function removeFriend(event) {
 	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
 	if (!selfRes.data.length) return err(5002)
 	const self = selfRes.data[0]
-	const friends = (self.friends || []).filter(f => f.friendCode !== friendCode)
-	if (friends.length === (self.friends || []).length) return err(2001, '未找到该好友')
-	await db.collection(PETS).doc(self._id).update({ friends })
+	const before = self.friends || []
+	const removed = before.find(f => f.friendCode === friendCode)
+	const myFriends = before.filter(f => f.friendCode !== friendCode)
+	if (myFriends.length === before.length) return err(2001, '未找到该好友')
+	await db.collection(PETS).doc(self._id).update({ friends: myFriends })
+	// 对方侧自动同步删除（不推送通知，仅日记留痕）
+	const tRes = await db.collection(PETS).where({ friendCode }).limit(1).get()
+	if (tRes.data.length) {
+		const target = tRes.data[0]
+		const tFriends = (target.friends || []).filter(f => f.friendCode !== self.friendCode)
+		await db.collection(PETS).doc(target._id).update({ friends: tFriends })
+		await db.collection(FRIENDS).where({ user_id: target.user_id, friend_code: self.friendCode }).remove()
+		await addDiary(target._id, 'cut', `和「${self.name}」绝交了 💔`)
+	}
 	await db.collection(FRIENDS).where({ user_id: userId, friend_code: friendCode }).remove()
-	return ok({ friends }, '已绝交，好友列表已更新')
+	await addDiary(self._id, 'cut', `和「${(removed && removed.name) || friendCode}」绝交了 💔`)
+	return ok({ friends: myFriends }, '已绝交，双方好友关系已解除')
+}
+
+// ================= 消息通知（好友申请 / 好友送关心）=================
+async function noticeList(event) {
+	const { userId } = event
+	if (!userId) return err(1001)
+	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
+	if (!selfRes.data.length) return err(5002)
+	const self = selfRes.data[0]
+	const res = await db.collection(NOTICES).where({ pet_id: self._id }).orderBy('create_date', 'desc').limit(50).get()
+	const unread = res.data.filter(n => !n.read).length
+	return ok({ list: res.data, unread })
+}
+async function noticeRead(event) {
+	const { userId, noticeId } = event
+	if (!userId) return err(1001)
+	const selfRes = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
+	if (!selfRes.data.length) return err(5002)
+	const self = selfRes.data[0]
+	if (noticeId) {
+		// 只标记自己收件箱内的某一条
+		await db.collection(NOTICES).where({ pet_id: self._id, _id: noticeId }).update({ read: true })
+	} else {
+		await db.collection(NOTICES).where({ pet_id: self._id, read: false }).update({ read: true })
+	}
+	return ok({}, noticeId ? '已读' : '全部已读')
 }
 
 // ================= 旅行（消耗工资；上班旅行=旷工；睡觉禁止）=================
@@ -880,6 +991,7 @@ async function clearData(event) {
 	await db.collection(DIARY).where({ pet_id: petId }).remove()
 	await db.collection(LOGS).where({ pet_id: petId }).remove()
 	await db.collection(FRIENDS).where({ pet_id: petId }).remove()
+	await db.collection(NOTICES).where({ pet_id: petId }).remove()
 	await db.collection(CHAT).where({ pet_id: petId }).remove()
 	await db.collection(PETS).doc(petId).remove()
 	return ok({}, '数据已清空')

@@ -210,6 +210,14 @@
 		}
 	},
 	{
+		"path": "pages/game/loveQY/notice",
+		"style": {
+			"navigationBarTitleText": "消息通知",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/game/loveQY/chat",
 		"style": {
 			"navigationBarTitleText": "和杯蜜聊天",

@@ -77,7 +77,7 @@
 			            _this.wxLogin()
 			        },fail: () => {
 			            uni.hideLoading();
-			            uni.showModal({content: '获取用户信息失败',showCancel: false
+			            uni.showModal({content: '暂未登录，登录后开启更多精彩内容',showCancel: false
 			            })
 			        }
 			    })

@@ -91,7 +91,7 @@
 				const userInfo = uni.getStorageSync('userInfo')
 				this.userInfo = JSON.parse(userInfo)
 			} catch (e) {
-				console.error('获取用户信息失败', e)
+				console.error('暂未登录，登录后开启更多精彩内容', e)
 			}
 		},
 		methods: {

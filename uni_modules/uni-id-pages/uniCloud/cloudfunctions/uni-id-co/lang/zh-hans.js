@@ -26,7 +26,7 @@ const sentence = {
   'uni-id-invalid-param': '参数错误',
   'uni-id-param-required': '缺少参数: {param}',
   'uni-id-get-third-party-account-failed': '获取第三方账号失败',
-  'uni-id-get-third-party-user-info-failed': '获取用户信息失败',
+  'uni-id-get-third-party-user-info-failed': '暂未登录，登录后开启更多精彩内容',
   'uni-id-mobile-verify-code-error': '手机验证码错误或已过期',
   'uni-id-email-verify-code-error': '邮箱验证码错误或已过期',
   'uni-id-admin-exists': '超级管理员已存在',

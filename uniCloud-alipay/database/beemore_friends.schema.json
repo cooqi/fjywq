@@ -6,8 +6,15 @@
     "_id": { "description": "ID，系统自动生成" },
     "user_id": { "bsonType": "string", "description": "发起方用户ID" },
     "pet_id": { "bsonType": "string", "description": "发起方杯蜜ID" },
-    "friend_code": { "bsonType": "string", "description": "好友杯蜜唯一编码" },
-    "target_pet": { "bsonType": "string", "description": "好友杯蜜ID" },
-    "create_date": { "bsonType": "timestamp", "description": "添加时间", "forceDefaultValue": { "$env": "now" } }
+    "friend_code": { "bsonType": "string", "description": "被申请方（目标）杯蜜唯一编码" },
+    "target_pet": { "bsonType": "string", "description": "目标杯蜜ID" },
+    "from_code": { "bsonType": "string", "description": "发起方杯蜜编码（用于目标方查看/同意）" },
+    "from_name": { "bsonType": "string", "description": "发起方杯蜜名字（列表展示，免联表）" },
+    "from_emoji": { "bsonType": "string", "description": "发起方杯蜜emoji" },
+    "to_name": { "bsonType": "string", "description": "目标杯蜜名字" },
+    "to_emoji": { "bsonType": "string", "description": "目标杯蜜emoji" },
+    "status": { "bsonType": "string", "description": "申请状态：pending=待对方同意（成为好友后申请记录删除）" },
+    "create_date": { "bsonType": "timestamp", "description": "发起时间", "forceDefaultValue": { "$env": "now" } },
+    "update_date": { "bsonType": "timestamp", "description": "更新时间" }
   }
 }
