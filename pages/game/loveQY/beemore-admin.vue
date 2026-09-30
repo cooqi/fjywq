@@ -38,9 +38,9 @@
 			</view>
 		</view>
 
-		<!-- 编辑弹窗 -->
-		<uni-popup ref="popup" type="bottom">
-			<view class="dialog">
+		<!-- 编辑弹窗（自绘遮罩，不依赖 uni-popup） -->
+		<view v-if="popupVisible" class="popup-mask" @click="close" @touchmove.stop.prevent>
+			<view class="dialog" @click.stop>
 				<view class="d-head">
 					<text class="d-title">编辑「{{ cur.key }}」</text>
 					<text class="d-close" @click="close">✕</text>
@@ -140,7 +140,7 @@
 					<button class="save-btn" @click="save">保存</button>
 				</view>
 			</view>
-		</uni-popup>
+		</view>
 	</view>
 </template>
 
@@ -174,6 +174,7 @@ export default {
 	data() {
 		return {
 			isAdminUser: false, loading: false, list: [],
+			popupVisible: false,
 			cur: { key: '', label: '', sort: 100, is_active: true },
 			mode: 'json',
 			sched: { workShifts: [], restWindows: [], sleep: { start: '23:00', end: '07:00', weekdays: [0, 1, 2, 3, 4, 5, 6] } },
@@ -239,15 +240,15 @@ export default {
 				this.mode = 'json'
 				this.jsonStr = JSON.stringify(doc.value || {}, null, 2)
 			}
-			this.$refs.popup.open()
+			this.popupVisible = true
 		},
 		addNew() {
 			this.cur = { key: '', label: '', sort: 100, is_active: true, _id: '' }
 			this.mode = 'json'
 			this.jsonStr = '{}'
-			this.$refs.popup.open()
+			this.popupVisible = true
 		},
-		close() { this.$refs.popup.close() },
+		close() { this.popupVisible = false },
 		addShift() { this.sched.workShifts.push({ name: '新班次', start: '09:00', end: '12:00', weekdays: [1, 2, 3, 4, 5] }) },
 		addRest() { this.sched.restWindows.push({ name: '休息', start: '12:00', end: '13:00', weekdays: [1, 2, 3, 4, 5] }) },
 		rmArr(arr, i) { arr.splice(i, 1) },
@@ -347,7 +348,9 @@ export default {
 .act { font-size: 12px; color: #6a5acd; padding: 2px 10px; border-radius: 8px; background: #f4f2fb; }
 .act.del { color: #e0566b; background: #fff0f2; }
 /* 弹窗 */
-.dialog { background: #fff; border-radius: 20px 20px 0 0; max-height: 86vh; display: flex; flex-direction: column; }
+.popup-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 999; background: rgba(0, 0, 0, .45); display: flex; flex-direction: column; justify-content: flex-end; }
+.dialog { background: #fff; border-radius: 20px 20px 0 0; max-height: 86vh; display: flex; flex-direction: column; animation: pop-up .25s ease-out; }
+@keyframes pop-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .d-head { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1rpx solid #f0eef7; }
 .d-title { font-size: 16px; font-weight: bold; color: #444; }
 .d-close { font-size: 18px; color: #999; padding: 0 6px; }
