@@ -18,7 +18,7 @@
 					<view class="ov-big">🍉</view>
 					<view class="ov-title">合成大青宇</view>
 					<view class="ov-sub">左右滑动瞄准 · 松开手指投放</view>
-					<view class="ov-sub">同级水果相碰即可升级，堆过红线就输啦</view>
+					<view class="ov-sub">同级图片相碰即可升级，堆过红线就输啦</view>
 					<button class="ov-btn">开始游戏</button>
 				</view>
 			</view>
@@ -46,15 +46,15 @@
 
 		<view class="tips">提示：两个大青宇不再合并；合成大青宇即胜利，可继续刷分</view>
 
-		<!-- 自定义贴图弹窗（登录用户上传/选择水果皮肤） -->
+		<!-- 自定义贴图弹窗（登录用户上传/选择图片皮肤） -->
 		<view v-if="skinVisible" class="popup-mask" @click="closeSkin" @touchmove.stop.prevent>
 			<view class="skin-panel" @click.stop>
 				<view class="sp-head">
-					<text class="sp-title">自定义水果贴图</text>
+					<text class="sp-title">自定义图片贴图</text>
 					<text class="sp-close" @click="closeSkin">×</text>
 				</view>
 
-				<view v-if="!loggedIn" class="sp-login">请先登录后再上传属于你自己的水果图片～</view>
+				<view v-if="!loggedIn" class="sp-login">请先登录后再上传属于你自己的图片图片～</view>
 
 				<block v-else>
 					<view class="sp-row">
@@ -94,7 +94,7 @@
 import { FRUITS, MAX_LEVEL, randomSpawnLevel } from './fruits.js'
 import { createWorld, addCircle, removeCircle, step } from './physics.js'
 
-const SPAWN_Y = 36 // 待落水果中心线
+const SPAWN_Y = 36 // 待落图片中心线
 const DEATH_Y = SPAWN_Y + 34 // 死亡线
 const BEST_KEY = 'new2048_best'
 const CLOUD_DOMAIN = 'https://env-00jy66xyyok3.normal.cloudstatic.cn'
@@ -156,8 +156,8 @@ export default {
 	onReady() {
 		this.queryRect()
 	},
-	onHide() { this.stopTimer() },
-	onUnload() { this.stopTimer() },
+	onHide() { this.commitBest(); this.stopTimer() },
+	onUnload() { this.commitBest(); this.stopTimer() },
 	onShow() {
 		if (this.status === 'playing' && !this.timer) this.timer = setInterval(() => this.tick(), 33)
 	},
@@ -197,7 +197,7 @@ export default {
 				this.selected = Array.isArray(saved.selected) ? saved.selected : []
 			} catch (e) { this.skinOn = false; this.selected = [] }
 		},
-		// 当前第 i 级水果使用贴图：启用自定义时低等级依次用勾选的图，选够前用完则回退默认图补足
+		// 当前第 i 级图片使用贴图：启用自定义时低等级依次用勾选的图，选够前用完则回退默认图补足
 		levelImg(i) {
 			if (this.skinOn && this.selected && i < this.selected.length) return this.selected[i]
 			return FRUITS[i].img
@@ -335,6 +335,7 @@ export default {
 			}).exec()
 		},
 		restart() {
+			this.commitBest() // 重新开始先结算上一局得分（高于本地最高才写）
 			this.stopTimer()
 			this.world = createWorld(this.canvasW, this.canvasH)
 			this.fx = []
@@ -401,13 +402,14 @@ export default {
 				const r = FRUITS[nl].r
 				const nb = addCircle(this.world, this.clampAim(x, r), Math.min(y, this.canvasH - r), r, { level: nl })
 				nb.vx = 0
-				nb.vy = ((a.vy + b.vy) / 2) * 0.4 // 新水果速度归小，避免飞出
+				nb.vy = ((a.vy + b.vy) / 2) * 0.4 // 新图片速度归小，避免飞出
 				nb.bornAt = now // 合成保护期，防死亡线误判
 				this.score += FRUITS[nl].score
 				this.fx.push({ x: nb.x, y: nb.y, r, until: now + 260 })
 				if (nl === MAX_LEVEL && !this.winShown) {
 					this.winShown = true
 					this.showWin = true
+					this.commitBest() // 每次合成最大图也结算一次
 				}
 			}
 		},
@@ -416,7 +418,7 @@ export default {
 			const bs = this.world.bodies
 			for (let i = 0; i < bs.length; i++) {
 				const b = bs[i]
-				if (b.bornAt && now - b.bornAt < 1200) continue // 刚投放/刚合成的水果给缓冲
+				if (b.bornAt && now - b.bornAt < 1200) continue // 刚投放/刚合成的图片给缓冲
 				if (b.y - b.r < DEATH_Y && Math.abs(b.vy) < 45) {
 					if (!b.overAt) b.overAt = now
 					else if (now - b.overAt > 1500) { this.gameOver(); return }
@@ -428,11 +430,14 @@ export default {
 		gameOver() {
 			this.status = 'over'
 			this.stopTimer()
-			if (this.score > this.best) {
-				this.best = this.score
-				uni.setStorageSync(BEST_KEY, String(this.best))
-			}
+			this.commitBest()
 			this.draw()
+		},
+		// 结算最高分：与本地已存最高分比对，仅当本局分数更高才写入缓存
+		commitBest() {
+			const local = Number(uni.getStorageSync(BEST_KEY)) || 0
+			if (this.score > local) uni.setStorageSync(BEST_KEY, String(this.score))
+			if (this.score > this.best) this.best = this.score
 		},
 		/* ---------- Canvas 渲染（旧版 API，微信/支付宝小程序通用） ---------- */
 		draw() {
@@ -460,7 +465,7 @@ export default {
 					ctx.stroke()
 				}
 			}
-			// 水果
+			// 图片
 			if (this.world) {
 				const bs = this.world.bodies
 				for (let i = 0; i < bs.length; i++) {
@@ -478,7 +483,7 @@ export default {
 				ctx.arc(f.x, f.y, f.r + (1 - p) * 14, 0, Math.PI * 2)
 				ctx.stroke()
 			}
-			// 待落水果
+			// 待落图片
 			if (this.status === 'playing') {
 				const f = FRUITS[this.nextLevel]
 				this.drawFruit(ctx, this.clampAim(this.aimX, f.r), SPAWN_Y, f.r, this.nextLevel)
