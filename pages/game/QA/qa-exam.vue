@@ -24,11 +24,23 @@
 						<text class="rule-dot">🚫</text>
 						<text class="rule-text">每题只能答一次，不可回退修改</text>
 					</view>
+					<view class="rule-item">
+						<text class="rule-dot">📝</text>
+						<text class="rule-text">对答案有疑问可联系我们，人工录入会存在纰漏，切勿默认我们答案一定是对的</text>
+					</view>
 				</view>
+				
+				
 				
 				<button class="start-btn" @click="startExam" :disabled="isLoading">
 					{{isLoading ? '加载中...' : '开始答题'}}
 				</button>
+
+				<!-- 回溯模式入口（新页面，不影响正常答题） -->
+				<view class="backtrack-entry" @click="goBacktrack">
+					<text class="backtrack-entry-title">🧠 回溯模式挑战 ›</text>
+					<text class="backtrack-entry-sub">题目只给选项，凭记忆回答前面第 k 题</text>
+				</view>
 				
 				<!-- 历史记录入口 -->
 				<view class="history-entry" @click="goHistory">
@@ -133,7 +145,10 @@
 						{{item.score}}分
 					</view>
 					<view class="record-info">
-						<view class="record-status">{{item.passed ? '及格' : '未及格'}}</view>
+						<view class="record-status">
+							{{item.passed ? '及格' : '未及格'}}
+							<text class="mode-tag" v-if="item.mode === 'backtrack'">🧠 回溯</text>
+						</view>
 						<view class="record-detail">答对 {{item.correct_count}}/25 题</view>
 					</view>
 					<view class="record-time">{{formatTime(item.create_date)}}</view>
@@ -147,7 +162,10 @@
 			<view class="wrong-list" v-if="historyTab === 'wrong'">
 				<view class="wrong-item" v-for="(item, idx) in wrongList" :key="item.questionId || idx">
 					<view class="wrong-header">
-						<view class="type-tag" :class="'type-' + item.type">{{typeLabel(item.type)}}</view>
+						<view class="wrong-header-left">
+							<view class="type-tag" :class="'type-' + item.type">{{typeLabel(item.type)}}</view>
+							<text class="mode-tag" v-if="item.mode === 'backtrack'">🧠 回溯</text>
+						</view>
 						<text class="wrong-count">错 {{item.wrongCount}} 次</text>
 					</view>
 					<view class="wrong-question">{{item.question}}</view>
@@ -259,6 +277,15 @@ export default {
 		}
 	},
 	methods: {
+		// 进入回溯答题模式（新页面）
+		goBacktrack() {
+			if (!this.userInfo._id) {
+				uni.showToast({ title: '请先登录', icon: 'none' })
+				return
+			}
+			uni.navigateTo({ url: '/pages/game/QA/qa-backtrack' })
+		},
+		
 		// 题型标签
 		typeLabel(type) {
 			const map = { single: '单选', multiple: '多选', judge: '判断', fill: '填空' }
@@ -700,6 +727,29 @@ export default {
 	color: #555;
 }
 
+/* 回溯模式入口 */
+.backtrack-entry {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 28rpx;
+	margin: 40rpx 0;
+	background: linear-gradient(135deg, #fff3e0, #ffe6cf);
+	border: 2rpx solid #ffcc80;
+	border-radius: 20rpx;
+}
+.backtrack-entry:active { opacity: 0.85; }
+.backtrack-entry-title {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #e65100;
+}
+.backtrack-entry-sub {
+	margin-top: 10rpx;
+	font-size: 22rpx;
+	color: #b06b30;
+}
+
 .start-btn {
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	color: #fff;
@@ -1018,6 +1068,28 @@ export default {
 	font-size: 26rpx;
 	color: #333;
 	font-weight: 500;
+}
+
+.wrong-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.mode-tag {
+	display: inline-block;
+	margin-left: 12rpx;
+	font-size: 20rpx;
+	font-weight: normal;
+	color: #e65100;
+	background: #fff3e0;
+	border: 2rpx solid #ffcc80;
+	border-radius: 16rpx;
+	padding: 2rpx 14rpx;
+	vertical-align: middle;
+}
+.wrong-header-left .mode-tag {
+	margin-left: 0;
 }
 
 .record-detail {

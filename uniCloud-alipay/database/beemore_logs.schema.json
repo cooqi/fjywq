@@ -1,0 +1,16 @@
+{
+  "bsonType": "object",
+  "required": ["pet_id", "action"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "description": "ID，系统自动生成" },
+    "pet_id": { "bsonType": "string", "description": "杯蜜ID" },
+    "action": { "bsonType": "string", "description": "动作类型：pet/feed/play/chat/clean/sleep/helpFriend" },
+    "d_interaction": { "bsonType": "int", "description": "互动值变化" },
+    "d_health": { "bsonType": "int", "description": "健康值变化" },
+    "d_happiness": { "bsonType": "int", "description": "开心值变化" },
+    "over_limit": { "bsonType": "bool", "description": "是否超出每日上限（收益为0）" },
+    "target_pet": { "bsonType": "string", "description": "好友帮助时的目标杯蜜ID" },
+    "create_date": { "bsonType": "timestamp", "description": "记录时间", "forceDefaultValue": { "$env": "now" } }
+  }
+}

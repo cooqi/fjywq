@@ -1,0 +1,12 @@
+{
+  "bsonType": "object",
+  "required": ["pet_id", "type", "text"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "description": "ID，系统自动生成" },
+    "pet_id": { "bsonType": "string", "description": "杯蜜ID" },
+    "type": { "bsonType": "string", "description": "事件类型：adopt/interact/sick/recover/heal/friend/work/unlock/notify" },
+    "text": { "bsonType": "string", "description": "日记文案" },
+    "create_date": { "bsonType": "timestamp", "description": "记录时间", "forceDefaultValue": { "$env": "now" } }
+  }
+}

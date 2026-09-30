@@ -34,6 +34,16 @@
             "description": "是否及格（>=60分）",
             "defaultValue": false
         },
+        "mode": {
+            "bsonType": "string",
+            "description": "答题模式：normal 正常 / backtrack 回溯",
+            "defaultValue": "normal"
+        },
+        "backtrack_k": {
+            "bsonType": "int",
+            "description": "回溯间隔题数 k（仅 backtrack 模式有效）",
+            "defaultValue": 0
+        },
         "is_deleted": {
             "bsonType": "bool",
             "description": "是否已删除（软删除标记）",

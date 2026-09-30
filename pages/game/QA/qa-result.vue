@@ -13,8 +13,9 @@
 			<view class="score-detail">
 				答对 {{correctCount}} / {{totalQuestions}} 题（每题 4 分）
 			</view>
+			<view class="mode-badge" v-if="examMode === 'backtrack'">🧠 回溯模式 · 延迟 k 题凭记忆作答，末尾 k 步收尾答完全部题目</view>
 			<view class="score-bar">
-				<view class="bar-fill" :class="{'bar-pass': passed}" :style="{width: (score) + '%'}"></view>
+				<view class="bar-fill" :class="{'bar-pass': passed}" :style="{width: scorePercent + '%'}"></view>
 			</view>
 			<view class="score-line">
 				<text class="line-label">及格线 60 分</text>
@@ -36,7 +37,7 @@
 			
 			<view class="wrong-card" v-for="(item, idx) in wrongQuestions" :key="idx">
 				<view class="wrong-card-header">
-					<text class="wrong-index">第 {{item.index}} 题</text>
+					<text class="wrong-index">{{ examMode === 'backtrack' ? ('第 ' + item.index + ' 题 · 回溯步 ' + (item.stepIndex || '')) : ('第 ' + item.index + ' 题') }}</text>
 					<view class="type-tag" :class="'type-' + item.type">
 						{{typeLabel(item.type)}}
 					</view>
@@ -100,8 +101,17 @@ export default {
 			correctCount: 0,
 			totalQuestions: 25,
 			passed: false,
+			examMode: 'normal',
 			wrongQuestions: [],
 			loaded: false
+		}
+	},
+	computed: {
+		// 分数占满分比例（兼容回溯模式非 100 满分）
+		scorePercent() {
+			const max = (this.totalQuestions || 1) * 4
+			const pct = Math.round((this.score / max) * 100)
+			return pct > 100 ? 100 : (pct < 0 ? 0 : pct)
 		}
 	},
 	onLoad(options) {
@@ -143,6 +153,7 @@ export default {
 					this.loaded = true
 					if (res.result.code === 0 && res.result.data) {
 						const record = res.result.data
+						this.examMode = record.mode || 'normal'
 						// 筛选错题
 						this.wrongQuestions = (record.questions || [])
 							.filter(q => q.isCorrect === false)
@@ -173,9 +184,10 @@ export default {
 		
 		// 再考一次
 		retryExam() {
-			uni.redirectTo({
-				url: '/pages/game/QA/qa-exam'
-			})
+			const url = this.examMode === 'backtrack'
+				? '/pages/game/QA/qa-backtrack'
+				: '/pages/game/QA/qa-exam'
+			uni.redirectTo({ url })
 		},
 		
 		// 返回首页
@@ -249,6 +261,17 @@ export default {
 	font-size: 26rpx;
 	color: #999;
 	margin-bottom: 30rpx;
+}
+
+.mode-badge {
+	display: inline-block;
+	font-size: 22rpx;
+	color: #e65100;
+	background: #fff3e0;
+	border: 2rpx solid #ffcc80;
+	border-radius: 20rpx;
+	padding: 8rpx 20rpx;
+	margin-bottom: 24rpx;
 }
 
 .score-bar {

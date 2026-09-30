@@ -1,0 +1,67 @@
+{
+	"bsonType": "object",
+	"required": ["creator_id", "exam_code", "question_count"],
+	"permission": {
+		"read": false,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"creator_id": {
+			"bsonType": "string",
+			"description": "创建考试的用户ID"
+		},
+		"creator_nick": {
+			"bsonType": "string",
+			"description": "创建者昵称"
+		},
+		"exam_code": {
+			"bsonType": "string",
+			"description": "考试码（6位大写字母数字，唯一）"
+		},
+		"question_count": {
+			"bsonType": "int",
+			"description": "题数（最少5）"
+		},
+		"pass_score": {
+			"bsonType": "int",
+			"description": "及格分（最少1）"
+		},
+		"total_score": {
+			"bsonType": "int",
+			"description": "满分（最少5）"
+		},
+		"points_per_question": {
+			"bsonType": "int",
+			"description": "每题分值 = floor(满分/题数)"
+		},
+		"tiers": {
+			"bsonType": "array",
+			"description": "分数称号配置 [{minScore, title, prize}]，按 minScore 降序匹配"
+		},
+		"questions": {
+			"bsonType": "array",
+			"description": "创建时固化的题目快照（含正确答案与解析，仅云端可见），同一考试码所有人题目一致"
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"expire_at": {
+			"bsonType": "timestamp",
+			"description": "过期时间戳（创建/续期时 +10 分钟），超过则不可参与"
+		},
+		"participant_count": {
+			"bsonType": "int",
+			"description": "参与人数",
+			"defaultValue": 0
+		}
+	}
+}

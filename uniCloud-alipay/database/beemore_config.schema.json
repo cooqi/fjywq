@@ -1,0 +1,24 @@
+{
+  "bsonType": "object",
+  "required": ["key"],
+  "permission": {
+    "read": true,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "description": "ID，系统自动生成" },
+    "key": {
+      "bsonType": "string",
+      "description": "配置分类键：schedule/rules/leave/actions/emoticons/jobs/travel_places/postcards/decor/care_tasks/task_defs",
+      "trim": "both"
+    },
+    "label": { "bsonType": "string", "description": "中文名称，用于管理页展示", "trim": "both" },
+    "value": { "bsonType": "object", "description": "该分类的配置载荷（结构随 key 而定，见 beemore_config.init_data.json）" },
+    "sort": { "bsonType": "int", "description": "排序序号", "minimum": 0, "maximum": 999, "forceDefaultValue": 0 },
+    "is_active": { "bsonType": "bool", "description": "是否启用", "forceDefaultValue": true },
+    "update_date": { "bsonType": "timestamp", "description": "更新时间", "forceDefaultValue": { "$env": "now" } },
+    "create_date": { "bsonType": "timestamp", "description": "创建时间", "forceDefaultValue": { "$env": "now" } }
+  }
+}

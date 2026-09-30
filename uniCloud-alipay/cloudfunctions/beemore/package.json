@@ -1,0 +1,7 @@
+{
+	"name": "beemore",
+	"version": "1.0.0",
+	"description": "电子杯蜜养成云函数：状态计算/互动/诊所/任务/工作/好友/日记",
+	"main": "index.js",
+	"dependencies": {}
+}

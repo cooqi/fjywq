@@ -1,0 +1,5 @@
+{
+	"name": "beemore-config",
+	"version": "1.0.0",
+	"description": "电子杯蜜全局配置管理云函数（beemore_config 集合 CRUD）"
+}

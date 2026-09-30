@@ -52,6 +52,20 @@
         <text class="game-desc">寻找你的答案</text>
       </view>
 
+      <!-- 青宇宇宙通行证 -->
+      <view class="game-card" @click="goToGame('txz')">
+        <view class="game-icon txz-icon">🎫</view>
+        <text class="game-name">宇宙通行证</text>
+        <text class="game-desc">嗑学水平测试</text>
+      </view>
+
+      <!-- 电子杯蜜 -->
+      <view class="game-card" @click="goToGame('loveQY')">
+        <view class="game-icon beemore-icon">🌻</view>
+        <text class="game-name">电子杯蜜</text>
+        <text class="game-desc">养一个自己的杯蜜</text>
+      </view>
+
       <!-- 创意画板 -->
       <!-- <view class="game-card" @click="goToGame('draw')">
         <view class="game-icon draw-icon">🎨</view>
@@ -88,7 +102,9 @@ export default {
         'draw': '/pages/game/draw',
         'huarongdao': '/pages/game/huarongdao',
         'qa': '/pages/game/QA/qa-exam',
-        'answerBook': '/pages/game/answer-book'
+        'answerBook': '/pages/game/answer-book',
+        'txz': '/pages/game/txz/txz-index',
+        'loveQY': '/pages/game/loveQY/loveQY'
       }
       
       if (routes[gameType]) {
@@ -192,6 +208,14 @@ export default {
 
 .answer-book-icon {
   background: linear-gradient(135deg, #4aa8b8 0%, #6f5bd8 100%);
+}
+
+.txz-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.beemore-icon {
+  background: linear-gradient(135deg, #ffd76e 0%, #ff9a3c 100%);
 }
 
 .game-info {

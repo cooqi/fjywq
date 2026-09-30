@@ -138,9 +138,105 @@
 		}
 	},
 	{
+		"path": "pages/game/loveQY/loveQY",
+		"style": {
+			"navigationBarTitleText": "电子杯蜜",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#e6cffc"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/clinic",
+		"style": {
+			"navigationBarTitleText": "杯蜜诊所",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#d6f0ff"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/tasks",
+		"style": {
+			"navigationBarTitleText": "杯蜜任务",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#e6cffc"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/diary",
+		"style": {
+			"navigationBarTitleText": "杯蜜日记",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#fff6e6"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/settings",
+		"style": {
+			"navigationBarTitleText": "杯蜜设置",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#e6cffc"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/travel",
+		"style": {
+			"navigationBarTitleText": "杯蜜旅行",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/wardrobe",
+		"style": {
+			"navigationBarTitleText": "杯蜜衣橱",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#e6cffc"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/friends",
+		"style": {
+			"navigationBarTitleText": "杯蜜好友",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/chat",
+		"style": {
+			"navigationBarTitleText": "和杯蜜聊天",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#e6cffc"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/beemore-admin",
+		"style": {
+			"navigationBarTitleText": "杯蜜后台管理",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#d6f0ff"
+		}
+	},
+	{
+		"path": "pages/game/loveQY/customize",
+		"style": {
+			"navigationBarTitleText": "自定义形象",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#ffeef5"
+		}
+	},
+	{
 		"path": "pages/game/QA/qa-exam",
 		"style": {
 			"navigationBarTitleText": "青宇问答",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/QA/qa-backtrack",
+		"style": {
+			"navigationBarTitleText": "回溯答题",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#cff8f5"
 		}
@@ -167,6 +263,30 @@
 			"navigationBarTitleText": "青宇答案之书",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#bfe6ef"
+		}
+	},
+	{
+		"path": "pages/game/txz/txz-index",
+		"style": {
+			"navigationBarTitleText": "青宇宇宙通行证",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/txz/txz-exam",
+		"style": {
+			"navigationBarTitleText": "嗑学水平测试",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/txz/txz-result",
+		"style": {
+			"navigationBarTitleText": "认证证书",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
 		}
 	},
 	{

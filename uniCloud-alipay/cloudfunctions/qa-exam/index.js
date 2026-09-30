@@ -16,7 +16,7 @@ exports.main = async (event, context) => {
 	try {
 		switch (action) {
 			case 'startExam':
-				return await startExam(userId);
+				return await startExam(userId, event);
 			case 'submitExam':
 				return await submitExam(userId, event);
 			case 'getRecord':
@@ -39,7 +39,14 @@ exports.main = async (event, context) => {
 };
 
 // 开始考试：随机抽 25 题（优先避开近期已考题目）
-async function startExam(userId) {
+async function startExam(userId, event) {
+	// 解析模式与回溯间隔 k
+	const mode = event && event.mode === 'backtrack' ? 'backtrack' : 'normal';
+	let k = 0;
+	if (mode === 'backtrack') {
+		k = parseInt(event.k);
+		if (!k || k < 1) k = 3;
+	}
 	// 查询所有启用的题目（先获取总数，再一次性拉取，避免默认 limit 100 截断）
 	const countRes = await questionsCol.where({ status: 1 }).count();
 	const totalAvailable = countRes.total;
@@ -53,6 +60,16 @@ async function startExam(userId) {
 	}
 
 	const total = Math.min(25, allQuestions.data.length);
+
+	// 回溯模式需 k 至少为 1 且小于总题数，否则降级为正常模式
+	if (mode === 'backtrack') {
+		if (total < 2) {
+			k = 0;
+		} else {
+			k = Math.min(k, total - 1);
+			if (k < 1) k = 1;
+		}
+	}
 
 	// 获取该用户最近 3 次考试的题目 ID，用于去重
 	const recentRecords = await recordsCol
@@ -115,6 +132,8 @@ async function startExam(userId) {
 		score: 0,
 		correct_count: 0,
 		passed: false,
+		mode: mode,
+		backtrack_k: k,
 		create_date: Date.now()
 	});
 
@@ -126,6 +145,8 @@ async function startExam(userId) {
 			recordId: record.id,
 			questions: questionSnapshots,
 			totalQuestions: total,
+			mode: mode,
+			k: k,
 			timeLimit: total * 20 // 总时限（秒）
 		}
 	};
@@ -167,41 +188,50 @@ async function submitExam(userId, event) {
 		};
 	});
 
-	// 判分
+	// 回溯模式：总步数 = N + k。前 k 步热身（不作答、不计分）；第 step(k<step<=N+k) 步作答第 (step-k) 题；全部 N 题均被作答计分
+	const isBacktrack = record.mode === 'backtrack' && record.backtrack_k > 0;
+	const k = record.backtrack_k || 0;
+
+	// 防版本错位：回溯模式答卷长度应为 N + k，不足说明前端与云函数版本不一致
+	if (isBacktrack && answers.length < record.questions.length + k) {
+		return { code: -1, msg: '答题数据异常（请确认 qa-exam 云函数已重新上传后重新开始考试）' };
+	}
+
 	let correctCount = 0;
-	const updatedQuestions = record.questions.map(q => {
-		const userAnswer = answers[q.index - 1] || [];
-		const mapEntry = answerMap[q.questionId] || {};
-		const correctAnswer = mapEntry.answer || [];
-		const analysis = mapEntry.analysis || '';
-		// 优先用快照 type，兜底用数据库 type
-		const qType = q.type || mapEntry.type || 'single';
+	let updatedQuestions = [];
 
-		// 判分
-		let isCorrect = false;
-		if (qType === 'fill') {
-			// 填空题：用户输入文本与任一可接受答案匹配即得分
-			const userInput = Array.isArray(userAnswer) ? (userAnswer[0] || '') : (userAnswer || '');
-			const trimmed = userInput.trim().toLowerCase();
-			isCorrect = trimmed.length > 0 && correctAnswer.some(a => String(a).trim().toLowerCase() === trimmed);
-		} else {
-			// 选择题：多选必须完全匹配
-			isCorrect =
-				Array.isArray(userAnswer) &&
-				userAnswer.length === correctAnswer.length &&
-				userAnswer.slice().sort().join(',') === correctAnswer.slice().sort().join(',');
+	if (isBacktrack) {
+		for (let t = 1; t <= record.questions.length; t++) {
+			const target = record.questions[t - 1];
+			const step = t + k; // 该题在第 step 步作答
+			const userAnswer = answers[step - 1] || [];
+			const r = judgeOne(target, userAnswer, answerMap);
+			if (r.isCorrect) correctCount++;
+			updatedQuestions.push({
+				...target,
+				index: t,
+				stepIndex: step,
+				userAnswer: userAnswer,
+				isCorrect: r.isCorrect,
+				correctAnswer: r.correctAnswer,
+				analysis: r.analysis
+			});
 		}
-
-		if (isCorrect) correctCount++;
-
-		return {
-			...q,
-			userAnswer: userAnswer,
-			isCorrect: isCorrect,
-			correctAnswer: correctAnswer,
-			analysis: analysis
-		};
-	});
+	} else {
+		updatedQuestions = record.questions.map((q, i) => {
+			const userAnswer = answers[i] || [];
+			const r = judgeOne(q, userAnswer, answerMap);
+			if (r.isCorrect) correctCount++;
+			return {
+				...q,
+				index: i + 1,
+				userAnswer: userAnswer,
+				isCorrect: r.isCorrect,
+				correctAnswer: r.correctAnswer,
+				analysis: r.analysis
+			};
+		});
+	}
 
 	const totalQuestions = updatedQuestions.length;
 	const score = correctCount * 4; // 每题 4 分
@@ -283,6 +313,7 @@ async function getHistory(userId, page, pageSize) {
             score: true,
             correct_count: true,
             passed: true,
+            mode: true,
             create_date: true
         })
 		.get();
@@ -336,6 +367,7 @@ async function getWrongQuestions(userId) {
 						category: q.category,
 						difficulty: q.difficulty,
 						options: q.options,
+						mode: record.mode || 'normal',
 						correctAnswer: (q.options && q.options.length > 0)
 							? (q.correctAnswer || []).map(key => {
 								const opt = q.options.find(o => o.key === key);
@@ -415,6 +447,26 @@ async function deleteRecord(userId, recordId) {
         msg: '删除成功'
     };
 }
+// 工具：单题判分（返回 isCorrect / correctAnswer / analysis）
+function judgeOne(q, userAnswer, answerMap) {
+	const mapEntry = (answerMap && answerMap[q.questionId]) || {};
+	const correctAnswer = mapEntry.answer || [];
+	const analysis = mapEntry.analysis || '';
+	const qType = q.type || mapEntry.type || 'single';
+	let isCorrect = false;
+	if (qType === 'fill') {
+		const userInput = Array.isArray(userAnswer) ? (userAnswer[0] || '') : (userAnswer || '');
+		const trimmed = userInput.trim().toLowerCase();
+		isCorrect = trimmed.length > 0 && correctAnswer.some(a => String(a).trim().toLowerCase() === trimmed);
+	} else {
+		isCorrect =
+			Array.isArray(userAnswer) &&
+			userAnswer.length === correctAnswer.length &&
+			userAnswer.slice().sort().join(',') === correctAnswer.slice().sort().join(',');
+	}
+	return { isCorrect, correctAnswer, analysis };
+}
+
 // 工具：数组洗牌（Fisher-Yates）
 function shuffleArray(arr) {
 	const result = [...arr];
