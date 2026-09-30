@@ -8,8 +8,8 @@
 			<view class="hud-btn" @click="restart">重新开始</view>
 		</view>
 
-		<view class="stage" v-show="!skinVisible" :style="{ width: canvasW + 'px', height: canvasH + 'px' }">
-			<canvas canvas-id="game" id="game" class="cv" :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
+		<view class="stage" v-show="!skinVisible" :style="{ width: '100vw', height: canvasH + 'px' }">
+			<canvas canvas-id="game" id="game" class="cv" :style="{ width:'100vw', height: canvasH + 'px' }"
 				@touchstart="onTouch" @touchmove="onTouch" @touchend="onDrop"></canvas>
 
 			<!-- 开始遮罩 -->
@@ -145,9 +145,9 @@ export default {
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync()
-		const w = Math.min(info.windowWidth - 24, 420)
-		this.canvasW = Math.round(w)
-		this.canvasH = Math.round(Math.min(w * 1.4, info.windowHeight - 170))
+		// 画布铺满全屏宽：canvasW 直接取屏宽，与 CSS 100vw 对齐，避免拉伸/落点偏移
+		this.canvasW = Math.round(info.windowWidth)
+		this.canvasH = Math.round(Math.min(this.canvasW * 1.4, info.windowHeight - 170))
 		this.aimX = this.canvasW / 2
 		this.best = Number(uni.getStorageSync(BEST_KEY)) || 0
 		this.initUserSkin()
@@ -438,17 +438,8 @@ export default {
 		draw() {
 			const ctx = uni.createCanvasContext('game', this)
 			const W = this.canvasW, H = this.canvasH
-			// 背景
-			const grad = ctx.createLinearGradient(0, 0, 0, H)
-			grad.addColorStop(0, '#f6efdb')
-			grad.addColorStop(1, '#e9dfc8')
-			ctx.setFillStyle(grad)
-			ctx.fillRect(0, 0, W, H)
-			// 左右墙 + 底部装饰
-			ctx.setFillStyle('#c8b89a')
-			ctx.fillRect(0, 0, 3, H)
-			ctx.fillRect(W - 3, 0, 3, H)
-			ctx.fillRect(0, H - 3, W, 3)
+			// 清空画布（保持透明，露出页面渐变背景）；兼做逐帧清屏防残影
+			ctx.clearRect(0, 0, W, H)
 			// 死亡线（短横段模拟虚线）
 			ctx.setStrokeStyle('rgba(224, 86, 107, .7)')
 			ctx.setLineWidth(2)
@@ -513,11 +504,6 @@ export default {
 					ctx.drawImage(img, x - r, y - r, r * 2, r * 2)
 				}
 				ctx.restore()
-				ctx.beginPath()
-				ctx.arc(x, y, r, 0, Math.PI * 2)
-				ctx.setStrokeStyle('rgba(0, 0, 0, .22)')
-				ctx.setLineWidth(2)
-				ctx.stroke()
 				return
 			}
 			// 降级：色圆 + 高光 + emoji
@@ -547,14 +533,14 @@ export default {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: #efe6d0; display: flex; flex-direction: column; align-items: center; padding: 12px 0 20px; box-sizing: border-box; }
+.page { min-height: 100vh; background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%); display: flex; flex-direction: column; align-items: center; padding: 12px 0 20px; box-sizing: border-box; }
 .hud { width: 92vw; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .hud-item { flex: 1; background: #fff; border-radius: 12px; padding: 6px 8px; text-align: center; font-size: 11px; color: #9a8c6e; }
 .hud-val { display: block; font-size: 17px; font-weight: bold; color: #5d4f36; margin-top: 2px; }
 .next-img { width: 26px; height: 26px; border-radius: 50%; margin: 2px auto 0; display: block; }
 .hud-btn { background: #e0566b; color: #fff; font-size: 12px; border-radius: 12px; padding: 10px 12px; }
 .hud-btn.ghost { background: #fff; color: #e0566b; border: 1px solid #f2c8d0; }
-.stage { position: relative; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(93, 79, 54, .18); }
+.stage { position: relative; overflow: hidden; box-shadow: 0 6px 24px rgba(93, 79, 54, .18);}
 .cv { display: block; }
 .overlay { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(60, 50, 30, .55); display: flex; align-items: center; justify-content: center; }
 .ov-card { width: 78%; background: #fff; border-radius: 18px; padding: 22px 16px; text-align: center; }
