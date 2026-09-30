@@ -1,0 +1,13 @@
+{
+  "bsonType": "object",
+  "required": ["user_id", "url"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "description": "ID，系统自动生成" },
+    "user_id": { "bsonType": "string", "description": "所属用户ID（uni-id users _id）" },
+    "url": { "bsonType": "string", "description": "图片云端可访问 URL" },
+    "cloud_path": { "bsonType": "string", "description": "上传时的云存储路径" },
+    "label": { "bsonType": "string", "description": "可选备注名" },
+    "create_date": { "bsonType": "timestamp", "description": "上传时间", "forceDefaultValue": { "$env": "now" } }
+  }
+}

@@ -38,6 +38,8 @@
         <text class="game-desc">经典益智华容道</text>
       </view>
 
+     
+
       <!-- 青宇问答 -->
       <view class="game-card" @click="goToGame('qa')">
         <view class="game-icon qa-icon">📝</view>
@@ -64,6 +66,13 @@
         <view class="game-icon beemore-icon">🌻</view>
         <text class="game-name">电子杯蜜</text>
         <text class="game-desc">养一个自己的杯蜜</text>
+      </view>
+
+       <!-- 合成大西瓜 -->
+      <view class="game-card" @click="goToGame('new2048')">
+        <view class="game-icon new2048-icon">🍉</view>
+        <text class="game-name">合成大青宇</text>
+        <text class="game-desc">物理版 2048 挑战</text>
       </view>
 
       <!-- 创意画板 -->
@@ -101,6 +110,7 @@ export default {
         'match': '/pages/game/match',
         'draw': '/pages/game/draw',
         'huarongdao': '/pages/game/huarongdao',
+        'new2048': '/pages/game/new2048/new2048',
         'qa': '/pages/game/QA/qa-exam',
         'answerBook': '/pages/game/answer-book',
         'txz': '/pages/game/txz/txz-index',
@@ -200,6 +210,10 @@ export default {
 
 .huarongdao-icon {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.new2048-icon {
+  background: linear-gradient(135deg, #66bb6a 0%, #ef5350 100%);
 }
 
 .qa-icon {

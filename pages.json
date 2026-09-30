@@ -138,6 +138,14 @@
 		}
 	},
 	{
+		"path": "pages/game/new2048/new2048",
+		"style": {
+			"navigationBarTitleText": "合成大青宇",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#efe6d0"
+		}
+	},
+	{
 		"path": "pages/game/loveQY/loveQY",
 		"style": {
 			"navigationBarTitleText": "电子杯蜜",
