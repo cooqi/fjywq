@@ -8,7 +8,7 @@
 			<view class="hud-btn" @click="restart">重新开始</view>
 		</view>
 
-		<view class="stage" :style="{ width: canvasW + 'px', height: canvasH + 'px' }">
+		<view class="stage" v-show="!skinVisible" :style="{ width: canvasW + 'px', height: canvasH + 'px' }">
 			<canvas canvas-id="game" id="game" class="cv" :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
 				@touchstart="onTouch" @touchmove="onTouch" @touchend="onDrop"></canvas>
 
@@ -206,7 +206,14 @@ export default {
 			this.skinVisible = true
 			if (this.loggedIn) this.loadGallery()
 		},
-		closeSkin() { this.skinVisible = false },
+		closeSkin() {
+			this.skinVisible = false
+			// canvas 隐藏后可能清屏， reopen 后重新量取位置并重绘（未在计时循环时需手动刷）
+			this.$nextTick(() => {
+				this.queryRect()
+				if (this.status !== 'playing') this.draw()
+			})
+		},
 		loadGallery() {
 			uni.showLoading({ title: '加载中' })
 			this.callSkin({ action: 'list', userId: this.userId }).then(res => {
@@ -346,7 +353,7 @@ export default {
 		},
 		resumePlay() { this.showWin = false },
 		tick() {
-			if (this.status !== 'playing' || this.showWin) return
+			if (this.status !== 'playing' || this.showWin || this.skinVisible) return
 			step(this.world, 0.033)
 			this.processMerges()
 			this.checkDeath()
