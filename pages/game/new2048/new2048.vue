@@ -110,6 +110,10 @@ export default {
 	data() {
 		return {
 			FRUITS,
+			// 将模块级常量暴露到实例，供模板 {{ }} 插值读取
+			MAX_GALLERY,
+			MAX_SELECTED,
+			MIN_SELECTED,
 			canvasW: 300,
 			canvasH: 420,
 			status: 'ready', // ready | playing | over
