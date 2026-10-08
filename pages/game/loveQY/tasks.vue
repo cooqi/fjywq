@@ -5,7 +5,8 @@
 		<view v-else>
 			<view class="res-bar">
 				<text>❤️ 爱心 {{ heart }}</text>
-				<text>🌿 药草 {{ herb }}</text>
+				<text>🪙 杯蜜币 {{ coin }}</text>
+				<text>🍚 饥饿 {{ hunger }}</text>
 				<text>🔥 连续陪伴 {{ streak }} 天</text>
 			</view>
 
@@ -32,7 +33,7 @@ export default {
 	components: { TaskItem },
 	data() {
 		return {
-			loading: true, userId: '', tasks: [], heart: 0, herb: 0, streak: 1
+			loading: true, userId: '', tasks: [], heart: 0, coin: 0, hunger: 35, streak: 1
 		}
 	},
 	computed: {
@@ -58,7 +59,8 @@ export default {
 			if (tRes.code === 0 && tRes.data) {
 				this.tasks = tRes.data.tasks || []
 				this.heart = tRes.data.heart || 0
-				this.herb = tRes.data.herb || 0
+				this.coin = tRes.data.coin || 0
+				this.hunger = tRes.data.hunger == null ? 35 : tRes.data.hunger
 				this.streak = tRes.data.streak || 1
 			}
 			this.loading = false

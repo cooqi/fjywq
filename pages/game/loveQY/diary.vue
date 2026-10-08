@@ -26,8 +26,8 @@
 import { callBeemore, getMyUserInfo } from './store/pet.js'
 import { fmtTime } from './beemore.js'
 
-const ICONS = { adopt: '🐣', sick: '🤒', recover: '🌱', heal: '💊', friend: '🤝', cut: '💔', work: '💼', unlock: '🎁', notify: '🔔', interact: '💬' }
-const COLORS = { adopt: '#43e97b', sick: '#f5576c', recover: '#4facfe', heal: '#4facfe', friend: '#fa709a', cut: '#f5576c', work: '#f6a54a', unlock: '#b06ab3', notify: '#c9c9d4', interact: '#7f9cf5' }
+const ICONS = { adopt: '🐣', sick: '🤒', recover: '🌱', heal: '💊', friend: '🤝', cut: '💔', work: '💼', unlock: '🎁', notify: '🔔', interact: '💬', eat: '🍚', fat: '⚖️', thin: '🥺' }
+const COLORS = { adopt: '#43e97b', sick: '#f5576c', recover: '#4facfe', heal: '#4facfe', friend: '#fa709a', cut: '#f5576c', work: '#f6a54a', unlock: '#b06ab3', notify: '#c9c9d4', interact: '#7f9cf5', eat: '#ffb454', fat: '#f6a54a', thin: '#4facfe' }
 
 export default {
 	data() { return { loading: true, list: [], petName: '', userId: '' } },

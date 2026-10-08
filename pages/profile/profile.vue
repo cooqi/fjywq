@@ -55,6 +55,10 @@
 					<view class="menu-icon">💬</view>
 					<view class="menu-text">杯杯儿信箱</view>
 				</view>
+				<view class="menu-item" @click="goToLunTan">
+					<view class="menu-icon">ℹ️</view>
+					<view class="menu-text">社区论坛</view>
+				</view>
 			</view>
 			
 			<!-- 其他信息 -->
@@ -495,6 +499,19 @@
 			showAbout() {
 				uni.navigateTo({
 					url: '/pages/profile/about'
+				})
+			},
+			goToLunTan(){
+				//复制地址
+				
+				uni.setClipboardData({
+					data: 'http://fjywq.com',
+					success: () => {
+						uni.showToast({
+							title: '论坛地址已复制，到浏览器查看',
+							icon: 'success'
+						})
+					}
 				})
 			}
 		}

@@ -54,7 +54,7 @@ export default {
 		tone() { return this.statusMeta.tone },
 		stateTip() {
 			if (isLocked(this.status)) {
-				return this.status === 'sleeping' ? '杯蜜睡着了，消息会醒来后回复 Zzz…' : '杯蜜正在上班，会忙完再回你～'
+				return this.status === 'sleeping' ? '杯蜜睡着了，消息会醒来后回复 Zzz…' : '杯蜜正在上班，下班再联系～'
 			}
 			return this.statusMeta.hint
 		}

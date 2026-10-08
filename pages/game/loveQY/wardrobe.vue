@@ -4,8 +4,12 @@
 
 		<view v-else>
 			<view class="head">
-				<canvas canvas-id="wdPet" :style="{ width: px.w + 'px', height: px.h + 'px' }"></canvas>
+				<view class="stage">
+					<view class="grid-overlay"></view>
+					<canvas canvas-id="wdPet" :style="{ width: px.w + 'px', height: px.h + 'px' }" class="wd-canvas"></canvas>
+				</view>
 				<view class="equipped">当前穿戴：{{ equippedText || '无' }}</view>
+				<view class="wd-tip">{{ hairName }} · 配饰配色自动跟随衣服颜色</view>
 				<view class="streak">🔥 连续陪伴 {{ streak }} 天</view>
 			</view>
 
@@ -24,8 +28,8 @@
 </template>
 
 <script>
-import { callBeemore, getMyUserInfo } from './store/pet.js'
-import { normalizeLook } from './look.js'
+import { callBeemore, getMyUserInfo, getCachedPet, refreshPet } from './store/pet.js'
+import { normalizeLook, HAIRS } from './look.js'
 import { renderPet, CANVAS_W, CANVAS_H } from './renderer.js'
 
 export default {
@@ -35,7 +39,9 @@ export default {
 	computed: {
 		equippedText() {
 			return this.items.filter(i => i.equipped).map(i => i.emoji + i.name).join(' ')
-		}
+		},
+		// 发型属于形象（造型间）而不在衣橱里，预览下方明说避免找不到开关
+		hairName() { return '发型：' + (HAIRS[normalizeLook(this.pet.look, this.pet).hair] || HAIRS.none).name }
 	},
 	onLoad() {
 		const u = getMyUserInfo()
@@ -45,7 +51,8 @@ export default {
 	onShow() { if (!this.loading) this.load() },
 	methods: {
 		drawPet() {
-			try { renderPet(uni.createCanvasContext('wdPet', this), normalizeLook(this.pet.look, this.pet), 'smile', this.pet.equippedItems || [], 3) } catch (e) {}
+			// 静态帧：衣橱预览不需要逐帧动画，但形象（发型/衣服色）必须与主面板一致
+			try { renderPet(uni.createCanvasContext('wdPet', this), normalizeLook(this.pet.look, this.pet), 'happy', this.pet.equippedItems || [], 3) } catch (e) {}
 		},
 		async load() {
 			this.loading = true
@@ -53,18 +60,29 @@ export default {
 			if (res.code === 0 && res.data) {
 				this.items = res.data.items || []
 				this.streak = res.data.streak || 1
-				// 顺带取 pet 形象
-				const cached = uni.getStorageSync('beemore_pet_cache')
-				if (cached) { try { this.pet = JSON.parse(cached) || {} } catch (e) { this.pet = {} } }
+				// 形象以服务端 wardrobe 回传为准（缓存只作底色），否则预览会画错发型/性别；不写回缓存，避免局部字段污染
+				this.pet = Object.assign({}, getCachedPet() || {}, {
+					look: res.data.look,
+					gender: res.data.gender,
+					equippedItems: res.data.equippedItems || []
+				})
 			}
 			this.loading = false
 			this.$nextTick(() => this.drawPet())
+			// canvas 在 v-else 里，小程序首帧未就绪时补画一次
+			setTimeout(() => this.drawPet(), 200)
 		},
 		async toggle(it) {
 			const res = await callBeemore({ action: 'equip', userId: this.userId, itemKey: it.key, on: !it.equipped })
 			if (res.code === 0) {
 				uni.showToast({ title: res.message || '好了', icon: 'none' })
-				this.load()
+				// 先拿服务端回传的 equippedItems 就地重画预览，再拉一次全量状态同步缓存与主面板
+				if (res.data && Array.isArray(res.data.equippedItems)) {
+					this.pet = Object.assign({}, this.pet, { equippedItems: res.data.equippedItems })
+					this.items = this.items.map(i => Object.assign({}, i, { equipped: it.key === i.key ? !it.equipped : i.equipped }))
+					this.drawPet()
+				}
+				refreshPet()
 			} else {
 				uni.showToast({ title: res.message || '操作失败', icon: 'none' })
 			}
@@ -77,8 +95,13 @@ export default {
 .page { min-height: 100vh; background: linear-gradient(180deg, #cff8f5 0%, #e6cffc 100%); padding: 16px; box-sizing: border-box; }
 .center-tip { text-align: center; color: #8a7fb0; margin-top: 120px; }
 .head { background: #fff; border-radius: 18px; padding: 18px; text-align: center; margin-bottom: 14px; }
+/* 霓虹舞台：线条形象在暗底上才能体现发光 */
+.stage { position: relative; display: inline-block; padding: 6px 10px; border-radius: 16px; overflow: hidden; background: radial-gradient(circle at 50% 40%, #16232e 0%, #0a1117 55%, #04070a 100%); }
+.grid-overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-image: linear-gradient(rgba(94, 234, 212, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(94, 234, 212, 0.05) 1px, transparent 1px); background-size: 30px 30px; pointer-events: none; }
+.wd-canvas { position: relative; z-index: 1; }
 .big { font-size: 60px; }
 .equipped { font-size: 14px; color: #6a5acd; margin-top: 8px; }
+.wd-tip { font-size: 11px; color: #a8a2c0; margin-top: 4px; }
 .streak { font-size: 12px; color: #999; margin-top: 4px; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .cell { background: #fff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; }

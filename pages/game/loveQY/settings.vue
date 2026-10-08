@@ -17,8 +17,13 @@
 				<view class="info-row">
 					<text>性别：{{ pet.gender || '未设置' }}</text>
 					<text>年龄：{{ pet.age || 0 }}</text>
-					<text>身高：{{ pet.height || 0 }}</text>
-					<text>体重：{{ pet.weight || 0 }}</text>
+					<text>身高：{{ pet.height || 0 }}cm</text>
+					<text>体重：{{ pet.weight || 0 }}kg（标准 {{ pet.weightBase || pet.weight || 0 }}kg）</text>
+				</view>
+				<view class="info-row">
+					<text>饥饿值：{{ hungerNow }}（{{ hungerLabel }}）</text>
+					<text>今日已吃：{{ mealsToday }} 顿</text>
+					<text v-if="pet.overKcal > 0">热量堆积：{{ pet.overKcal }} kcal</text>
 				</view>
 				<view class="likes" v-if="pet.likes && pet.likes.length">喜好：{{ pet.likes.join('、') }}</view>
 			</view>
@@ -128,14 +133,14 @@
 
 			<!-- 清空数据 -->
 			<button class="danger" @click="confirmClear">清空我的杯蜜数据</button>
-			<view class="foot">电子杯蜜 V1.0 · 数字闺蜜 · 不用喂食 · 不会死亡</view>
+			<view class="foot">电子杯蜜 V1.0 · 数字闺蜜 · 要按时吃饭 · 会生病需照顾</view>
 		</view>
 	</view>
 </template>
 
 <script>
 import { callBeemore, getMyUserInfo, clearPetCache } from './store/pet.js'
-import { loadBeemoreConfig, getJobs, getSchedule } from './beemore.js'
+import { loadBeemoreConfig, getJobs, getSchedule, hungerInfo } from './beemore.js'
 import { isAdmin } from '@/common/js/permission.js'
 
 export default {
@@ -171,7 +176,10 @@ export default {
 		globalSleepText() {
 			const s = this.schedule && this.schedule.sleep
 			return s ? `${s.start} - ${s.end}` : '默认作息'
-		}
+		},
+		hungerNow() { return this.pet.hunger == null ? 35 : Math.max(0, Math.min(100, this.pet.hunger)) },
+		hungerLabel() { return hungerInfo(this.hungerNow).label },
+		mealsToday() { return (this.pet.daily && this.pet.daily.meals) || 0 }
 	},
 	methods: {
 		hasDay(arr, d) { return Array.isArray(arr) && arr.indexOf(d) > -1 },
@@ -278,7 +286,7 @@ export default {
 			uni.showModal({ title: '隐私政策', content: '本小程序仅记录你的杯蜜养成数据，不采集敏感个人信息，不涉及任何付费。数据可在「清空数据」中随时删除。', showCancel: false })
 		},
 		showAbout() {
-			uni.showModal({ title: '关于我们', content: '电子杯蜜：一位住在你手机里的电子闺蜜 / 数字打工人。她会按时上班、午休、睡觉，会赚工资、会去旅行。不用喂食也不会生病死亡，你只需关心她的心情与作息。全程无内购、无强制广告。', showCancel: false })
+			uni.showModal({ title: '关于我们', content: '电子杯蜜：一位住在你手机里的电子闺蜜 / 数字打工人。她会按时上班、午休、睡觉，会赚工资、会去旅行，也会饿——休息时记得带她干饭，吃太多可是会长胖的。她生病时会变瘦、不能上班，需要你去诊所照顾。全程无内购、无强制广告。', showCancel: false })
 		},
 		confirmClear() {
 			uni.showModal({

@@ -12,7 +12,7 @@
 			<view class="head">
 				<text class="doc">🩺 医生：{{ doctorText }}</text>
 				<text class="reason">诊断原因：{{ reason }}</text>
-				<text class="sub">完成下面 3 步护理，杯蜜就会好起来（不收费）</text>
+				<text class="sub">完成下面 3 步护理，杯蜜就会好起来；</text>
 			</view>
 
 			<view class="tasks">
@@ -120,7 +120,7 @@ export default {
 					return
 				}
 				this.care = res.data.care || this.care
-				uni.showToast({ title: `${t.name}完成啦`, icon: 'none' })
+				uni.showToast({ title: res.data.fee > 0 ? `${t.name}完成，诊疗费 ${res.data.fee} 币` : `${t.name}完成啦`, icon: 'none' })
 				// 刷新（可能触发等待间隔）
 			} else if (res.code === 3001) {
 				uni.showToast({ title: '还没到护理时间，稍等一下～', icon: 'none' })

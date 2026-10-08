@@ -242,6 +242,14 @@
 		}
 	},
 	{
+		"path": "pages/game/loveQY/eat",
+		"style": {
+			"navigationBarTitleText": "干饭时间",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#fff2e0"
+		}
+	},
+	{
 		"path": "pages/game/QA/qa-exam",
 		"style": {
 			"navigationBarTitleText": "青宇问答",

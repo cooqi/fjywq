@@ -21,7 +21,7 @@ const DEFAULT_CONFIG = {
 		sleep: { start: '23:00', end: '07:00', weekdays: [0, 1, 2, 3, 4, 5, 6] },
 		workDays: [1, 2, 3, 4, 5]
 	},
-	// 数值规则：离线衰减 + 打扰惩罚 + 阈值
+	// 数值规则：离线衰减 + 打扰惩罚 + 饥饿/体重 + 阈值
 	rules: {
 		MAX_OFFLINE_HOURS: 48,
 		INTERACT_DECAY_PER_HOUR: 2,
@@ -43,7 +43,24 @@ const DEFAULT_CONFIG = {
 		REST_OVER: { health: -1, threshold: { minutes: 20, countPerHour: 5 } },
 		SLEEP_WAKE: { health: -3, mood: -3 },
 		TRAVEL_COST_RATIO: 1,
-		MOOD_TH: { happy: { interaction: 80, health: 80, happiness: 80 }, unhappy: 40 }
+		MOOD_TH: { happy: { interaction: 80, health: 80, happiness: 80 }, unhappy: 40 },
+		// 饥饿值（hunger 0-100，数值越大越饿）：离线每小时上升，饿过头掉健康掉心情
+		HUNGER_RISE_PER_HOUR: 3,
+		HUNGER_STARVE: 80,
+		HUNGER_HEALTH_DECAY: 1,
+		HUNGER_HAPPY_DECAY: 1,
+		SICK_HUNGER_RISE: 2, // 生病时饿得更快（每小时额外上升）
+		DEFAULT_WEIGHT: { m: 60, f: 50 },
+		// 干饭规则：KCAL_PER_HUNGER=抵消 1 点饥饿需要的热量；多余热量攒够 FAT_KCAL_PER_KG 就 +1kg
+		KCAL_PER_HUNGER: 10,
+		FAT_KCAL_PER_KG: 240,
+		MEAL_COOLDOWN_MS: 900000,
+		MEAL_DAILY_SOFT: 3, // 一天第 4 顿起，热量全额堆积（必长胖）
+		MEAL_DAILY_LIMIT: 8,
+		EAT_TOO_FULL: 15, // 饥饿值低于此值还吃 = 吃太撑，扣健康
+		WEIGHT_MAX_GAIN: 20,
+		WEIGHT_MAX_LOSE: 8,
+		SICK_WEIGHT_LOSS: 1
 	},
 	// 请假/旷工
 	leave: {
@@ -51,11 +68,26 @@ const DEFAULT_CONFIG = {
 		sick: { label: '病假', payCut: 0, canInteract: true, noAudit: true, travel: 'restricted', mood: -1 },
 		absent: { label: '旷工', payCut: 1, mood: -4 }
 	},
-	// 闺蜜互动动作（去宠物化）
+	// 闺蜜互动动作（去宠物化）；eat 只作为入口展示，实际吃饭走独立 action 'eat'（interact 会拒绝）
 	actions: {
 		accompany: { name: '陪伴', emoji: '🫂', interaction: 4, health: 0, happiness: 1, cost: 0, cooldown: 300000, dailyLimit: 20 },
 		chat: { name: '聊天', emoji: '💬', interaction: 3, health: 1, happiness: 2, cost: 0, cooldown: 5000, dailyLimit: 30 },
-		gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 1800000, dailyLimit: 5 }
+		gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 1800000, dailyLimit: 5 },
+		eat: { name: '干饭', emoji: '🍚', kind: 'meal', interaction: 0, health: 0, happiness: 0, cost: 0, cooldown: 900000, dailyLimit: 8 }
+	},
+	// 干饭菜单：kcal=热量，hunger=可抵消的饥饿值，light=清淡（生病时只允许这些），cost=消耗杯蜜币
+	foods: {
+		list: [
+			{ key: 'rice', name: '家常套餐', emoji: '🍚', kcal: 400, hunger: 45, happiness: 4, health: 1, cost: 3, light: true, tag: '正餐' },
+			{ key: 'noodle', name: '热汤面', emoji: '🍜', kcal: 350, hunger: 38, happiness: 4, health: 1, cost: 2, light: true, tag: '正餐' },
+			{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, tag: '生病可吃' },
+			{ key: 'salad', name: '轻食沙拉', emoji: '🥗', kcal: 150, hunger: 18, happiness: 1, health: 2, cost: 3, light: true, tag: '不易胖' },
+			{ key: 'burger', name: '芝士汉堡', emoji: '🍔', kcal: 560, hunger: 48, happiness: 7, health: 0, cost: 5, light: false, tag: '高热量' },
+			{ key: 'hotpot', name: '火锅套餐', emoji: '🍲', kcal: 720, hunger: 55, happiness: 9, health: 0, cost: 8, light: false, tag: '高热量' },
+			{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, tag: '容易胖' },
+			{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, tag: '容易胖' },
+			{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, tag: '加餐' }
+		]
 	},
 	// 颜文字库：状态 + 关键词
 	emoticons: {
@@ -143,9 +175,10 @@ const DEFAULT_CONFIG = {
 			{ key: 'login', name: '每日登录', icon: '📅', target: 1, reward: { heart: 1 } },
 			{ key: 'interact', name: '陪伴/聊天 3 次', icon: '🫂', target: 3, reward: { heart: 2 } },
 			{ key: 'interact', name: '陪伴/聊天 5 次', icon: '💬', target: 5, reward: { heart: 3 } },
-			{ key: 'variety', name: '使用 2 种不同互动', icon: '🌈', target: 2, reward: { heart: 2, herb: 1 } },
+			{ key: 'variety', name: '使用 2 种不同互动', icon: '🌈', target: 2, reward: { heart: 2, coin: 5 } },
 			{ key: 'help', name: '帮助好友杯蜜 1 次', icon: '🤝', target: 1, reward: { heart: 2 } },
-			{ key: 'heal', name: '完成调养护理 1 次', icon: '🏥', target: 1, reward: { heart: 3, herb: 2 } }
+			{ key: 'heal', name: '完成调养护理 1 次', icon: '🏥', target: 1, reward: { heart: 3, coin: 8 } },
+			{ key: 'meal', name: '休息时好好吃 1 顿饭', icon: '🍚', target: 1, reward: { heart: 2 } }
 		]
 	}
 }
@@ -153,18 +186,32 @@ const DEFAULT_CONFIG = {
 // ============ 互动反馈文案（非配置项，动作兜底语气）============
 const ACTION_LINES = {
 	accompany: ['陪着你真好～', '有你在，上班都有动力了 (｡•̀ᴗ-)✧', '谢谢你陪我，心情好多了'],
-	gift: ['哇，收到礼物超开心！', '这个我喜欢，你怎么知道～', '礼物收下了，爱你哟 ( ˘ ³˘)♥']
+	gift: ['哇，收到礼物超开心！', '这个我喜欢，你怎么知道～', '礼物收下了，爱你哟 ( ˘ ³˘)♥'],
+	eat: ['干饭人干饭魂，太香了！(๑•̀ㅂ•́)و✧', '吃饱了才有力气上班呀～ 🍚', '这顿好满足，下次还吃 (￣▽￣)ﾉ', '唔……是不是又吃多了一点点？']
 }
 
 // ============ 形象自定义白名单（结构型，不入库配置）============
+// ren.html 霓虹线条形象：8 色调色板（前端 look.js THEME_COLORS 同步维护）
+const THEME_COLORS = ['#5eead4', '#14b8a6', '#f9a8d4', '#ec4899', '#c4b5fd', '#fde68a', '#fdba74', '#93c5fd']
 const LOOK_PARTS = {
+	// 形象数据版本：ver:3 起头发为可选部件（默认无发），旧版存量形象首次读取时一次性回落无发
+	VER: 3,
 	outfits: ['tee-blue', 'tee-green', 'hoodie-gray', 'sky-dress', 'rose-dress', 'sun-dress', 'denim-uniform', 'leaf-uniform'],
-	hairs: ['short', 'long'],
+	// 头发不默认长在头上：none（默认）/ short / long
+	hairs: ['none', 'short', 'long'],
+	HAIR_NAMES: { none: '无发', short: '短发', long: '长发' },
 	accessories: ['hat', 'scarf', 'glasses'],
+	themeColors: THEME_COLORS,
+	// 调色板色名（仅用于日志/日记展示）
+	COLOR_NAMES: {
+		'#5eead4': '薄荷青', '#14b8a6': '深海青', '#f9a8d4': '樱花粉', '#ec4899': '玫红',
+		'#c4b5fd': '香芋紫', '#fde68a': '奶黄', '#fdba74': '橘杏', '#93c5fd': '天蓝'
+	},
 	HEX_RE: /^#[0-9a-fA-F]{6}$/,
+	// ver:3 = 线条形象，衣服色/头发色取自 themeColors（线条色由性别固定），头发默认不选
 	DEFAULT: {
-		m: { ver: 1, gender: 'm', skin: '#4fc3f7', hairColor: '#4a4a55', hair: 'short', outfit: 'tee-blue' },
-		f: { ver: 1, gender: 'f', skin: '#ffe1e6', hairColor: '#e8437a', hair: 'short', outfit: 'rose-dress' }
+		m: { ver: 3, gender: 'm', skin: '#4fc3f7', clothColor: '#5eead4', hairColor: '#14b8a6', hair: 'none', outfit: 'tee-blue' },
+		f: { ver: 3, gender: 'f', skin: '#ffe1e6', clothColor: '#f9a8d4', hairColor: '#ec4899', hair: 'none', outfit: 'rose-dress' }
 	}
 }
 

@@ -121,6 +121,33 @@ export const HAIR_COLORS = ['#e8437a', '#4a4a55', '#8d5a2b', '#ffb300', '#7f9cf5
 export const INK = '#1a1a2e'
 export const C = { tear: '#00d4ff', tongue: '#ff6b9d', lip: '#ff8fab' }
 
+// ============ ren.html 霓虹线条形象专用：8 色调色板（与服务端 LOOK_PARTS.themeColors 同步）============
+export const THEME_COLORS = ['#5eead4', '#14b8a6', '#f9a8d4', '#ec4899', '#c4b5fd', '#fde68a', '#fdba74', '#93c5fd']
+// 形象数据版本：ver:3 起头发为可选部件（默认无发），与服务端 LOOK_PARTS.VER 同步
+export const LOOK_VER = 3
+// 默认色对齐 ren.html：男衣青/男发深青/女衣粉/女发玫红
+export const THEME_DEFAULT = {
+	m: { cloth: '#5eead4', hair: '#14b8a6' },
+	f: { cloth: '#f9a8d4', hair: '#ec4899' }
+}
+// 线条（头/四肢/五官）固定色，同 ren.html 的 --line，不开放自定义
+export const LINE_COLOR = { m: '#5eead4', f: '#f9a8d4' }
+
+// ============ ren.html 8 张脸：旧表情 key →新脸的别名（保持存量调用/mood 映射可用）============
+export const FACE_KEYS = ['normal', 'happy', 'love', 'wow', 'sad', 'angry', 'sleepy', 'dizzy']
+export const FACE_LABEL = { normal: '平静', happy: '开心', love: '心动', wow: '惊讶', sad: '难过', angry: '生气', sleepy: '困倦', dizzy: '晕眩' }
+export const FACE_ALIAS = {
+	normal: 'normal', smile: 'normal',
+	happy: 'happy', laugh: 'happy',
+	love: 'love', cheeky: 'love',
+	wow: 'wow', surprised: 'wow',
+	sad: 'sad', upset: 'sad',
+	angry: 'angry',
+	sleepy: 'sleepy',
+	dizzy: 'dizzy', confused: 'dizzy'
+}
+export function faceFor(expression) { return FACE_ALIAS[expression] || 'normal' }
+
 // ============ 衣服注册表（gender: m/f/unisex；colors 按色码 1/2 映射）============
 export const OUTFITS = {
 	'tee-blue': { name: '蓝色T恤', gender: 'm', shape: 'body-tee', colors: { 1: '#0a84ff' } },
@@ -133,10 +160,13 @@ export const OUTFITS = {
 	'leaf-uniform': { name: '小翠制服', gender: 'unisex', shape: 'body-dress', colors: { 1: '#43e97b', 2: '#c8f7d8' } }
 }
 
-// 发型（short=无背发层；long=女生长发层）
+// ============ 发型（可选部件：none 光头 / short 贴头短发 / long 垂肩长发）============
+// 头发不是默认长在头上，而是用户在「造型间」主动选择；发色仅在非 none 时生效
+export const HAIR_KEYS = ['none', 'short', 'long']
 export const HAIRS = {
-	short: { name: '短发', back: null },
-	long: { name: '长发', back: 'hair-long' }
+	none: { name: '无发' },
+	short: { name: '短发' },
+	long: { name: '长发' }
 }
 
 // ============ 五官表情图层（8 种，对齐 xx.md 表情；primitives 为原生 52×60 坐标）============
@@ -195,7 +225,8 @@ export const BLUSH = [
 	{ t: 'e', x: 42, y: 22, rx: 2.5, ry: 1.5, col: C.tongue, alpha: 0.6 }
 ]
 
-// ============ 配饰图层（衣橱 equippedItems 对应，与 look 正交）============
+// ============ 配饰图层（像素网格时代的遗留数据，已不再使用）============
+// 帽子/围巾/眼镜现由 renderer.js 的 ACCESSORIES（按 ren.html 几何形状、配色跟随衣服色）绘制
 export const ACCESSORIES = {
 	hat: { layer: 'accessory', prims: [
 		{ t: 'r', x: 18, y: 0, w: 16, h: 4, col: '#ff6b6b' },
@@ -228,18 +259,31 @@ export function expressionForMood(mood) {
 
 // 互动动作 -> 瞬时表情（事件覆盖 2~3 秒，前端用）
 export const ACTION_EXPRESSION = {
-	accompany: 'cheeky', chat: 'smile', gift: 'laugh'
+	accompany: 'cheeky', chat: 'smile', gift: 'laugh', eat: 'surprised'
 }
 
 // ============ 默认形象与归一化 ============
 export function defaultLook(gender) {
 	const f = gender === '女生' || gender === 'f'
-	// 领养默认短发（长发需用户在自定义形象页主动选择）
-	return { ver: 1, gender: f ? 'f' : 'm', skin: f ? '#ffe1e6' : '#4fc3f7', hair: 'short', outfit: f ? 'rose-dress' : 'tee-blue' }
+	const g = f ? 'f' : 'm'
+	// 领养默认无发（头发属于可选造型，要用户在自定义形象页主动选择）
+	return {
+		ver: LOOK_VER, gender: g, skin: f ? '#ffe1e6' : '#4fc3f7', hair: 'none', outfit: f ? 'rose-dress' : 'tee-blue',
+		clothColor: THEME_DEFAULT[g].cloth, hairColor: THEME_DEFAULT[g].hair
+	}
 }
 
 /** 归一化：存量杯蜜无 look 字段时按 gender 生成默认形象 */
 export function normalizeLook(look, pet) {
-	if (look && look.gender && OUTFITS[look.outfit]) return look
+	if (look && look.gender && OUTFITS[look.outfit]) {
+		// 存量形象补写主题色（旧 hairColor 合法则保留）
+		const g = look.gender === 'f' ? 'f' : 'm'
+		const inPalette = (v) => THEME_COLORS.indexOf(v) >= 0
+		return Object.assign({}, look, {
+			ver: LOOK_VER,
+			clothColor: inPalette(look.clothColor) ? look.clothColor : (inPalette(look.hairColor) ? look.hairColor : THEME_DEFAULT[g].cloth),
+			hairColor: inPalette(look.hairColor) ? look.hairColor : THEME_DEFAULT[g].hair
+		})
+	}
 	return defaultLook(pet && pet.gender)
 }

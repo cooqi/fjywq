@@ -25,7 +25,7 @@
 					<text class="help-left">{{ incoming.length }} 条</text>
 				</view>
 				<view v-for="r in incoming" :key="'in-' + r.friendCode" class="f-item">
-					<text class="f-e">{{ r.emoji }}</text>
+					
 					<view class="f-info">
 						<text class="f-n">{{ r.name }}</text>
 						<text class="f-c">{{ r.friendCode }}</text>
@@ -41,7 +41,7 @@
 					<text class="sec">等待对方同意</text>
 				</view>
 				<view v-for="r in outgoing" :key="'out-' + r.friendCode" class="f-item">
-					<text class="f-e">{{ r.emoji }}</text>
+				
 					<view class="f-info">
 						<text class="f-n">{{ r.name }}</text>
 						<text class="f-c">{{ r.friendCode }}</text>
@@ -57,7 +57,7 @@
 				</view>
 				<view v-if="!friends.length" class="no-friend">还没有好友杯蜜，发送申请并等对方同意后就有了～</view>
 				<view v-for="f in friends" :key="f.friendCode" class="f-item">
-					<text class="f-e">{{ f.emoji }}</text>
+					
 					<view class="f-info">
 						<text class="f-n">{{ f.name }}</text>
 						<text class="f-c">{{ f.friendCode }}</text>

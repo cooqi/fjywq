@@ -37,12 +37,42 @@ export const BEE_EMOJIS = ['🐥', '🐤', '🐣', '🧑‍💻', '👩‍💻',
 
 // ============ 闺蜜互动动作（默认值；运行时被配置覆盖）============
 // interaction/health/happiness: 属性变化, cost: 消耗杯蜜币, cooldown: 冷却ms, dailyLimit: 每日上限
+// eat（干饭）只作为入口：点它跳转干饭页，实际吃饭走云函数 action 'eat'
 export const ACTIONS = {
 	accompany: { name: '陪伴', emoji: '🫂', interaction: 4, health: 0, happiness: 1, cost: 0, cooldown: 5 * 60 * 1000, dailyLimit: 20 },
 	chat: { name: '聊天', emoji: '💬', interaction: 3, health: 1, happiness: 2, cost: 0, cooldown: 5 * 1000, dailyLimit: 30 },
-	gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 30 * 60 * 1000, dailyLimit: 5 }
+	gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 30 * 60 * 1000, dailyLimit: 5 },
+	eat: { name: '干饭', emoji: '🍚', kind: 'meal', interaction: 0, health: 0, happiness: 0, cost: 0, cooldown: 15 * 60 * 1000, dailyLimit: 8 }
 }
-export const ACTION_KEYS = ['accompany', 'chat', 'gift']
+export const ACTION_KEYS = ['accompany', 'chat', 'gift', 'eat']
+
+// ============ 干饭菜单（默认值；运行时被 beemore_config 的 foods 覆盖）============
+// kcal=热量, hunger=可抵消的饥饿值, light=清淡（生病时只允许这些）, cost=消耗杯蜜币
+export const FOODS = [
+	{ key: 'rice', name: '家常套餐', emoji: '🍚', kcal: 400, hunger: 45, happiness: 4, health: 1, cost: 3, light: true, tag: '正餐' },
+	{ key: 'noodle', name: '热汤面', emoji: '🍜', kcal: 350, hunger: 38, happiness: 4, health: 1, cost: 2, light: true, tag: '正餐' },
+	{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, tag: '生病可吃' },
+	{ key: 'salad', name: '轻食沙拉', emoji: '🥗', kcal: 150, hunger: 18, happiness: 1, health: 2, cost: 3, light: true, tag: '不易胖' },
+	{ key: 'burger', name: '芝士汉堡', emoji: '🍔', kcal: 560, hunger: 48, happiness: 7, health: 0, cost: 5, light: false, tag: '高热量' },
+	{ key: 'hotpot', name: '火锅套餐', emoji: '🍲', kcal: 720, hunger: 55, happiness: 9, health: 0, cost: 8, light: false, tag: '高热量' },
+	{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, tag: '容易胖' },
+	{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, tag: '容易胖' },
+	{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, tag: '加餐' }
+]
+export function getFoods() { return live.foods && live.foods.list && live.foods.list.length ? live.foods.list : FOODS }
+
+/** 哪些状态可以吃：午休/空闲/请假（上班、睡觉、旅行都不行，与云函数 EAT_ALLOWED 对齐） */
+export const EAT_ALLOWED = ['resting', 'idle', 'leave']
+export function canEat(status) { return EAT_ALLOWED.indexOf(status) >= 0 }
+
+// ============ 饥饿值（0-100，数值越大越饿）展示映射 ============
+export function hungerInfo(hunger) {
+	const v = Math.max(0, Math.min(100, hunger == null ? 35 : hunger))
+	if (v >= 85) return { level: 'starving', label: '饿扁了', face: '(╥﹏╥)', tone: '#f5576c', tip: '肚子咕咕叫得厉害，快带她吃饭' }
+	if (v >= 60) return { level: 'hungry', label: '有点饿', face: '(・_・)；', tone: '#ff9a3c', tip: '到了饭点，休息时喂点东西' }
+	if (v >= 25) return { level: 'ok', label: '不饿', face: '(￣▽￣)', tone: '#ffd76e', tip: '状态正常，不用特意吃' }
+	return { level: 'full', label: '饱腹', face: '(＾• ω •＾)', tone: '#43e97b', tip: '刚吃饱，再吃就要长胖啦' }
+}
 
 // ============ 旅行目的地（默认值；运行时被配置覆盖）============
 export const TRAVEL_PLACES = [
@@ -90,7 +120,7 @@ export const ERR_MSG = {
 }
 
 // ============ 运行时配置缓存 ============
-const live = { loaded: false, emoticons: null, schedule: null, rules: null, leave: null, decor: null, postcards: null, careTasks: null, taskDefs: null, jobs: null }
+const live = { loaded: false, emoticons: null, schedule: null, rules: null, leave: null, decor: null, postcards: null, careTasks: null, taskDefs: null, jobs: null, foods: null }
 
 // 内置默认（与云函数 DEFAULT_CONFIG 对齐，供访问器兜底）
 const DEFAULT_EMOTICONS = {
@@ -128,10 +158,13 @@ export function loadBeemoreConfig() {
 
 function applyConfig(map) {
 	if (map.actions && typeof map.actions === 'object') {
-		Object.keys(ACTIONS).forEach(k => { if (!map.actions[k]) delete ACTIONS[k] })
-		Object.keys(map.actions).forEach(k => { ACTIONS[k] = map.actions[k] })
+		// 逐动作字段回填：管理员只改数值时不会丢字段；内置新增动作（干饭）在旧配置里缺 key 时也保留
+		const builtin = { eat: ACTIONS.eat }
+		Object.keys(ACTIONS).forEach(k => { if (!map.actions[k] && !builtin[k]) delete ACTIONS[k] })
+		Object.keys(map.actions).forEach(k => { ACTIONS[k] = Object.assign({}, ACTIONS[k] || builtin[k] || {}, map.actions[k]) })
+		Object.keys(builtin).forEach(k => { if (!ACTIONS[k]) ACTIONS[k] = builtin[k] })
 		ACTION_KEYS.length = 0
-		Object.keys(map.actions).forEach(k => ACTION_KEYS.push(k))
+		Object.keys(ACTIONS).forEach(k => ACTION_KEYS.push(k))
 	}
 	if (map.travel_places && Array.isArray(map.travel_places.list)) {
 		TRAVEL_PLACES.length = 0
@@ -146,6 +179,7 @@ function applyConfig(map) {
 	if (map.postcards) live.postcards = map.postcards
 	if (map.care_tasks) live.careTasks = map.care_tasks
 	if (map.task_defs) live.taskDefs = map.task_defs
+	if (map.foods) live.foods = map.foods
 }
 
 export function getEmoticons() { return live.emoticons || DEFAULT_EMOTICONS }

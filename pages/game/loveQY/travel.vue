@@ -27,7 +27,7 @@
 			<!-- 选择目的地 -->
 			<view v-else class="card">
 				<view class="sec">选择目的地</view>
-				<view class="sub">旅行会消耗杯蜜工资/杯蜜币，回来后寄一张明信片海报给你。上班或睡觉时不能出发哦～</view>
+				<view class="sub">旅行会消耗杯蜜工资/杯蜜币，回来后寄一张明信片海报给你。生病、上班或睡觉时不能出发哦～</view>
 
 				<view class="status-hint" :style="{ background: statusTone }">
 					{{ statusEmoji }} {{ statusHint }}
@@ -50,11 +50,16 @@
 import { callBeemore, getMyUserInfo } from './store/pet.js'
 import { TRAVEL_PLACES, fmtCountdown, STATUS_MAP, MOOD_MAP } from './beemore.js'
 import { expressionForMood } from './look.js'
-import { renderPet } from './renderer.js'
+import { renderPet, CANVAS_W, CANVAS_H } from './renderer.js'
 
-// 海报画布尺寸（接近 3:4 竖版明信片）
+// 海报画布尺寸（竖版明信片；形象改为高个线条小人，高度相应加大）
 const PW = 300
-const PH = 400
+const PH = 500
+// 形象在海报里的缩放与霓虹舞台底板尺寸
+const PET_SCALE = 2
+const PET_W = CANVAS_W * PET_SCALE
+const PET_H = CANVAS_H * PET_SCALE
+const STAGE_X = 20, STAGE_Y = 106, STAGE_W = PW - 40, STAGE_H = PET_H + 26
 
 export default {
 	data() {
@@ -95,7 +100,7 @@ export default {
 			if (d.arrived && d.postcard) {
 				this.postcard = d.postcard
 				this.traveling = false
-				this.$nextTick(() => setTimeout(() => this.drawPoster(), 60))
+				this.$nextTick(() => setTimeout(() => this.drawPoster(), 200))
 			} else if (d.traveling) {
 				this.traveling = true; this.placeName = d.placeName || '远方'
 				this.endAt = Date.now() + d.remainMs; this.startTimer()
@@ -116,17 +121,25 @@ export default {
 		stopTimer() { if (this.timer) { clearInterval(this.timer); this.timer = null } },
 		resetToPick() { this.postcard = null; this.pick = '' },
 
-		/** 出发：睡觉禁止；工作且未请假 -> 引导请假 / 坚持则记旷工 */
+		/** 出发：生病/睡觉禁止；工作且未请假 -> 引导请假 / 坚持则记旷工 */
 		async start() {
+			if (this.pet.mood === 'sick') {
+				uni.showToast({ title: '杯蜜生病啦，先去诊所调养吧', icon: 'none' }); return
+			}
 			if (this.status === 'sleeping') {
 				uni.showToast({ title: '杯蜜睡着了，旅行等她醒来再说吧', icon: 'none' }); return
 			}
 			if (this.status === 'working') {
 				const onLeave = this.pet.leave && this.pet.leave.type && this.pet.leave.endAt > Date.now()
 				if (!onLeave) {
-					const idx = await this.promptLeave()
+					const canSick = this.pet.mood === 'sick'
+					const idx = await this.promptLeave(canSick)
 					if (idx === 0) return this.doLeave('personal')
-					if (idx === 1) return this.doLeave('sick')
+					if (idx === 1) {
+						// 病假需真的生病才能请
+						if (!canSick) { uni.showToast({ title: '杯蜜没生病，不能请病假哦～', icon: 'none' }); return }
+						return this.doLeave('sick')
+					}
 					if (idx === 2) return this.doTravel() // 坚持旅行=旷工
 					return // 取消
 				}
@@ -134,10 +147,10 @@ export default {
 			}
 			this.doTravel()
 		},
-		promptLeave() {
+		promptLeave(canSick) {
 			return new Promise((resolve) => {
 				uni.showActionSheet({
-					itemList: ['请事假后出发（扣半天工资）', '请病假后出发（不扣工资）', '坚持去旅行（按旷工处理）', '先不去了'],
+					itemList: ['请事假后出发（扣半天工资）', canSick ? '请病假后出发（不扣工资）' : '请病假（需生病才能请）', '坚持去旅行（按旷工处理）', '先不去了'],
 					success: (r) => resolve(r.tapIndex),
 					fail: () => resolve(-1)
 				})
@@ -194,16 +207,25 @@ export default {
 			ctx.setFillStyle('#6a5acd')
 			ctx.fillText(`${p.emoji || '📮'} ${p.placeName}`, 24, 70)
 
-			// 形象（居中）
-			const scale = 2.6
-			const petW = 52 * scale, petH = 60 * scale
+			// 霓虹舞台底板（线条形象在亮底上会看不清，给一块暗色底板）
+			ctx.setFillStyle('#0d151c')
+			ctx.fillRect(STAGE_X, STAGE_Y, STAGE_W, STAGE_H)
+			ctx.setStrokeStyle('#2b3d4d')
+			ctx.setLineWidth(1)
+			ctx.strokeRect(STAGE_X, STAGE_Y, STAGE_W, STAGE_H)
+			// 底板上的淡网格（对齐 ren.html 背景；透明度写进颜色，不用 setGlobalAlpha）
+			ctx.setStrokeStyle('rgba(94, 234, 212, 0.08)')
+			for (let gx = STAGE_X + 26; gx < STAGE_X + STAGE_W; gx += 26) ctx.drawLine(gx, STAGE_Y, gx, STAGE_Y + STAGE_H)
+			for (let gy = STAGE_Y + 26; gy < STAGE_Y + STAGE_H; gy += 26) ctx.drawLine(STAGE_X, gy, STAGE_X + STAGE_W, gy)
+
+			// 形象（在底板里居中，明信片为一次性绘制，不传 time 即静态帧）
 			if (ctx.save) ctx.save()
-			if (ctx.translate) ctx.translate((PW - petW) / 2, 116)
-			renderPet(ctx, p.look, expressionForMood(p.mood), p.equippedItems || [], scale)
+			if (ctx.translate) ctx.translate(STAGE_X + (STAGE_W - PET_W) / 2, STAGE_Y + (STAGE_H - PET_H) / 2)
+			renderPet(ctx, p.look, expressionForMood(p.mood), p.equippedItems || [], PET_SCALE)
 			if (ctx.restore) ctx.restore()
 
 			// 信息行
-			let y = 116 + petH + 40
+			let y = STAGE_Y + STAGE_H + 26
 			ctx.setFontSize(14)
 			ctx.setFillStyle('#666')
 			ctx.fillText(`📅 ${p.date || ''}    ${p.weather || ''}`, 24, y)

@@ -10,8 +10,8 @@ import { ERR_MSG } from '../beemore.js'
 const CACHE_PET_KEY = 'beemore_pet_cache'
 const CACHE_USER_KEY = 'beemore_user_id'
 const CACHE_VER_KEY = 'beemore_cache_ver'
-// 缓存版本：数据模型变更（数字打工人重构；新增 workPlan/sleepPlan 作息自定义）时递增，旧缓存自动失效
-const CACHE_VER = 'v5'
+// 缓存版本：数据模型变更（数字打工人重构；workPlan/sleepPlan 作息自定义；新增饥饿值/体重；形象 ver:3 头发改为可选）时递增，旧缓存自动失效
+const CACHE_VER = 'v7'
 
 /** 读取本地 userInfo（项目统一存储于 storage，JSON 字符串） */
 export function getMyUserInfo() {
@@ -129,4 +129,11 @@ export function setWorkPlan(userId, payload) {
 /** 设置自定义睡眠时段；on=false 恢复全局默认 */
 export function setSleepPlan(userId, plan) {
 	return callBeemore(Object.assign({ action: 'setSleepPlan', userId }, plan))
+}
+/**
+ * 干饭：只能在休息/空闲/请假时吃，foodKey 取自 getFoods()
+ * 服务端会结算热量堆积（吃太多长胖）并写日记
+ */
+export function eatFood(userId, foodKey) {
+	return callBeemore({ action: 'eat', userId, foodKey })
 }

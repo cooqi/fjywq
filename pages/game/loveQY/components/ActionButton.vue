@@ -1,5 +1,5 @@
 <template>
-	<view class="action-grid">
+	<view class="action-grid" :style="{ 'grid-template-columns': 'repeat(' + (list.length > 3 ? 2 : 3) + ', 1fr)' }">
 		<view
 			v-for="item in list"
 			:key="item.key"
@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { ACTIONS, ACTION_KEYS, fmtCountdown } from '../beemore.js'
+import { ACTIONS, ACTION_KEYS, fmtCountdown, canEat, hungerInfo } from '../beemore.js'
 export default {
 	name: 'ActionButton',
 	props: {
@@ -28,6 +28,7 @@ export default {
 		list() {
 			const pet = this.pet || {}
 			const disturb = pet.status === 'working' || pet.status === 'sleeping'
+			const hunger = pet.hunger == null ? 35 : Math.max(0, Math.min(100, pet.hunger))
 			return ACTION_KEYS.map(key => {
 				const cfg = ACTIONS[key]
 				const lastAt = (pet.lastActionAt || {})[key] || 0
@@ -38,7 +39,11 @@ export default {
 				const costTip = cfg.cost > 0 ? `耗${cfg.cost}币 · ` : ''
 				let subText
 				if (cooling) subText = fmtCountdown(remain)
-				else if (limited) subText = `已 ${used}/${cfg.dailyLimit}`
+				else if (cfg.kind === 'meal') {
+					// 干饭不靠 daily.actions 计数，也不吃“打扰”那一套：只报饥饿程度与能不能吃
+					const h = hungerInfo(hunger)
+					subText = canEat(pet.status) ? `${h.label} · 饥饿${hunger}` : '休息时才能吃'
+				} else if (limited) subText = `已 ${used}/${cfg.dailyLimit}`
 				else if (disturb) subText = '打扰 ⚠️'
 				else subText = costTip + `剩余 ${Math.max(0, cfg.dailyLimit - used)}`
 				return {

@@ -31,7 +31,7 @@ export default {
 			const r = this.task.reward || {}
 			const arr = []
 			if (r.heart) arr.push(`❤️×${r.heart}`)
-			if (r.herb) arr.push(`🌿×${r.herb}`)
+			if (r.coin) arr.push(`🪙×${r.coin}`)
 			if (r.newEmoji) arr.push('新表情')
 			if (r.newLine) arr.push('新文案')
 			if (r.growth) arr.push(`成长+${r.growth}`)
