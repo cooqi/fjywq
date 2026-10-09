@@ -130,7 +130,10 @@ export default {
 				uni.showToast({ title: '杯蜜睡着了，旅行等她醒来再说吧', icon: 'none' }); return
 			}
 			if (this.status === 'working') {
-				const onLeave = this.pet.leave && this.pet.leave.type && this.pet.leave.endAt > Date.now()
+				// 请假按“今天请过假”认定（请假只覆盖今日上班时间，下班后 endAt 已过但仍算请过假）
+				const d = new Date()
+				const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+				const onLeave = (this.pet.leaveLog || []).some(l => l && l.date === today)
 				if (!onLeave) {
 					const canSick = this.pet.mood === 'sick'
 					const idx = await this.promptLeave(canSick)
@@ -150,7 +153,7 @@ export default {
 		promptLeave(canSick) {
 			return new Promise((resolve) => {
 				uni.showActionSheet({
-					itemList: ['请事假后出发（扣半天工资）', canSick ? '请病假后出发（不扣工资）' : '请病假（需生病才能请）', '坚持去旅行（按旷工处理）', '先不去了'],
+					itemList: ['请事假后出发（当场扣点钱）', canSick ? '请病假后出发（不扣钱）' : '请病假（需生病才能请）', '坚持去旅行（记旷工无工资）', '先不去了'],
 					success: (r) => resolve(r.tapIndex),
 					fail: () => resolve(-1)
 				})

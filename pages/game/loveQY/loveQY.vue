@@ -74,9 +74,11 @@
 			<view v-if="pet.job" class="work">
 				<view class="sec-title">今日工作（{{ jobName }}）</view>
 				<view class="work-btns">
-					<button class="w-btn work" @click="doSettle">{{ canSettle ? '结算工资 💼' : '下班后结算 💼' }}</button>
+					<button class="w-btn work" @click="doSettle">{{ settleLabel }}</button>
 					<button class="w-btn leave" @click="doLeave">请假 🙋</button>
 				</view>
+				<view v-if="salary && salary.unpaidDays" class="work-note owing">⏳ 本月还有 {{ salary.unpaidDays }} 天工资没领（共 {{ salary.unpaid }} 币），跨月会自动一次性发放</view>
+				<view v-if="salary && salary.absentDays" class="work-note absent">🫥 本月旷工 {{ salary.absentDays }} 天：生病要记得请病假，不然当天没有工资</view>
 				<view v-if="schedule" class="sched">
 					<view v-if="schedule.work && schedule.work.length" class="sched-row"><text class="sch-k">🕘 上班时间</text><text class="sch-v">{{ fmtShifts(schedule.work) }}</text></view>
 					<view v-if="schedule.rest && schedule.rest.length" class="sched-row"><text class="sch-k">🍚 休息时间</text><text class="sch-v">{{ fmtShifts(schedule.rest) }}</text></view>
@@ -87,20 +89,12 @@
 
 			<view class="sec-title">快捷入口</view>
 			<view class="quick">
-				<view class="q-item" @click="go('notice')">
-					<text class="q-e">🔔</text>
-					<text v-if="unreadNotices" class="q-badge">{{ unreadNotices > 99 ? '99+' : unreadNotices }}</text>
-					<text class="q-t">消息</text>
+				<view v-for="q in quickEntries" :key="q.key" class="q-item" :class="{ dim: q.locked }" @click="goEntry(q)">
+					<text class="q-e">{{ q.icon }}</text>
+					<text v-if="q.badge && unreadNotices" class="q-badge">{{ unreadNotices > 99 ? '99+' : unreadNotices }}</text>
+					<text v-if="q.locked" class="q-lock">忙</text>
+					<text class="q-t">{{ q.label }}</text>
 				</view>
-				<view class="q-item" @click="go('chat')"><text class="q-e">💬</text><text class="q-t">聊天</text></view>
-				<view class="q-item" @click="goGated('travel')"><text class="q-e">🎒</text><text class="q-t">旅行</text></view>
-				<view class="q-item" @click="goGated('wardrobe')"><text class="q-e">👒</text><text class="q-t">衣橱</text></view>
-				<view class="q-item" @click="goGated('customize')"><text class="q-e">🎨</text><text class="q-t">形象</text></view>
-				<view class="q-item" @click="goGated('friends')"><text class="q-e">🤝</text><text class="q-t">好友</text></view>
-				<view class="q-item" @click="go('clinic')"><text class="q-e">🏥</text><text class="q-t">诊所</text></view>
-				<view class="q-item" @click="go('tasks')"><text class="q-e">📋</text><text class="q-t">任务</text></view>
-				<view class="q-item" @click="go('diary')"><text class="q-e">📔</text><text class="q-t">日记</text></view>
-				<view class="q-item" @click="go('settings')"><text class="q-e">⚙️</text><text class="q-t">设置</text></view>
 			</view>
 		</view>
 	</view>
@@ -111,11 +105,50 @@ import PetDisplay from './components/PetDisplay.vue'
 import StatusBar from './components/StatusBar.vue'
 import ActionButton from './components/ActionButton.vue'
 import Bubble from './components/Bubble.vue'
-import { BEE_EMOJIS, MOOD_MAP, STATUS_MAP, awayTip, ERR_MSG, isLocked, loadBeemoreConfig, getJobs } from './beemore.js'
+import { BEE_EMOJIS, MOOD_MAP, STATUS_MAP, awayTip, ERR_MSG, isLocked, statusLabel, loadBeemoreConfig, getJobs, getLeave } from './beemore.js'
 import { normalizeLook, ACTION_EXPRESSION } from './look.js'
 import { getMyUserInfo, getCachedPet, cachePet, callBeemore, settleWork, applyLeave } from './store/pet.js'
 
 const defaultForm = () => ({ name: '', emoji: '🐥', gender: '', age: '', height: '', weight: '', likes: [], job: '' })
+
+// ============ 跳转用页面路径表（与 pages.json 一一对应，改路由只改这里）============
+// 不用 `'/pages/game/loveQY/' + name` 现拼：拼错了运行时只会静默失败，查不到也提示不出
+const PAGE = {
+	loveQY: 'pages/game/loveQY/loveQY',
+	notice: 'pages/game/loveQY/notice',
+	chat: 'pages/game/loveQY/chat',
+	eat: 'pages/game/loveQY/eat',
+	travel: 'pages/game/loveQY/travel',
+	wardrobe: 'pages/game/loveQY/wardrobe',
+	customize: 'pages/game/loveQY/customize',
+	friends: 'pages/game/loveQY/friends',
+	clinic: 'pages/game/loveQY/clinic',
+	tasks: 'pages/game/loveQY/tasks',
+	diary: 'pages/game/loveQY/diary',
+	settings: 'pages/game/loveQY/settings',
+	admin: 'pages/game/loveQY/beemore-admin'
+}
+
+// ============ 快捷入口配置 ============
+// gate：'travel' 需要她空闲且没生病；'idle' 需要她空闲（上班/睡觉时先挡住，进去也办不成事）；不写=随时可进
+const QUICK_ENTRIES = [
+	{ key: 'notice', icon: '🔔', label: '消息', badge: true },
+	{ key: 'chat', icon: '💬', label: '聊天' },
+	{ key: 'clinic', icon: '🏥', label: '诊所' },
+	{ key: 'tasks', icon: '📋', label: '任务' },
+	{ key: 'diary', icon: '📔', label: '日记' },
+	{ key: 'settings', icon: '⚙️', label: '设置' },
+	{ key: 'travel', icon: '🎒', label: '旅行', gate: 'travel' },
+	{ key: 'wardrobe', icon: '👒', label: '衣橱', gate: 'idle' },
+	{ key: 'customize', icon: '🎨', label: '形象', gate: 'idle' },
+	{ key: 'friends', icon: '🤝', label: '好友', gate: 'idle' }
+]
+
+// 拦截文案按入口分开说，不再共用一句「杯蜜正忙或已入睡」
+const GATE_TIP = {
+	travel: s => `杯蜜正在${s}，旅行得等她下班睡饱再去～`,
+	idle: s => `杯蜜正在${s}，这事得等她空闲时再办，现在改了她也看不见～`
+}
 
 export default {
 	components: { PetDisplay, StatusBar, ActionButton, Bubble },
@@ -126,6 +159,7 @@ export default {
 			userId: '',
 			pet: {},
 			schedule: null,
+			salary: null,
 			bubble: '',
 			awayText: '',
 			settleText: '',
@@ -146,21 +180,43 @@ export default {
 		statusEmoji() { return (STATUS_MAP[this.pet.status] || STATUS_MAP.idle).emoji },
 		statusTone() { return (STATUS_MAP[this.pet.status] || STATUS_MAP.idle).tone },
 		statusHint() {
-			// 生病优先：即使当前 status 是空闲/工作，也提示需去诊所调养，且不能上班与旅行
-			if (this.pet.mood === 'sick') return '杯蜜生病啦，需要先带去诊所调养，这期间不能上班和旅行哦～'
+			// 生病优先：即使当前 status 是空闲/工作，也提示需去诊所调养，且不能上班与旅行（旷工不在这里说，服务端文案已写清当日没工资）
+			if (this.pet.mood === 'sick' && this.pet.status !== 'absent') return '杯蜜生病啦，需要先带去诊所调养，这期间不能上班和旅行哦～'
 			return this.pet.statusHint || (STATUS_MAP[this.pet.status] || STATUS_MAP.idle).hint
 		},
+		/** 今天有没有排班（班次按星期过滤后是否非空） */
+		scheduledToday() { return !!(this.schedule && this.schedule.work && this.schedule.work.length) },
+		/** 今天是否已经请过假（按日期认定，下班后补请也算） */
+		dayKey() {
+			const d = new Date()
+			return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+		},
+		hasLeaveToday() { return (this.pet.leaveLog || []).some(l => l && l.date === this.dayKey) },
+		jobSalary() { return ((getJobs()[this.pet.job] || {}).salary) || 0 },
+		/** 事假当场扣的钱（云函数按 job.salary × leave.personal.payCut 计算，口径保持一致） */
+		leaveDeduct() { return Math.round(this.jobSalary * (((getLeave().personal) || {}).payCut || 0)) },
 		canSettle() {
-			// 只有下班后才能结算：上班/午休中不行；今日还有未结束班次（含尚未上班）也不行；请假中可随时结算
+			// 请假只占今天的上班时间，到点照样下班，所以结算一律等到今日班次全部结束（不再有“请假中可随时结算”的捷径）
 			if (this.pet.status === 'working' || this.pet.status === 'resting') return false
-			const lv = this.pet.leave
-			if (lv && lv.type && lv.endAt > Date.now()) return true
-			if (this.schedule && this.schedule.offAt && Date.now() < this.schedule.offAt) return false
-			return true
+			if (this.salary && this.salary.settledToday) return false
+			return !(this.schedule && this.schedule.offAt && Date.now() < this.schedule.offAt)
+		},
+		settleLabel() {
+			if (this.salary && this.salary.settledToday) return '今日已结算 💼'
+			if (!this.scheduledToday) return '今天不上班 💼'
+			return this.canSettle ? '结算工资 💼' : '下班后结算 💼'
 		},
 		todayWage() { return (this.pet.wallet && this.pet.wallet.todayWage) || 0 },
 		/** 饥饿值 0-100（越大越饿），存量数据无该字段时按“有点饿”展示，与服务端 hungerOf 对齐 */
-		hungerNow() { return this.pet.hunger == null ? 35 : Math.max(0, Math.min(100, this.pet.hunger)) }
+		hungerNow() { return this.pet.hunger == null ? 35 : Math.max(0, Math.min(100, this.pet.hunger)) },
+		/** 快捷入口：10 项固定顺序，忙时只打标记（仍可点，点了告诉她为什么进不去） */
+		quickEntries() {
+			const busy = isLocked(this.pet.status)
+			return QUICK_ENTRIES.map(q => ({
+				key: q.key, icon: q.icon, label: q.label, badge: !!q.badge, gate: q.gate || '',
+				locked: !!(q.gate && busy)
+			}))
+		}
 	},
 	onLoad() {
 		const u = getMyUserInfo()
@@ -200,6 +256,7 @@ export default {
 					this.unreadNotices = res.data.unreadNotices || 0
 					if (res.data.statusInfo) { this.$set(this.pet, 'statusHint', res.data.statusInfo.hint) }
 					this.schedule = res.data.schedule || null
+					this.salary = res.data.salary || null
 					this.needAdopt = false
 					this.awayText = awayTip(res.data.awayTipBase)
 					cachePet(this.pet)
@@ -266,78 +323,132 @@ export default {
 			)
 		},
 		async doSettle() {
-			// 生病（需调养）期间不能上班，先引导去诊所照顾她
-			if (this.pet.mood === 'sick') {
+			// 生病又没请假：她上不了班，当天已记旷工（工资 0），结算前给她一次补请病假的机会
+			if (this.pet.mood === 'sick' && !this.hasLeaveToday && (this.scheduledToday || this.pet.status === 'absent')) {
 				uni.showModal({
-					title: '杯蜜生病啦 🤒',
-					content: '她现在需要先去诊所调养，好起来才能上班。现在就带她去诊所吗？',
-					confirmText: '去诊所', cancelText: '再等等',
-					success: (r) => { if (r.confirm) this.go('clinic') }
+					title: '杯蜜病着上不了班 🤒',
+					content: `她今天该上班却病倒了，也没人帮她请假，已经记了旷工（当天工资 0）。现在补一张病假条可以撤销旷工、工资照发；不补就按旷工结算。`,
+					confirmText: '补请病假', cancelText: '按旷工结算',
+					success: (r) => { if (r.confirm) this.submitLeave('sick'); else this.submitSettle() }
 				})
 				return
 			}
 			// 只有下班后才能结算：未下班时提醒，并展示今日班次/下班时刻
 			if (!this.canSettle) {
-				const w = this.schedule && this.schedule.work && this.schedule.work.length ? this.fmtShifts(this.schedule.work) : ''
+				if (this.salary && this.salary.settledToday) {
+					uni.showToast({ title: '今天已经结算过工资啦', icon: 'none' })
+					return
+				}
+				const w = this.scheduledToday ? this.fmtShifts(this.schedule.work) : ''
 				const off = this.schedule && this.schedule.offAt ? this.fmtHM(this.schedule.offAt) : ''
 				const extra = off ? `今天 ${off} 下班` : '还在上班/休息中'
 				uni.showModal({
 					title: '还没下班哦 💼',
-					content: w ? `杯蜜今日班次：${w}（${extra}），下班后再来结算工资吧～` : `杯蜜${extra}，下班后再来结算工资吧～`,
+					content: w ? `杯蜜今日班次：${w}（${extra}），下班后再来结算工资吧～不点结算也不会丢，跨月会一次性补发。` : `杯蜜${extra}，下班后再来结算工资吧～`,
 					showCancel: false
 				})
 				return
 			}
+			this.submitSettle()
+		},
+		async submitSettle() {
 			const res = await settleWork(this.userId)
 			if (res.code === 0 && res.data) {
-				if (res.data.rest) { uni.showToast({ title: '今天是休息日～', icon: 'none' }); return }
+				if (res.data.rest) { uni.showToast({ title: '今天是休息日～', icon: 'none' }); this.loadStatus(); return }
 				this.settleText = res.data.text
 				uni.showToast({ title: res.data.text || '结算完成', icon: 'none', duration: 2500 })
 				this.loadStatus()
 			} else if (res.code === 3001) {
 				uni.showToast({ title: '今天已经结算过工作啦', icon: 'none' })
-			} else if (res.code === 4001) {
-				uni.showToast({ title: '杯蜜生病啦，先去诊所调养吧', icon: 'none' })
+				this.loadStatus()
 			} else {
 				uni.showToast({ title: res.message || '结算失败', icon: 'none' })
 			}
 		},
 		doLeave() {
-			// 请假生效期间不能重复请假
-			const lv = this.pet.leave
-			if (lv && lv.type && lv.endAt > Date.now()) {
-				uni.showToast({ title: `杯蜜已在${lv.type === 'sick' ? '病假' : '事假'}中，不能重复请假`, icon: 'none' })
+			if (this.hasLeaveToday) {
+				uni.showToast({ title: '杯蜜今天已经请过假啦，一天只能请一次', icon: 'none' })
 				return
 			}
-			// 病假需真的生病（需调养）才能请
+			if (!this.scheduledToday) {
+				uni.showToast({ title: '今天没有排班，是休息日，不用请假～', icon: 'none' })
+				return
+			}
 			const canSick = this.pet.mood === 'sick'
 			uni.showActionSheet({
-				itemList: ['事假（扣当日工资50%）', canSick ? '病假（不扣钱）' : '病假（需生病才能请）'],
-				success: async ({ tapIndex }) => {
-					const type = tapIndex === 0 ? 'personal' : 'sick'
-					if (type === 'sick' && !canSick) {
-						uni.showToast({ title: '杯蜜没生病，不能请病假哦～', icon: 'none' })
+				itemList: ['请事假', canSick ? '请病假（不扣钱）' : '请病假（需生病）'],
+				success: ({ tapIndex }) => { this.confirmLeave(tapIndex === 0 ? 'personal' : 'sick', canSick) }
+			})
+		},
+		/** 请假前把“只占今日上班时间 + 当场扣多少钱”讲清楚，避免用户误以为请假就等于结算 */
+		confirmLeave(type, canSick) {
+			if (type === 'sick' && !canSick) {
+				uni.showToast({ title: '杯蜜没生病，不能请病假哦～', icon: 'none' })
+				return
+			}
+			const lv = getLeave()[type] || {}
+			const cut = type === 'sick' ? 0 : this.leaveDeduct
+			const off = this.schedule && this.schedule.offAt ? this.fmtHM(this.schedule.offAt) : ''
+			const span = off ? `请假只到今天 ${off} 下班，之后她会正常作息` : '请假只占今天的上班时间'
+			uni.showModal({
+				title: `确认请${lv.label || (type === 'sick' ? '病假' : '事假')}`,
+				content: cut > 0
+					? `${span}。当场扣 ${cut} 杯蜜币（余额 ${this.pet.coin || 0}），工资仍是下班后按全额 ${this.jobSalary} 发放～`
+					: `${span}。病假不扣钱，下班后结算照发全额工资 ${this.jobSalary} 杯蜜币～`,
+				success: (r) => { if (r.confirm) this.submitLeave(type) }
+			})
+		},
+		async submitLeave(type) {
+			const res = await applyLeave(this.userId, type, 8, '')
+			if (res.code === 0) {
+				uni.showToast({ title: res.message || '已请假', icon: 'none', duration: 2500 })
+				this.loadStatus()
+			} else {
+				uni.showToast({ title: res.message || '请假失败', icon: 'none' })
+			}
+		},
+		/** 统一跳转：查表取路径 + 带 fail 兜底。小程序的 navigateTo 失败默认是静默的
+		 * （页面栈满 10 层 / 目标是 tabBar 页 / 路径不存在），过去只能看到“点了没反应” */
+		navTo(key) {
+			const path = PAGE[key]
+			if (!path) {
+				console.warn('[beemore] 跳转 key 未在 PAGE 表登记:', key)
+				uni.showToast({ title: '这个页面还没上线，先回主页吧', icon: 'none' })
+				return
+			}
+			const url = '/' + path
+			uni.navigateTo({
+				url,
+				fail: (e) => {
+					const msg = String((e && e.errMsg) || '')
+					console.warn('[beemore] navigateTo 失败:', url, msg)
+					if (msg.indexOf('tabbar') >= 0 || msg.indexOf('tabBar') >= 0) { uni.switchTab({ url }); return }
+					if (msg.indexOf('not found') >= 0 || msg.indexOf('不存在') >= 0) {
+						uni.showToast({ title: '页面没注册，检查 pages.json', icon: 'none' })
 						return
 					}
-					const res = await applyLeave(this.userId, type, 8, '')
-					if (res.code === 0) {
-						uni.showToast({ title: res.message || '已请假', icon: 'none' })
-						this.loadStatus()
-					} else {
-						uni.showToast({ title: res.message || '请假失败', icon: 'none' })
+					// 页面栈最多 10 层：满了就换掉当前页再进，实在不行整页重启，保证入口一定能点开
+					if (/10|exceed|maximum|栈/i.test(msg)) {
+						uni.redirectTo({ url, fail: () => uni.reLaunch({ url }) })
+						return
 					}
+					uni.showToast({ title: '打不开：' + (msg || '未知原因'), icon: 'none' })
 				}
 			})
 		},
-		go(name) {
-			uni.navigateTo({ url: `/pages/game/loveQY/${name}` })
-		},
-		goGated(name) {
-			if (isLocked(this.pet.status)) {
-				uni.showToast({ title: ERR_MSG[4002], icon: 'none' })
+		/** 兼容旧写法（生病提示条等直接按 key 跳） */
+		go(key) { this.navTo(key) },
+		/** 快捷入口点击：先按入口自己的规则拦一道，拦不住才真正跳转 */
+		goEntry(q) {
+			if (q.gate === 'travel' && this.pet.mood === 'sick') {
+				uni.showToast({ title: '杯蜜生病啦，先带她去诊所调养，这期间出不了门～', icon: 'none' })
 				return
 			}
-			this.go(name)
+			if (q.gate && isLocked(this.pet.status)) {
+				uni.showToast({ title: GATE_TIP[q.gate](statusLabel(this.pet.status)), icon: 'none' })
+				return
+			}
+			this.navTo(q.key)
 		},
 		/** 事件瞬时表情：覆盖 mood 推导 2.5 秒后自动还原 */
 		flashExp(exp) {
@@ -368,16 +479,21 @@ export default {
 .w-btn.work { background: #43e97b; color: #fff; }
 .w-btn.leave { background: #ffd76e; color: #7a5a00; }
 .work-note { font-size: 12px; color: #6a5acd; margin-top: 8px; }
+.work-note.owing { color: #b47800; }
+.work-note.absent { color: #e0566b; }
 .sched { margin-top: 10px; background: rgba(255,255,255,.7); border-radius: 12px; padding: 8px 12px; }
 .sched-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
 .sch-k { font-size: 12px; color: #8a6fb0; flex: none; }
 .sch-v { font-size: 13px; color: #444; }
 .sb-sick { color: #e0566b; font-weight: bold; }
-.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.q-item { background: #fff; border-radius: 14px; padding: 16px 0; display: flex; flex-direction: column; align-items: center; position: relative; }
-.q-badge { position: absolute; top: 8px; right: 18px; min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: #f5576c; color: #fff; font-size: 10px; text-align: center; }
-.q-e { font-size: 26px; }
-.q-t { font-size: 13px; color: #555; margin-top: 6px; }
+/* 10 个入口刚好 5 列 × 2 行，不留孤项 */
+.quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.q-item { background: #fff; border-radius: 12px; padding: 12px 0; display: flex; flex-direction: column; align-items: center; position: relative; }
+.q-item.dim { opacity: .6; }
+.q-badge { position: absolute; top: 5px; right: 8px; min-width: 15px; height: 15px; line-height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; background: #f5576c; color: #fff; font-size: 9px; text-align: center; }
+.q-lock { position: absolute; top: 4px; left: 6px; font-size: 9px; color: #8a6fb0; background: rgba(138, 111, 176, .16); border-radius: 6px; padding: 0 4px; }
+.q-e { font-size: 22px; }
+.q-t { font-size: 11px; color: #555; margin-top: 5px; }
 
 /* 领养 */
 .adopt { background: #fff; border-radius: 20px; padding: 20px 16px; }

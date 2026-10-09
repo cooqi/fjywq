@@ -3,8 +3,10 @@
  * 1. 坐标直接沿用 ren.html 的 SVG viewBox 源坐标（男生在左、女生在右，女生 = 男生 x + 200）；
  * 2. 按性别裁出单人画框 FRAME，统一乘 u 映射到逻辑画布 CANVAS_W×CANVAS_H，再乘调用方 scale，
  *    因此不使用 ctx 变换矩阵，全端（H5/小程序旧 canvas-context）表现一致；
- * 3. 颜色：线条色（头/四肢/五官）按性别固定，衣服色与头发色可在调色板中自定义；
- *    配饰（帽/巾/镜）不写死颜色，同 ren.html 取衣服色作为 --acc 实色填充，描边用其暗色；
+ * 3. 颜色：线条色（头/四肢/五官）按性别固定，衣服色、头发色可在调色板中自定义；
+ *    眼睛（含愤怒/晕眩的眉毛、爱心目、闭眼线）可按 look.eyeColors 左右异色，未选色的一侧用线条色；
+ *    配饰（帽/巾/镜）默认同 ren.html 取衣服色作为 --acc 实色填充、描边用其暗色，
+ *    可按 look.accColors 逐件逐片分色（帽/围巾 main，眼镜左右镜片 l/r）；
  * 4. 头发是可选部件（look.hair: none/short/long），默认不画，只有用户选了发型才叠加；
  * 5. 动画：呼吸浮动/弹跳/抖动/心跳/眼泪/眨眼/手臂摆动/Zzz 漂浮，由 opts.time 逐帧驱动，
  *    不传 time 则为静态帧（衣橱缩略图、明信片等一次性绘制场景）。
@@ -58,56 +60,57 @@ const ARMS = [
 const GROUND = { m: { x: 100, y: 234, rx: 50, ry: 9 }, f: { x: 300, y: 234, rx: 50, ry: 9 } }
 const PIVOT = { m: { x: 100, y: 229 }, f: { x: 300, y: 229 } } // 动画缩放的支点（中心底部）
 
-// ================= 8 张脸（男生坐标，女生整体 +200；s=样式，role=动画标记） =================
+// ================= 8 张脸（男生坐标，女生整体 +200；s=样式，role=动画标记，side=属于哪只眼睛/眉毛）=================
+// side 标 'l'/'r' 的形状受 look.eyeColors 控制（异瞳时左右可异色），未标者用性别线条色
 const FACES = {
 	normal: [
-		{ t: 'circle', s: 'solid', role: 'eye', x: 80, y: 74, r: 7 },
-		{ t: 'circle', s: 'solid', role: 'eye', x: 120, y: 74, r: 7 },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'l', x: 80, y: 74, r: 7 },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'r', x: 120, y: 74, r: 7 },
 		{ t: 'path', s: 'stroke', d: 'M88 98 Q100 110 112 98' }
 	],
 	happy: [
-		{ t: 'path', s: 'stroke', d: 'M70 79 Q80 65 90 79' },
-		{ t: 'path', s: 'stroke', d: 'M110 79 Q120 65 130 79' },
+		{ t: 'path', s: 'stroke', side: 'l', d: 'M70 79 Q80 65 90 79' },
+		{ t: 'path', s: 'stroke', side: 'r', d: 'M110 79 Q120 65 130 79' },
 		{ t: 'path', s: 'stroke', d: 'M84 94 Q100 116 116 94' },
 		{ t: 'circle', s: 'blush', x: 66, y: 92, r: 5.5 },
 		{ t: 'circle', s: 'blush', x: 134, y: 92, r: 5.5 }
 	],
 	love: [
-		{ t: 'heart', s: 'solid', x: 80, y: 72 },
-		{ t: 'heart', s: 'solid', x: 120, y: 72 },
+		{ t: 'heart', s: 'solid', side: 'l', x: 80, y: 72 },
+		{ t: 'heart', s: 'solid', side: 'r', x: 120, y: 72 },
 		{ t: 'path', s: 'stroke', d: 'M86 96 Q100 112 114 96' }
 	],
 	wow: [
-		{ t: 'circle', s: 'solid', x: 80, y: 71, r: 10 },
-		{ t: 'circle', s: 'solid', x: 120, y: 71, r: 10 },
+		{ t: 'circle', s: 'solid', side: 'l', x: 80, y: 71, r: 10 },
+		{ t: 'circle', s: 'solid', side: 'r', x: 120, y: 71, r: 10 },
 		{ t: 'ellipse', s: 'solid', x: 100, y: 102, rx: 7, ry: 9 }
 	],
 	sad: [
-		{ t: 'circle', s: 'solid', role: 'eye', x: 80, y: 72, r: 6.5 },
-		{ t: 'circle', s: 'solid', role: 'eye', x: 120, y: 72, r: 6.5 },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'l', x: 80, y: 72, r: 6.5 },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'r', x: 120, y: 72, r: 6.5 },
 		{ t: 'ellipse', s: 'tear', role: 'tear', x: 72, y: 88, rx: 3.5, ry: 5 },
 		{ t: 'path', s: 'stroke', d: 'M86 108 Q100 92 114 108' }
 	],
 	angry: [
-		{ t: 'path', s: 'stroke', d: 'M67 58 L90 68' },
-		{ t: 'path', s: 'stroke', d: 'M133 58 L110 68' },
-		{ t: 'circle', s: 'solid', role: 'eye', x: 80, y: 78, r: 6.5 },
-		{ t: 'circle', s: 'solid', role: 'eye', x: 120, y: 78, r: 6.5 },
+		{ t: 'path', s: 'stroke', side: 'l', d: 'M67 58 L90 68' },
+		{ t: 'path', s: 'stroke', side: 'r', d: 'M133 58 L110 68' },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'l', x: 80, y: 78, r: 6.5 },
+		{ t: 'circle', s: 'solid', role: 'eye', side: 'r', x: 120, y: 78, r: 6.5 },
 		{ t: 'path', s: 'stroke', d: 'M88 106 Q100 97 112 106' }
 	],
 	sleepy: [
-		{ t: 'path', s: 'stroke', d: 'M70 76 H90' },
-		{ t: 'path', s: 'stroke', d: 'M110 76 H130' },
+		{ t: 'path', s: 'stroke', side: 'l', d: 'M70 76 H90' },
+		{ t: 'path', s: 'stroke', side: 'r', d: 'M110 76 H130' },
 		{ t: 'path', s: 'stroke', d: 'M92 100 Q100 106 108 100' },
 		{ t: 'text', s: 'z', role: 'z', zi: 0, x: 148, y: 64, text: 'z' },
 		{ t: 'text', s: 'z', role: 'z', zi: 1, x: 158, y: 48, text: 'z' },
 		{ t: 'text', s: 'z', role: 'z', zi: 2, x: 168, y: 32, text: 'z' }
 	],
 	dizzy: [
-		{ t: 'path', s: 'stroke', d: 'M71 65 L89 83' },
-		{ t: 'path', s: 'stroke', d: 'M89 65 L71 83' },
-		{ t: 'path', s: 'stroke', d: 'M111 65 L129 83' },
-		{ t: 'path', s: 'stroke', d: 'M129 65 L111 83' },
+		{ t: 'path', s: 'stroke', side: 'l', d: 'M71 65 L89 83' },
+		{ t: 'path', s: 'stroke', side: 'l', d: 'M89 65 L71 83' },
+		{ t: 'path', s: 'stroke', side: 'r', d: 'M111 65 L129 83' },
+		{ t: 'path', s: 'stroke', side: 'r', d: 'M129 65 L111 83' },
 		{ t: 'path', s: 'stroke', d: 'M84 102 q8 -8 16 0 t16 0' }
 	]
 }
@@ -117,6 +120,7 @@ const HEART_D = 'M0,-4 C-1.5,-9 -9,-9 -9,-3 C-9,2 -3,7 0,10 C3,7 9,2 9,-3 C9,-9 
 // ================= 配饰（衣橱 equippedItems，几何形状逐条照搬 ren.html）=================
 // 男女头型不同（男 84×84 圆角矩形、女 r42 圆），所以帽子形状分性别定义，不用简单位移套用；
 // k = 图层样式：shape 实色配件 / lens 镜片（半透）/ line 镜腿与镜梁 / hl 白色高光
+// side = 该形状属于哪片镜片（l 画面左侧 / r 画面右侧），眼镜按片取色，镜梁从中点拆开各归一边
 const ACCESSORIES = {
 	m: {
 		hat: [
@@ -130,13 +134,14 @@ const ACCESSORIES = {
 			{ k: 'hl', t: 'ellipse', x: 90, y: 110, rx: 12, ry: 3.5 }
 		],
 		glasses: [
-			{ k: 'lens', t: 'circle', x: 80, y: 74, r: 13 },
-			{ k: 'lens', t: 'circle', x: 120, y: 74, r: 13 },
-			{ k: 'line', t: 'path', d: 'M93 74 L107 74' },
-			{ k: 'line', t: 'path', d: 'M67 72 L58 64' },
-			{ k: 'line', t: 'path', d: 'M133 72 L142 64' },
-			{ k: 'hl', t: 'circle', x: 75, y: 69, r: 3 },
-			{ k: 'hl', t: 'circle', x: 115, y: 69, r: 3 }
+			{ k: 'lens', side: 'l', t: 'circle', x: 80, y: 74, r: 13 },
+			{ k: 'lens', side: 'r', t: 'circle', x: 120, y: 74, r: 13 },
+			{ k: 'line', side: 'l', t: 'path', d: 'M93 74 L100 74' },
+			{ k: 'line', side: 'r', t: 'path', d: 'M100 74 L107 74' },
+			{ k: 'line', side: 'l', t: 'path', d: 'M67 72 L58 64' },
+			{ k: 'line', side: 'r', t: 'path', d: 'M133 72 L142 64' },
+			{ k: 'hl', side: 'l', t: 'circle', x: 75, y: 69, r: 3 },
+			{ k: 'hl', side: 'r', t: 'circle', x: 115, y: 69, r: 3 }
 		]
 	},
 	f: {
@@ -151,13 +156,14 @@ const ACCESSORIES = {
 			{ k: 'hl', t: 'ellipse', x: 290, y: 110, rx: 12, ry: 3.5 }
 		],
 		glasses: [
-			{ k: 'lens', t: 'circle', x: 280, y: 74, r: 13 },
-			{ k: 'lens', t: 'circle', x: 320, y: 74, r: 13 },
-			{ k: 'line', t: 'path', d: 'M293 74 L307 74' },
-			{ k: 'line', t: 'path', d: 'M267 72 L258 64' },
-			{ k: 'line', t: 'path', d: 'M333 72 L342 64' },
-			{ k: 'hl', t: 'circle', x: 275, y: 69, r: 3 },
-			{ k: 'hl', t: 'circle', x: 315, y: 69, r: 3 }
+			{ k: 'lens', side: 'l', t: 'circle', x: 280, y: 74, r: 13 },
+			{ k: 'lens', side: 'r', t: 'circle', x: 320, y: 74, r: 13 },
+			{ k: 'line', side: 'l', t: 'path', d: 'M293 74 L300 74' },
+			{ k: 'line', side: 'r', t: 'path', d: 'M300 74 L307 74' },
+			{ k: 'line', side: 'l', t: 'path', d: 'M267 72 L258 64' },
+			{ k: 'line', side: 'r', t: 'path', d: 'M333 72 L342 64' },
+			{ k: 'hl', side: 'l', t: 'circle', x: 275, y: 69, r: 3 },
+			{ k: 'hl', side: 'r', t: 'circle', x: 315, y: 69, r: 3 }
 		]
 	}
 }
@@ -176,6 +182,8 @@ function nearestPalette(hex) {
 	return best
 }
 const palOr = (v, dft) => (THEME_COLORS.indexOf(v) >= 0 ? v : (nearestPalette(v) || dft))
+/** 分部位取色：只认调色板内的色值，其余一律归为空串（= 跟随默认色，保证存量形象行为不变） */
+const palOrFollow = (v) => (THEME_COLORS.indexOf(v) >= 0 ? v : '')
 
 /** 归一化 look：任何字段缺失/非法都回落到性别默认，保证渲染永不崩 */
 export function resolveLook(look) {
@@ -185,6 +193,10 @@ export function resolveLook(look) {
 	const outfit = OUTFITS[l.outfit] && (OUTFITS[l.outfit].gender === gender || OUTFITS[l.outfit].gender === 'unisex')
 		? l.outfit : (gender === 'f' ? 'rose-dress' : 'tee-blue')
 	const outfitColor = (l.outfit && OUTFITS[l.outfit]) ? (OUTFITS[l.outfit].colors || {})[1] : ''
+	const eye = l.eyeColors || {}
+	const acc = l.accColors || {}
+	const accPart = (v) => ({ main: palOrFollow((v || {}).main) })
+	const glasses = acc.glasses || {}
 	return {
 		ver: LOOK_VER, gender,
 		skin: HEX_RE.test(l.skin || '') ? l.skin : (gender === 'f' ? '#ffe1e6' : '#4fc3f7'),
@@ -192,7 +204,11 @@ export function resolveLook(look) {
 		hair: HAIRS[l.hair] ? l.hair : 'none',
 		outfit,
 		clothColor: palOr(l.clothColor || outfitColor, base.cloth),
-		hairColor: palOr(l.hairColor, base.hair)
+		hairColor: palOr(l.hairColor, base.hair),
+		// 眼睛左右可异色（空串 = 该侧用性别线条色）
+		eyeColors: { l: palOrFollow(eye.l), r: palOrFollow(eye.r) },
+		// 配饰配色：帽/围巾整体一色，眼镜左右镜片各一色（空串 = 跟随衣服色）
+		accColors: { hat: accPart(acc.hat), scarf: accPart(acc.scarf), glasses: { l: palOrFollow(glasses.l), r: palOrFollow(glasses.r) } }
 	}
 }
 
@@ -358,6 +374,14 @@ function paintGround(ctx, g, map, u, color) {
 		ctx.fill()
 	}
 }
+/** 配饰图层样式：k 决定实色配件 / 半透镜片 / 镜腿镜梁 / 白色高光，color 由调用方按片给定（眼镜可左右异色） */
+function accStyle(k, color, u) {
+	const dark = darken(color, 0.55)
+	if (k === 'lens') return { fill: rgba(color, 0.72), stroke: dark, width: 2.5 * u, glow: 6 * u }
+	if (k === 'line') return { stroke: dark, width: 3.5 * u, glow: 6 * u }
+	if (k === 'hl') return { fill: 'rgba(255,255,255,0.35)' }
+	return { fill: color, stroke: dark, width: 2.5 * u, glow: 7 * u }
+}
 
 // ================= 逐帧动画 =================
 const TAU = Math.PI * 2
@@ -433,7 +457,7 @@ function animOf(face, t) {
 /**
  * 渲染杯蜜形象
  * @param {Object} ctx uni.createCanvasContext 返回值
- * @param {Object} rawLook pet.look（可空，自动归一化；含 clothColor/hairColor）
+ * @param {Object} rawLook pet.look（可空，自动归一化；含 clothColor/hairColor/eyeColors/accColors）
  * @param {String} expression 表情 key（旧 smile/laugh/… 与新 normal/happy/… 均可）
  * @param {Array} equipped 已穿戴配饰 key 列表（hat/scarf/glasses）
  * @param {Number} scale 放大倍数（逻辑画布 × scale = 像素）
@@ -508,11 +532,13 @@ export function renderPet(ctx, rawLook, expression, equipped, scale = 3, opts) {
 			continue
 		}
 		const sh = f.role === 'tear' ? Object.assign({}, f, { y: f.y + an.tearY }) : f
+		// 眼睛/眉毛可按侧取色（异瞳），未选色的一侧仍用性别线条色
+		const eyeColor = (f.side && l.eyeColors[f.side]) || line
 		let opt
-		if (f.s === 'stroke') opt = { stroke: line, width: 4 * u }
+		if (f.s === 'stroke') opt = { stroke: eyeColor, width: 4 * u }
 		else if (f.s === 'blush') opt = { fill: 'rgba(255,143,177,0.55)' }
 		else if (f.s === 'tear') opt = { fill: `rgba(125,211,252,${Math.max(0.15, an.tearA)})` }
-		else opt = { fill: rgba(line, 0.95) }
+		else opt = { fill: rgba(eyeColor, 0.95) }
 		// 眨眼：只压扁眼睛（以眼心为支点），整体位移/缩放仍跟随全身
 		const m = f.role === 'eye' && an.eyeKy !== 1
 			? (x, y) => [
@@ -524,22 +550,18 @@ export function renderPet(ctx, rawLook, expression, equipped, scale = 3, opts) {
 	}
 
 	// 8. 配饰图层（正交于 look，来自衣橱 equippedItems）
-	// 同 ren.html：帽子/围巾/眼镜的填充色直接取衣服色 --acc，描边取 darken(--acc, .55)
+	// 同 ren.html：默认取衣服色 --acc 做填充，描边取 darken(--acc, .55)；
+	// 可按 look.accColors 逐件逐片分色（帽/围巾看 main，眼镜按镜片左右侧），未设色的回落衣服色
 	const eq = Array.isArray(equipped) ? equipped : []
-	const accDark = darken(cloth, 0.55)
-	const accOpt = {
-		shape: { fill: cloth, stroke: accDark, width: 2.5 * u, glow: 7 * u },
-		lens: { fill: rgba(cloth, 0.72), stroke: accDark, width: 2.5 * u, glow: 6 * u },
-		line: { stroke: accDark, width: 3.5 * u, glow: 6 * u },
-		hl: { fill: 'rgba(255,255,255,0.35)' }
-	}
 	for (const key of ['hat', 'scarf', 'glasses']) {
 		const shapes = ACCESSORIES[g][key]
 		if (!eq.includes(key) || !shapes) continue
+		const part = l.accColors[key]
 		for (let i = 0; i < shapes.length; i++) {
 			const sh = shapes[i]
+			const accColor = (sh.side ? part[sh.side] : part.main) || cloth
 			// 配饰坐标已是当前性别的绝对坐标，用 map 而非 mapS
-			paintShape(ctx, sh, map, u, accOpt[sh.k] || accOpt.shape)
+			paintShape(ctx, sh, map, u, accStyle(sh.k, accColor, u))
 		}
 	}
 

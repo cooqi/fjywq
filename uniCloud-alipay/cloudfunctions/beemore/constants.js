@@ -201,6 +201,12 @@ const LOOK_PARTS = {
 	hairs: ['none', 'short', 'long'],
 	HAIR_NAMES: { none: '无发', short: '短发', long: '长发' },
 	accessories: ['hat', 'scarf', 'glasses'],
+	// 配饰可着色的部位（存于 look.accColors）：帽/围巾整体一个 main 色，眼镜左右镜片各一色；空串 = 跟随衣服色
+	accParts: { hat: ['main'], scarf: ['main'], glasses: ['l', 'r'] },
+	ACC_SLOT_NAMES: { main: '颜色', l: '左镜片', r: '右镜片' },
+	// 眼睛（含眉毛）可左右异色，存于 look.eyeColors；空串 = 跟随该性别的线条色
+	eyeSlots: ['l', 'r'],
+	EYE_SLOT_NAMES: { l: '左眼', r: '右眼' },
 	themeColors: THEME_COLORS,
 	// 调色板色名（仅用于日志/日记展示）
 	COLOR_NAMES: {
@@ -208,7 +214,8 @@ const LOOK_PARTS = {
 		'#c4b5fd': '香芋紫', '#fde68a': '奶黄', '#fdba74': '橘杏', '#93c5fd': '天蓝'
 	},
 	HEX_RE: /^#[0-9a-fA-F]{6}$/,
-	// ver:3 = 线条形象，衣服色/头发色取自 themeColors（线条色由性别固定），头发默认不选
+	// ver:3 = 线条形象，衣服色/头发色取自 themeColors（线条色由性别固定），头发默认不选；
+	// 眼睛色与配饰色不写在默认值里（无 eyeColors/accColors = 全部跟随默认色，避免给存量形象多挂一层空对象）
 	DEFAULT: {
 		m: { ver: 3, gender: 'm', skin: '#4fc3f7', clothColor: '#5eead4', hairColor: '#14b8a6', hair: 'none', outfit: 'tee-blue' },
 		f: { ver: 3, gender: 'f', skin: '#ffe1e6', clothColor: '#f9a8d4', hairColor: '#ec4899', hair: 'none', outfit: 'rose-dress' }

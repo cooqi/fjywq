@@ -4,6 +4,10 @@
  * 1. look 只存 key/色值（gender/skin/hair/outfit），存于 beemore_pets.look，服务端白名单校验；
  * 2. 表情 expression 不入库，由 mood 实时推导（MOOD_EXPRESSION），事件可瞬时覆盖；
  * 3. 配饰（帽/巾/镜）属于衣橱 equippedItems，渲染为 accessory 图层，与 look 正交；
+ *    配色例外：帽/围巾整体一色、眼镜左右镜片各一色，存于 look.accColors
+ *    {hat:{main},scarf:{main},glasses:{l,r}}；眼睛（含眉毛）也按 look.eyeColors {l,r} 左右异色，
+ *    空串均表示“跟随”（配饰跟衣服色、眼睛跟性别线条色）；
+ *    这样所有 renderPet 调用点（主面板/造型间/衣橱/明信片）只传 look 就能带上这些颜色；
  * 4. 新增部件 = 在注册表加一条，存量数据自动兼容；废弃部件保留 key 并打 deprecated。
  * 必须使用 ESM 导出（common/js 模块规范），禁止 module.exports
  */
@@ -225,8 +229,20 @@ export const BLUSH = [
 	{ t: 'e', x: 42, y: 22, rx: 2.5, ry: 1.5, col: C.tongue, alpha: 0.6 }
 ]
 
+// ============ 配色扩展（眼睛 + 配饰）============
+// look.eyeColors = { l, r }：性别决定的线条色作为底色，用户可给左/右眼单独上色（异瞳），值取自 THEME_COLORS
+// look.accColors = { hat:{main}, scarf:{main}, glasses:{l, r} }：空串表示该处跟随（眼睛跟线条色，配饰跟衣服色）
+// 存量形象无这些字段时行为不变，所以不升 ver（升 ver 会把发型重置成无发）
+export const FOLLOW_DEFAULT = ''
+/** 取分部位色值，未设置返回空串（由 renderer 回落到线条色/衣服色） */
+export function accColorOf(accColors, accKey, side) {
+	const one = (accColors || {})[accKey]
+	return (one && one[side]) || FOLLOW_DEFAULT
+}
+
 // ============ 配饰图层（像素网格时代的遗留数据，已不再使用）============
-// 帽子/围巾/眼镜现由 renderer.js 的 ACCESSORIES（按 ren.html 几何形状、配色跟随衣服色）绘制
+// 帽子/围巾/眼镜现由 renderer.js 的 ACCESSORIES（按 ren.html 几何形状）绘制，
+// 默认取衣服色，可按 look.accColors 逐件逐片分色
 export const ACCESSORIES = {
 	hat: { layer: 'accessory', prims: [
 		{ t: 'r', x: 18, y: 0, w: 16, h: 4, col: '#ff6b6b' },
@@ -266,10 +282,12 @@ export const ACTION_EXPRESSION = {
 export function defaultLook(gender) {
 	const f = gender === '女生' || gender === 'f'
 	const g = f ? 'f' : 'm'
-	// 领养默认无发（头发属于可选造型，要用户在自定义形象页主动选择）
+	// 领养默认无发（头发属于可选造型，要用户在自定义形象页主动选择）；眼睛跟线条色、配饰跟衣服色
 	return {
 		ver: LOOK_VER, gender: g, skin: f ? '#ffe1e6' : '#4fc3f7', hair: 'none', outfit: f ? 'rose-dress' : 'tee-blue',
-		clothColor: THEME_DEFAULT[g].cloth, hairColor: THEME_DEFAULT[g].hair
+		clothColor: THEME_DEFAULT[g].cloth, hairColor: THEME_DEFAULT[g].hair,
+		eyeColors: { l: FOLLOW_DEFAULT, r: FOLLOW_DEFAULT },
+		accColors: { hat: { main: FOLLOW_DEFAULT }, scarf: { main: FOLLOW_DEFAULT }, glasses: { l: FOLLOW_DEFAULT, r: FOLLOW_DEFAULT } }
 	}
 }
 

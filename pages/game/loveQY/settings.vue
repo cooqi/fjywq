@@ -39,7 +39,7 @@
 
 			<!-- 职业 -->
 			<view class="card">
-				<view class="c-title">职业（上班按全局日程发日薪，旅行/请假会影响工资与心情）</view>
+				<view class="c-title">职业（按班次发日薪：请假当场扣钱、下班后领全额；生病不请病假按旷工，当天没工资）</view>
 				<view class="chip-row">
 					<view v-for="j in jobOptions" :key="j.value" class="chip" :class="{ on: pet.job === j.value }" @click="setJob(j.value)">{{ j.label }}</view>
 				</view>
@@ -48,32 +48,34 @@
 			<!-- 上班时段（职业班次可选 / 自由职业自定义） -->
 			<view class="card" v-if="curJob">
 				<view class="c-title">上班时段</view>
+				<view v-if="conflictTip" class="conflict-tip">⚠️ {{ conflictTip }}，这样保存会被拦住：换个班次，或把下面的睡眠时段错开</view>
 				<!-- 自由职业：自定义工作时段 -->
 				<block v-if="curJob.custom">
-					<view class="sch-note">自由职业：自定义你的工作时间（最多 5 段），不设置则没有固定班。</view>
-					<view v-for="(s, i) in workPlan.customShifts" :key="'cs' + i" class="shift-box">
+					<view class="sch-note">自由职业：自定义你的工作时间（最多 5 段），不设置则没有固定班。上班时段不能和睡眠重叠。</view>
+					<view v-for="(shift, idx) in workPlan.customShifts" :key="'cs' + idx" class="shift-box">
 						<view class="shift-top">
-							<input class="shift-name" v-model="s.name" maxlength="8" placeholder="班次名称" @blur="saveCustom" />
-							<text class="shift-rm" @click="removeCustomShift(i)">删除</text>
+							<input class="shift-name" v-model="shift.name" maxlength="8" placeholder="班次名称" @blur="saveCustom" />
+							<text class="shift-rm" @click="removeCustomShift(idx)">删除</text>
 						</view>
 						<view class="shift-time">
-							<picker mode="time" :value="s.start" @change="onCustomTime(i, 'start', $event)"><view class="time-chip">{{ s.start }}</view></picker>
+							<picker mode="time" :value="shift.start" @change="onCustomTime(idx, 'start', $event)"><view class="time-chip">{{ shift.start }}</view></picker>
 							<text class="dash">–</text>
-							<picker mode="time" :value="s.end" @change="onCustomTime(i, 'end', $event)"><view class="time-chip">{{ s.end }}</view></picker>
-							<text v-if="s.end <= s.start" class="cross-tag">跨天</text>
+							<picker mode="time" :value="shift.end" @change="onCustomTime(idx, 'end', $event)"><view class="time-chip">{{ shift.end }}</view></picker>
+							<text v-if="shift.end <= shift.start" class="cross-tag">跨天</text>
+							<text v-if="isShiftConflict(shift)" class="clash">撞上睡觉</text>
 						</view>
 						<view class="week-row">
-							<text v-for="(wd, d) in weekLabels" :key="'cw' + d" class="wd" :class="{ on: hasDay(s.weekdays, d) }" @click="toggleCustomDay(i, d)">{{ wd }}</text>
+							<text v-for="(wd, d) in weekLabels" :key="'cw' + d" class="wd" :class="{ on: hasDay(shift.weekdays, d) }" @click="toggleCustomDay(idx, d)">{{ wd }}</text>
 						</view>
 					</view>
 					<button class="mini-btn ghost" v-if="workPlan.customShifts.length < 5" @click="addCustomShift">+ 添加工作时段</button>
 				</block>
 				<!-- 多班次职业：可选其一 -->
 				<block v-else-if="jobShifts.length > 1">
-					<view class="sch-note">这个职业有多班次，选择上班时段：</view>
+					<view class="sch-note">这个职业有多班次，选择上班时段（带「撞睡觉」的班次与睡眠时段重叠，选了保存不了）：</view>
 					<view class="chip-row">
 						<view class="chip" :class="{ on: !workPlan.shiftKey }" @click="chooseShift('')">全部班次</view>
-						<view v-for="s in jobShifts" :key="s.key" class="chip" :class="{ on: workPlan.shiftKey === s.key }" @click="chooseShift(s.key)">{{ s.name }} {{ s.start }}-{{ s.end }}</view>
+						<view v-for="sh in jobShifts" :key="sh.key" class="chip" :class="{ on: workPlan.shiftKey === sh.key }" @click="chooseShift(sh.key)">{{ sh.name }} {{ sh.start }}-{{ sh.end }}<text v-if="isShiftConflict(sh)" class="clash">撞睡觉</text></view>
 					</view>
 				</block>
 				<block v-else-if="jobShifts.length === 1">
@@ -91,6 +93,7 @@
 					<switch :checked="sleepPlan.on" color="#6a5acd" @change="onSleepToggle" />
 				</view>
 				<view class="sch-note">{{ sleepPlan.on ? '已启用自定义睡眠时段：' : '默认跟随全局作息：' + globalSleepText + '（打开开关可自定义）' }}</view>
+				<view v-if="sleepConflictTip" class="conflict-tip">⚠️ {{ sleepConflictTip }}，先把睡觉时间挪到班次之外再保存</view>
 				<block v-if="sleepPlan.on">
 					<view class="shift-time">
 						<picker mode="time" :value="sleepPlan.start" @change="onSleepTime('start', $event)"><view class="time-chip">入睡 {{ sleepPlan.start }}</view></picker>
@@ -140,7 +143,7 @@
 
 <script>
 import { callBeemore, getMyUserInfo, clearPetCache } from './store/pet.js'
-import { loadBeemoreConfig, getJobs, getSchedule, hungerInfo } from './beemore.js'
+import { loadBeemoreConfig, getJobs, getSchedule, hungerInfo, findSleepConflict, sleepConflictText } from './beemore.js'
 import { isAdmin } from '@/common/js/permission.js'
 
 export default {
@@ -177,12 +180,41 @@ export default {
 			const s = this.schedule && this.schedule.sleep
 			return s ? `${s.start} - ${s.end}` : '默认作息'
 		},
+		/** 校验用的生效上班班次（与云函数 activeWorkShifts 同口径） */
+		checkShifts() {
+			if (!this.curJob) return []
+			if (this.curJob.custom) return this.workPlan.customShifts || []
+			const list = (this.jobShifts && this.jobShifts.length) ? this.jobShifts : ((this.schedule && this.schedule.workShifts) || [])
+			const key = this.workPlan.shiftKey || ''
+			if (!key) return list
+			const chosen = list.filter(s => s.key === key)
+			return chosen.length ? chosen : list
+		},
+		/** 校验用的生效睡眠时段：自定义优先，否则全局默认 */
+		checkSleep() {
+			if (this.sleepPlan.on) return this.sleepPlan
+			return (this.schedule && this.schedule.sleep) || null
+		},
+		/** 第一个与睡觉重叠的上班班次（云端会硬拦截保存，这里提前标出来） */
+		conflictWin() { return findSleepConflict(this.checkShifts, this.checkSleep) },
+		conflictTip() { return this.conflictWin ? sleepConflictText(this.conflictWin, this.checkSleep) : '' },
+		sleepConflictTip() {
+			const w = this.conflictWin
+			return w ? `这个睡觉时间和上班班次「${w.name || '班次'} ${w.start}-${w.end}」重叠` : ''
+		},
 		hungerNow() { return this.pet.hunger == null ? 35 : Math.max(0, Math.min(100, this.pet.hunger)) },
 		hungerLabel() { return hungerInfo(this.hungerNow).label },
 		mealsToday() { return (this.pet.daily && this.pet.daily.meals) || 0 }
 	},
 	methods: {
 		hasDay(arr, d) { return Array.isArray(arr) && arr.indexOf(d) > -1 },
+		/** 单个班次是否与睡眠重叠（不看当前选中哪个班次，用于逐项标红） */
+		isShiftConflict(s) { return !!findSleepConflict([s], this.checkSleep) },
+		/** 作息冲突硬拦截：弹窗说明原因，并回滚到服务端已保存的作息 */
+		planFail(msg) {
+			uni.showModal({ title: '作息冲突，没保存成功', content: msg || '上班时段和睡眠时段重叠了，必须错开才能保存', showCancel: false })
+			this.load()
+		},
 		syncPetPlan() {
 			const wp = this.pet.workPlan || {}
 			this.workPlan = {
@@ -219,17 +251,18 @@ export default {
 		},
 		async setJob(job) {
 			const res = await callBeemore({ action: 'setJob', userId: this.userId, job })
-			if (res.code === 0) { this.pet.job = res.data.job; if (res.data.workPlan) this.pet.workPlan = res.data.workPlan; this.syncPetPlan(); uni.showToast({ title: res.message || '已更新', icon: 'none' }) }
+			if (res.code === 0) { this.pet.job = res.data.job; if (res.data.workPlan) this.pet.workPlan = res.data.workPlan; this.syncPetPlan(); uni.showToast({ title: res.message || '已更新', icon: 'none', duration: 2500 }) }
+			else uni.showModal({ title: '这个职业暂时上不了', content: res.message || '切换职业失败', showCancel: false })
 		},
 		// ---- 上班时段 ----
 		async chooseShift(key) {
 			const res = await callBeemore({ action: 'setWorkPlan', userId: this.userId, shiftKey: key })
 			if (res.code === 0) { this.workPlan.shiftKey = res.data.workPlan.shiftKey; uni.showToast({ title: res.message || '已保存', icon: 'none' }) }
-			else { uni.showToast({ title: res.message || '保存失败', icon: 'none' }); this.load() }
+			else this.planFail(res.message)
 		},
 		saveCustom() {
 			return callBeemore({ action: 'setWorkPlan', userId: this.userId, customShifts: this.workPlan.customShifts }).then(res => {
-				if (res.code !== 0) { uni.showToast({ title: res.message || '保存失败', icon: 'none' }); this.load() }
+				if (res.code !== 0) this.planFail(res.message)
 			})
 		},
 		addCustomShift() {
@@ -256,7 +289,7 @@ export default {
 		// ---- 睡眠时段 ----
 		sendSleep() {
 			return callBeemore({ action: 'setSleepPlan', userId: this.userId, on: this.sleepPlan.on, start: this.sleepPlan.start, end: this.sleepPlan.end, weekdays: this.sleepPlan.weekdays }).then(res => {
-				if (res.code !== 0) { uni.showToast({ title: res.message || '保存失败', icon: 'none' }); this.load() }
+				if (res.code !== 0) this.planFail(res.message)
 			})
 		},
 		onSleepToggle(e) {
@@ -331,6 +364,8 @@ export default {
 .sch-tag { font-size: 13px; color: #555; }
 .sch-time { font-size: 13px; color: #6a5acd; font-weight: bold; }
 .sch-note { font-size: 11px; color: #9a8fb0; margin-top: 8px; line-height: 1.6; }
+.conflict-tip { font-size: 11px; color: #c0392b; background: #fdecea; border: 1rpx solid #f7c9c1; border-radius: 10px; padding: 6px 10px; margin-top: 8px; line-height: 1.6; }
+.clash { font-size: 10px; color: #c0392b; background: #fdecea; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
 .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .shift-box { border: 1rpx solid #ece7f7; border-radius: 12px; padding: 10px 12px; margin-top: 10px; background: #faf9ff; }
 .shift-top { display: flex; justify-content: space-between; align-items: center; }

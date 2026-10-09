@@ -5,7 +5,7 @@
  * 2. 缓存最近一次 pet 状态到 storage，用于快速首屏展示；
  * 3. 进入页面后立即请求服务端状态，以服务端为准，回来后覆盖缓存并通过 uni.$emit 通知页面刷新。
  */
-import { ERR_MSG } from '../beemore.js'
+import { ERR_MSG } from './_beemore.mjs'
 
 const CACHE_PET_KEY = 'beemore_pet_cache'
 const CACHE_USER_KEY = 'beemore_user_id'

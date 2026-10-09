@@ -1,7 +1,8 @@
 'use strict';
 /**
  * 电子杯蜜（beemore）云函数 —— 电子闺蜜 / 数字打工人逻辑 V1.0
- * 核心：状态机（空闲/工作/休息/睡觉/请假/旅行/旷工）+ 全局日程配置 + 请假旷工 + 睡觉打扰 +
+ * 核心：状态机（空闲/工作/休息/睡觉/请假/旅行/旷工）+ 全局日程配置 + 作息冲突硬拦截（上班与睡觉必须错开）+ 睡觉打扰 +
+ *       工资账本（请假当场扣款·下班后领全额·未结算挂欠薪跨月补发·旷工当日 0 元）+ 发薪/请假/旷工均写日记 +
  *       去宠物化互动（陪伴/聊天/送礼）+ 状态化颜文字聊天 + 旅行消耗工资与明信片 + 全量数据可配。
  * 数据集合：beemore_pets / beemore_logs / beemore_diary / beemore_friends / beemore_chat / beemore_config
  * 错误码：0成功 1001未登录 2001参数 3001冷却 3002超上限 3003已满 4001需调养 4002状态锁定(工作/睡觉) 5001无权限 5002无杯蜜 9001系统
@@ -28,7 +29,7 @@ const STATUS_HINT = {
 	leave: '请假中，可以尽情陪她～',
 	traveling: '旅行中，等她寄回明信片吧～',
 	idle: '现在有空，随便玩～',
-	absent: '上次上班旅行没请假，按旷工处理了……'
+	absent: '该上班却没去（生病没请假／翘班去玩），今天记了旷工，工资 0 💸'
 }
 
 // ---- 时间工具 ----
@@ -39,6 +40,69 @@ function dayStr(ts) {
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
 function pick(arr) { return arr && arr.length ? arr[Math.floor(Math.random() * arr.length)] : '嗯嗯～' }
 function parseHM(s) { const p = String(s || '0:0').split(':'); return (Number(p[0]) || 0) * 60 + (Number(p[1]) || 0) }
+function hmOf(ts) { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
+/** 'YYYY-MM-DD' → 当日 00:00 本地时间戳 */
+function dayStartTs(dateStr) {
+	const p = String(dateStr || '').split('-')
+	return new Date(Number(p[0]) || 1970, (Number(p[1]) || 1) - 1, Number(p[2]) || 1).getTime()
+}
+/** 时间戳 → 它所在自然日的 00:00 */
+function dayStartOf(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime() }
+
+// ---- 作息冲突校验：上班班次与睡眠时段必须错开（夜班不能撞上睡觉时间）----
+/** HH:MM 区间拆成不跨天的分钟段；相等视为全天，跨天拆两段 */
+function segsOf(start, end) {
+	const s = parseHM(start), e = parseHM(end)
+	if (s === e) return [[0, 1440]]
+	return e > s ? [[s, e]] : [[s, 1440], [0, e]]
+}
+function segOverlap(a, b) {
+	for (const [as, ae] of a) {
+		for (const [bs, be] of b) {
+			if (as < be && bs < ae) return true
+		}
+	}
+	return false
+}
+/** windows 里第一个与睡眠时段重叠的窗口（星期有交集且时间重叠）；无冲突返回 null */
+function findSleepConflict(windows, sleep) {
+	if (!sleep || !sleep.start || !sleep.end) return null
+	const ALLD = [0, 1, 2, 3, 4, 5, 6]
+	const sw = (sleep.weekdays && sleep.weekdays.length) ? sleep.weekdays : ALLD
+	const ss = segsOf(sleep.start, sleep.end)
+	for (const w of (windows || [])) {
+		if (!w || !w.start || !w.end) continue
+		const ww = (w.weekdays && w.weekdays.length) ? w.weekdays : ALLD
+		if (!ww.some(d => sw.indexOf(d) >= 0)) continue
+		if (segOverlap(ss, segsOf(w.start, w.end))) return w
+	}
+	return null
+}
+const shiftTitle = (w) => `「${w.name || '班次'} ${w.start}-${w.end}」`
+function conflictMsg(w, sleep, advice) {
+	return `${shiftTitle(w)}与睡眠时段 ${sleep.start}-${sleep.end} 重叠，上班和睡觉必须错开：${advice}～`
+}
+/**
+ * 为职业挑一组与睡眠不冲突的班次（供领养/换职业复用）：
+ * 全部不冲突 → shiftKey:''（按全部班次）；有冲突但存在不冲突班次 → 自动选第一个并说明；全冲突 → error 硬拦截
+ */
+function planJobShifts(job, cfg, sleep) {
+	const name = job.name || '该职业'
+	const own = job.shifts && job.shifts.length ? job.shifts : []
+	const list = own.length ? own : ((cfg.schedule && cfg.schedule.workShifts) || [])
+	if (!sleep || !list.length) return { shiftKey: '', note: '', error: '' }
+	const bad = findSleepConflict(list, sleep)
+	if (!bad) return { shiftKey: '', note: '', error: '' }
+	const good = own.filter(s => !findSleepConflict([s], sleep))
+	if (good.length) {
+		return {
+			shiftKey: good[0].key || '',
+			note: `${name}的${shiftTitle(bad)}与睡眠时段 ${sleep.start}-${sleep.end} 重叠，已默认只上${good[0].name || '可选班次'}`,
+			error: ''
+		}
+	}
+	return { shiftKey: '', note: '', error: conflictMsg(bad, sleep, own.length ? '先把睡眠时段错开（该职业所有班次都会撞上）' : '先在「设置-睡眠时段」把睡觉时间错开，再选这个职业') }
+}
 
 // ---- 日程/状态机 ----
 function matchesWindow(dow, mins, weekdays, start, end) {
@@ -67,6 +131,10 @@ function activeSleep(pet, cfg) {
 	if (sp && sp.on && sp.start && sp.end) return { start: sp.start, end: sp.end, weekdays: sp.weekdays }
 	return (cfg.schedule && cfg.schedule.sleep) || null
 }
+/** 当天是否请过假（含已下班后补请，按日期认定，不看 endAt） */
+function hasLeaveToday(pet, dateStr) {
+	return (pet.leaveLog || []).some(l => l && l.date === dateStr)
+}
 function computeStatus(pet, now, cfg) {
 	const d = new Date(now), dow = d.getDay(), mins = d.getHours() * 60 + d.getMinutes()
 	const sc = cfg.schedule || {}
@@ -77,7 +145,11 @@ function computeStatus(pet, now, cfg) {
 	if (pet.leave && pet.leave.type && pet.leave.endAt && now < pet.leave.endAt) return 'leave'
 	const aw = activeWorkShifts(pet, cfg)
 	// 不设职业 = 不工作：working/resting（班间午休人设）均不生效，也不受睡眠外的作息约束
-	if (pet.job && aw.shifts.some(w => matchesWindow(dow, mins, w.weekdays, w.start, w.end))) return 'working'
+	if (pet.job && aw.shifts.some(w => matchesWindow(dow, mins, w.weekdays, w.start, w.end))) {
+		// 生病期间不能上班：没主动请病假就按旷工算（当天请过病假则仍是请假中）
+		if (pet.mood === 'sick' && !hasLeaveToday(pet, dayStr(now))) return 'absent'
+		return 'working'
+	}
 	const rest = sc.restWindows || []
 	if (pet.job && rest.some(w => matchesWindow(dow, mins, w.weekdays, w.start, w.end))) return 'resting'
 	return 'idle'
@@ -88,6 +160,8 @@ function buildStatusInfo(pet, cfg) {
 	const starveTh = (cfg.rules && cfg.rules.HUNGER_STARVE) || 80
 	const hungry = (pet.hunger || 0) >= starveTh
 	let hint = STATUS_HINT[status] || ''
+	// 请假只覆盖今天的上班时间，到点就恢复正常作息：把结束时刻写明
+	if (status === 'leave' && pet.leave && pet.leave.endAt > Date.now()) hint = `请假中（到 ${hmOf(pet.leave.endAt)} 下班），可以尽情陪她～`
 	// 饿了不影响“能不能打扰”，但要在提示里带上，提醒主人趁休息喂点东西
 	if (hungry && !locked) hint = (hint ? hint + ' ' : '') + '她肚子饿得咕咕叫了，趁休息喂点东西吧～'
 	return { status, label: STATUS_LABEL[status] || status, locked, hint, hungry }
@@ -114,6 +188,114 @@ function lastOffDutyTs(pet, cfg, now) {
 	}
 	return last
 }
+/** 指定自然日（当天 00:00 时间戳）的最后下班时刻；当天无班返回 0（跨天班次算到次日凌晨） */
+function dayOffDutyTs(pet, cfg, dayStart) {
+	const dow = new Date(dayStart).getDay()
+	const ALLD = [0, 1, 2, 3, 4, 5, 6]
+	const aw = activeWorkShifts(pet, cfg)
+	let last = 0
+	for (const w of (aw.shifts || [])) {
+		const wd = (w.weekdays && w.weekdays.length) ? w.weekdays : ALLD
+		if (!wd.includes(dow)) continue
+		const s = parseHM(w.start), e = parseHM(w.end)
+		const endTs = dayStart + (e <= s ? 86400000 + e * 60000 : e * 60000)
+		if (endTs > last) last = endTs
+	}
+	return last
+}
+/** 指定自然日是否工作日（有班次即算工作日；无具体班次时回退全局 workDays） */
+function isWorkDayTs(pet, cfg, dayStart) {
+	const dow = new Date(dayStart).getDay()
+	const ALLD = [0, 1, 2, 3, 4, 5, 6]
+	const aw = activeWorkShifts(pet, cfg)
+	if (aw.own && aw.shifts.length) return aw.shifts.some(s => ((s.weekdays && s.weekdays.length) ? s.weekdays : ALLD).includes(dow))
+	const workDays = (cfg.schedule && cfg.schedule.workDays && cfg.schedule.workDays.length) ? cfg.schedule.workDays : [1, 2, 3, 4, 5]
+	return workDays.includes(dow)
+}
+
+// ---- 工资台账：逐日挂欠薪 + 跨月打包发放 ----
+/** 钱包结构归一（存量数据只有 todayWage/lastSettleDate，新字段缺失不报错） */
+function normalizeWallet(w) {
+	const src = w || {}
+	return {
+		todayWage: Number(src.todayWage) || 0,
+		lastSettleDate: src.lastSettleDate || '',
+		accrualFrom: src.accrualFrom || '',
+		unpaid: (Array.isArray(src.unpaid) ? src.unpaid : [])
+			.filter(u => u && u.date)
+			.map(u => ({ date: u.date, wage: Number(u.wage) || 0, reason: u.reason || 'work' }))
+	}
+}
+/**
+ * 某天的应得工资：旷工 0；其余一律全额（事假/病假的 payCut 已在请假当时即时扣款，结算不再打折）
+ */
+function dayWageOf(pet, cfg, dateStr) {
+	const base = ((cfg.jobs || {})[pet.job] || {}).salary || 0
+	if ((pet.absentLog || []).indexOf(dateStr) >= 0) return { date: dateStr, wage: 0, reason: 'absent' }
+	const lv = (pet.leaveLog || []).filter(l => l && l.date === dateStr)[0]
+	return { date: dateStr, wage: base, reason: lv ? 'leave' : 'work' }
+}
+/**
+ * 把“已经收尾但未主动结算”的工作日挂进 wallet.unpaid（欠薪清单）
+ * 仅从本次版本首次访问当日开始累计，不回补历史，避免凭空发钱
+ */
+function accrueWages(pet, cfg, now) {
+	const wallet = normalizeWallet(pet.wallet)
+	pet.wallet = wallet
+	const today = dayStr(now)
+	if (!wallet.accrualFrom || wallet.accrualFrom > today) wallet.accrualFrom = today
+	if (!pet.job) return false
+	let changed = false
+	const latest = dayStartTs(today)
+	let t = Math.max(dayStartTs(wallet.accrualFrom), latest - 90 * 86400000) // 最多回补 90 天
+	for (; t <= latest; t += 86400000) {
+		const ds = dayStr(t)
+		const settled = wallet.lastSettleDate === ds || wallet.unpaid.some(u => u.date === ds)
+		if (!settled && isWorkDayTs(pet, cfg, t)) {
+			const off = dayOffDutyTs(pet, cfg, t) || (t + 86399999)
+			if (now < off) break // 这一天还没下班，后面的日子也不可能收尾
+			const item = dayWageOf(pet, cfg, ds)
+			if (item) { wallet.unpaid.push(item); changed = true }
+		}
+		wallet.accrualFrom = ds
+	}
+	return changed
+}
+/** 首页工资卡：本月未领欠薪合计/天数 + 今日是否已结算 */
+function buildSalaryInfo(pet, now) {
+	const wallet = normalizeWallet(pet.wallet)
+	const month = dayStr(now).slice(0, 7)
+	const mine = wallet.unpaid.filter(u => u.date.slice(0, 7) === month)
+	return {
+		unpaid: mine.reduce((s, u) => s + (u.wage || 0), 0),
+		unpaidDays: mine.length,
+		absentDays: (pet.absentLog || []).filter(d => String(d).slice(0, 7) === month).length,
+		todayWage: wallet.todayWage,
+		settledToday: wallet.lastSettleDate === dayStr(now)
+	}
+}
+
+/** 跨月：把上月及更早没领的工资一次性发放并写日记（#4/#6） */
+async function settlePastMonths(pet, now) {
+	const wallet = normalizeWallet(pet.wallet)
+	pet.wallet = wallet
+	const thisMonth = dayStr(now).slice(0, 7)
+	const past = wallet.unpaid.filter(u => u.date.slice(0, 7) !== thisMonth)
+	if (!past.length) return null
+	const total = past.reduce((s, u) => s + (u.wage || 0), 0)
+	const absentDays = past.filter(u => u.reason === 'absent').length
+	wallet.unpaid = wallet.unpaid.filter(u => u.date.slice(0, 7) === thisMonth)
+	const coin = clamp((pet.coin || 0) + total, 0, 999999)
+	pet.coin = coin
+	wallet.todayWage = total
+	const mon = past[past.length - 1].date.slice(0, 7).replace('-', '年') + '月'
+	const text = total > 0
+		? `${mon}有 ${past.length} 天工资没主动结算，月底一次性发放：+${total} 杯蜜币（余额 ${coin}）💰${absentDays ? `（其中 ${absentDays} 天旷工不算钱）` : ''}`
+		: `${mon}的 ${past.length} 天全部旷工，一分钱也没拿到 🫥（余额 ${coin}）`
+	await addDiary(pet._id, 'salary', text, '月底结算工资')
+	return { coin, total, days: past.length, wallet, text }
+}
+
 /** 今日作息：按当前星期取生效的上班班次/休息窗口/睡眠，供主面板展示（无职业返回 null） */
 function buildScheduleInfo(pet, cfg, now) {
 	if (!pet.job) return null
@@ -287,7 +469,8 @@ async function loadAndDecay(userId, now, cfg) {
 	else lowIntimacySince = 0
 	const moodCtx = Object.assign({}, pet, { lowIntimacySince, hunger: sim.hunger })
 	let newMood = computeMood(moodCtx, sim.interaction, sim.health, sim.happiness, now, sim.sickByLowInteract, R)
-	const status = computeStatus(pet, now, cfg)
+	// 状态用本轮新心情推导：当天生病当天就不再“工作中”（没请病假即算旷工）
+	const status = computeStatus(Object.assign({}, pet, { mood: newMood }), now, cfg)
 	// 健康归零＝危重：强制进入“生病需就医”，并禁止靠陪伴/自愈恢复
 	const healthZero = sim.health <= 0
 	if (healthZero) newMood = 'sick'
@@ -331,9 +514,29 @@ async function loadAndDecay(userId, now, cfg) {
 		pet.weight -= 1
 		if (pet.weight === pet.weightBase) await addDiary(pet._id, 'thin', `体重慢慢回到 ${pet.weight}kg，最近吃得刚刚好 ✨`, '回到标准体重')
 	}
+	// 生病期间不能上班：当天没请病假就记旷工（#5）
+	// 用“本轮生病开始时间 ≤ 今日最后下班时刻”判定，避免她上完班才病倒也被算旷工；允许当天结算前补请病假撤销
+	const todayStr = dayStr(now)
+	let absenceNew = false
+	const sickStart = changed.sickAt || pet.sickAt || 0
+	if (pet.job && newMood === 'sick' && (pet.absentLog || []).indexOf(todayStr) < 0 && !hasLeaveToday(pet, todayStr)) {
+		const dayOpen = dayStartOf(now)
+		const offToday = dayOffDutyTs(pet, cfg, dayOpen) || (dayOpen + 86399999)
+		if (isWorkDayTs(pet, cfg, dayOpen) && sickStart && sickStart <= offToday) {
+			pet.absentLog = (pet.absentLog || []).concat([todayStr])
+			absenceNew = true
+			await addDiary(pet._id, 'work', '杯蜜病着上不了班，又没人帮她请假，今天记了旷工 🫥（当天工资 0，结算前补请病假还能撤销）', '旷工')
+		}
+	}
+	// 工资挂账：已经下班却没主动结算的日子先进欠薪清单，跨月一次性发放
+	const wageChanged = accrueWages(pet, cfg, now)
+	const monthSettled = await settlePastMonths(pet, now)
 	changed.weight = pet.weight
 	changed.weightBase = pet.weightBase
 	changed.overKcal = pet.overKcal
+	if (absenceNew) changed.absentLog = pet.absentLog
+	if (wageChanged || monthSettled) changed.wallet = pet.wallet
+	if (monthSettled) changed.coin = pet.coin
 	if (lookUpgraded) changed.look = pet.look
 	await db.collection(PETS).doc(pet._id).update(changed)
 	Object.assign(pet, changed)
@@ -387,6 +590,7 @@ exports.main = async (event, context) => {
 			case 'travelCheck': return await travelCheck(event, cfg)
 			case 'wardrobe': return await wardrobe(event, cfg)
 			case 'equip': return await equip(event, cfg)
+			case 'setAccColor': return await setAccColor(event, cfg)
 			case 'customizeLook': return await customizeLook(event, cfg)
 			case 'rename': return await rename(event, cfg)
 			case 'setJob': return await setJob(event, cfg)
@@ -428,7 +632,7 @@ async function getStatus(event, cfg) {
 		})
 	}
 	const unreadRes = await db.collection(NOTICES).where({ pet_id: pet._id, read: false }).count()
-	return ok({ pet, statusInfo: buildStatusInfo(pet, cfg), schedule: buildScheduleInfo(pet, cfg, now), awayTipBase: prevCalcAt || now, unreadNotices: (unreadRes && unreadRes.total) || 0 })
+	return ok({ pet, statusInfo: buildStatusInfo(pet, cfg), schedule: buildScheduleInfo(pet, cfg, now), salary: buildSalaryInfo(pet, now), awayTipBase: prevCalcAt || now, unreadNotices: (unreadRes && unreadRes.total) || 0 })
 }
 
 // ================= 领养 =================
@@ -444,6 +648,9 @@ async function adopt(event, cfg) {
 	// 每个杯蜜拿一份独立副本，避免存量形象升级时改到共享常量
 	const look = Object.assign({}, (profile.gender === '女生' || profile.gender === 'f') ? LOOK_PARTS.DEFAULT.f : LOOK_PARTS.DEFAULT.m)
 	const job = profile.job && cfg.jobs[profile.job] ? profile.job : ''
+	// 领养时也保证“上班与睡觉错开”：多班次职业自动避开撞上睡眠的班次
+	const adoptJob = job ? cfg.jobs[job] : null
+	const adoptPlan = adoptJob && !adoptJob.custom ? planJobShifts(adoptJob, cfg, (cfg.schedule && cfg.schedule.sleep) || null) : { shiftKey: '', note: '', error: '' }
 	const status = computeStatus({ travel: {}, leave: {}, job }, now, cfg)
 	// 体重：未填或明显不合理时按性别给默认值，并作为“基础体重”（后续胖瘦都在它附近浮动）
 	const isGirl = profile.gender === '女生' || profile.gender === 'f'
@@ -461,11 +668,12 @@ async function adopt(event, cfg) {
 		care: { done: [], lastCareAt: 0 },
 		daily: { date: dayStr(now), actions: {}, variety: [], interact: 0, login: 1, help: 0, heal: 0, disturb: 0, chat: 0, meals: 0 },
 		work: { lastWorkDate: '', state: '' },
-		leave: { type: '', startAt: 0, endAt: 0, reason: '' },
+		leave: { type: '', day: '', startAt: 0, endAt: 0, hours: 0, reason: '' },
+		leaveLog: [],
 		restInteract: { at: 0, count: 0 },
-		workPlan: { shiftKey: '', customShifts: [] },
+		workPlan: { shiftKey: adoptPlan.shiftKey, customShifts: [] },
 		sleepPlan: { on: false },
-		wallet: { todayWage: 0, lastSettleDate: '' },
+		wallet: { todayWage: 0, lastSettleDate: '', accrualFrom: dayStr(now), unpaid: [] },
 		absentLog: [],
 		travel: { place: '', endAt: 0 },
 		equippedItems: [], streak: 1, lastVisitDate: dayStr(now), decorUnlocked: [],
@@ -473,7 +681,10 @@ async function adopt(event, cfg) {
 	}
 	const res = await db.collection(PETS).add(doc)
 	await addDiary(res.id, 'adopt', `第一次相遇！你领养了电子闺蜜「${name}」${doc.emoji}`)
-	return ok({ pet: Object.assign({ _id: res.id }, doc), statusInfo: buildStatusInfo(doc, cfg) }, '领养成功')
+	const adoptMsg = adoptPlan.error
+		? `领养成功（提醒：${adoptPlan.error}，不然上班时段会被睡觉盖住）`
+		: (adoptPlan.note ? `领养成功（${adoptPlan.note}）` : '领养成功')
+	return ok({ pet: Object.assign({ _id: res.id }, doc), statusInfo: buildStatusInfo(doc, cfg), warn: adoptPlan.error || adoptPlan.note }, adoptMsg)
 }
 
 // ================= 互动（陪伴/送礼；工作/睡觉按打扰处理）=================
@@ -837,7 +1048,12 @@ async function claimTask(event, cfg) {
 }
 
 // ================= 工作结算 & 请假 =================
-// 每日结算一次：正常上班发工资；请假按 payCut；旷工（上班期间旅行未请假）扣更多
+/**
+ * 每日结算一次，只发“今天应得的工资”：
+ * - 正常上班 / 请假：全额日薪（请假的 payCut 已在请假当时扣过钱，不再重复打折）
+ * - 旷工（生病没请病假／上班期间跑去旅行）：工资 0
+ * 没主动结算的日子会挂进 wallet.unpaid，跨月由 settlePastMonths 一次性补发
+ */
 async function settleWork(event, cfg) {
 	const { userId } = event
 	if (!userId) return err(1001)
@@ -846,61 +1062,53 @@ async function settleWork(event, cfg) {
 	if (!pet) return err(5002)
 	if (!pet.job) return err(2001, '杯蜜还没有职业，先去设置吧')
 	const today = dayStr(now)
-	const wallet = pet.wallet || { todayWage: 0, lastSettleDate: '' }
+	const wallet = normalizeWallet(pet.wallet)
 	if (wallet.lastSettleDate === today) return err(3001, '今天已经结算过工作了')
-	const dow = new Date(now).getDay()
-	const workDays = (cfg.schedule.workDays && cfg.schedule.workDays.length) ? cfg.schedule.workDays : [1, 2, 3, 4, 5]
-	// 工作日判定：有固定/自定义班次的职业按班次星期并集；否则按全局 workDays
-	const aw = activeWorkShifts(pet, cfg)
-	const ALLD = [0, 1, 2, 3, 4, 5, 6]
-	let isWorkDay
-	if (aw.own && aw.shifts.length) isWorkDay = aw.shifts.some(s => (s.weekdays && s.weekdays.length ? s.weekdays : ALLD).includes(dow))
-	else isWorkDay = workDays.includes(dow)
-	if (!isWorkDay) {
-		wallet.lastSettleDate = today; wallet.todayWage = 0
+	if (!isWorkDayTs(pet, cfg, dayStartOf(now))) {
+		wallet.lastSettleDate = today
+		wallet.unpaid = wallet.unpaid.filter(u => u.date !== today)
+		pet.wallet = wallet
 		await db.collection(PETS).doc(pet._id).update({ wallet })
-		return ok({ rest: true, wallet }, '今天是休息日，杯蜜不用上班～')
+		return ok({ rest: true, wallet, salary: buildSalaryInfo(pet, now) }, '今天是休息日，杯蜜不用上班～')
 	}
-	// 生病（需调养）期间不能上班：先去诊所把她照顾好，再回来结算
-	if (pet.mood === 'sick') return err(4001, '杯蜜生病啦，需要先去诊所调养，好起来才能上班～')
-	// 只有下班后才能结算：仍在上班/午休时段不允许（pet.status 由 loadAndDecay 实时计算）
+	// 只有今天全部班次结束（下班）后才能结算：请假也不会绕过这条规则
 	if (pet.status === 'working') return err(2001, '杯蜜还在上班中，等今天下班后再来结算工资吧～')
 	if (pet.status === 'resting') return err(2001, '现在是午休时间，等今天工作全部结束后再来结算吧～')
-	// 今日还有未结束的班次（含尚未上班）时也不能提前结算；请假/旷工当天无需等下班，随时可结算
-	const onLeaveNow = pet.leave && pet.leave.type && pet.leave.endAt > now
-	if (!onLeaveNow) {
-		const offAt = lastOffDutyTs(pet, cfg, now)
-		if (offAt && now < offAt) {
-			const od = new Date(offAt)
-			const hh = String(od.getHours()).padStart(2, '0'), mm = String(od.getMinutes()).padStart(2, '0')
-			return err(2001, `杯蜜今天 ${hh}:${mm} 才下班，下班后再来结算工资吧～`)
-		}
-	}
+	const offAt = lastOffDutyTs(pet, cfg, now)
+	if (offAt && now < offAt) return err(2001, `杯蜜今天 ${hmOf(offAt)} 才下班，下班后再来结算工资吧～`)
 	const job = cfg.jobs[pet.job] || { salary: 0, name: '打工人' }
-	const base = job.salary || 0
-	const absent = (pet.absentLog || []).includes(today)
-	const leave = (pet.leave && pet.leave.type && pet.leave.endAt > now) ? pet.leave.type : ''
-	let cut = 0, moodD = 0, text
-	if (absent) {
-		cut = cfg.leave.absent.payCut; moodD = cfg.leave.absent.mood
-		text = `旷工（上班期间跑去旅行还没请假），今天工资 ${base} 全扣，杯蜜很自责 😔`
-	} else if (leave) {
-		const lv = cfg.leave[leave] || { payCut: 0, mood: 0 }
-		cut = lv.payCut; moodD = lv.mood || 0
-		text = `${lv.label || '请假'}一天，${cut > 0 ? `扣了 ${Math.round(base * cut)} 杯蜜币` : '病假不扣钱'}，好好休息～`
-	} else {
-		text = `${job.name}的一天结束啦，工资 +${base} 杯蜜币，充实又满足 💪`
-	}
-	const wage = Math.round(base * (1 - cut))
+	const absent = (pet.absentLog || []).indexOf(today) >= 0
+	const lv = (pet.leaveLog || []).filter(l => l && l.date === today)[0]
+	const deduct = lv ? (lv.deduct || 0) : 0
+	const item = dayWageOf(pet, cfg, today)
+	const wage = item ? item.wage : 0
 	const coin = clamp((pet.coin || 0) + wage, 0, 999999)
+	let moodD = 0, text
+	if (absent) {
+		moodD = (cfg.leave.absent && cfg.leave.absent.mood) || 0
+		text = `今天该上班却没去（${pet.mood === 'sick' ? '生病又没请病假' : '擅自在上班时段跑去玩'}），按旷工处理：工资 0 杯蜜币，杯蜜很自责 😔`
+	} else if (lv) {
+		const label = (cfg.leave[lv.type] || {}).label || '请假'
+		text = `${label}也记满勤：工资 +${wage} 杯蜜币已到账${deduct > 0 ? `（请假当时已扣 ${deduct}，实际到手 ${wage - deduct}）` : '（病假不扣钱）'}，余额 ${coin} 💪`
+	} else {
+		text = `${job.name}的一天结束啦，工资 +${wage} 杯蜜币已到账，余额 ${coin} 💪`
+	}
 	const happiness = clamp((pet.happiness == null ? 60 : pet.happiness) + moodD, 0, 100)
-	wallet.lastSettleDate = today; wallet.todayWage = wage
+	wallet.lastSettleDate = today
+	wallet.todayWage = wage
+	wallet.unpaid = wallet.unpaid.filter(u => u.date !== today)
+	pet.wallet = wallet
 	const firstWork = !pet.workStarted
 	await db.collection(PETS).doc(pet._id).update({ coin, happiness, wallet, workStarted: true })
-	await addDiary(pet._id, 'work', text)
+	// 工资发放必须体现在日记里
+	await addDiary(pet._id, absent ? 'work' : 'salary', text, absent ? '旷工结算' : '工资到账')
 	if (firstWork) await addDiary(pet._id, 'work', `🌟 第一次以${job.name}的身份上岗，迈出独立的一步，赚到 ${wage} 杯蜜币！`, '第一次工作')
-	return ok({ coin, wage, happiness, wallet, text })
+	return ok({ coin, wage, deduct, happiness, wallet, text, salary: buildSalaryInfo(pet, now) })
 }
+/**
+ * 请假：只覆盖“今天还没下班的上班时间”，下班后状态就回到空闲/休息
+ * 事假的 payCut 当场从杯蜜币里扣掉（日记留痕），工资仍等下班后按全额结算发放
+ */
 async function applyLeave(event, cfg) {
 	const { userId, type, hours } = event
 	if (!userId) return err(1001)
@@ -909,21 +1117,45 @@ async function applyLeave(event, cfg) {
 	const { pet } = await loadAndDecay(userId, now, cfg)
 	if (!pet) return err(5002)
 	if (!pet.job) return err(2001, '杯蜜还没有职业')
-	// 请假生效期间不能重复请假
-	if (pet.leave && pet.leave.type && cfg.leave[pet.leave.type] && pet.leave.endAt > now) {
-		return err(2001, `杯蜜已经在${cfg.leave[pet.leave.type].label}中啦，这次假期结束后才能再请假`)
-	}
+	const today = dayStr(now)
+	const lv = cfg.leave[type]
+	// 一天只能请一次（按日期认定，所以请假窗口结束后也不能再请）
+	const done = (pet.leaveLog || []).filter(l => l && l.date === today)[0]
+	if (done) return err(2001, `杯蜜今天已经请过${(cfg.leave[done.type] || {}).label || '假'}啦，一天只能请一次`)
+	if (!isWorkDayTs(pet, cfg, dayStartOf(now))) return err(2001, '今天没有排班，是休息日，不用请假～')
 	// 病假必须确实生病（处于需调养状态）
 	if (type === 'sick' && pet.mood !== 'sick') return err(2001, '杯蜜身体好着呢，不能请病假哦～先把她的身体照顾好再说')
-	const hrs = Number(hours) > 0 ? Number(hours) : 24
-	// 请假至当日结束（与“每日结算一次”对齐，保证当晚结算能命中 payCut）
-	const endOfDay = new Date(now); endOfDay.setHours(23, 59, 59, 999)
-	const leave = { type, startAt: now, endAt: Math.max(now + hrs * 3600000, endOfDay.getTime()), reason: String((event.reason || '')).slice(0, 50) }
-	await db.collection(PETS).doc(pet._id).update({ leave })
+	const hrs = Number(hours) > 0 ? clamp(Number(hours), 1, 24) : 8
+	// 请假窗口不越过今日最后下班时刻（跨天夜班算到次日凌晨）；今日班已结束（补请）则只记当日账，不再挂“请假中”状态
+	const offToday = dayOffDutyTs(pet, cfg, dayStartOf(now))
+	const endAt = offToday > now ? Math.min(now + hrs * 3600000, offToday) : now
+	const job = cfg.jobs[pet.job] || { salary: 0, name: '打工人' }
+	const deduct = Math.round((job.salary || 0) * (lv.payCut || 0))
+	const coin = clamp((pet.coin || 0) - deduct, 0, 999999)
+	const happiness = clamp((pet.happiness == null ? 60 : pet.happiness) + (lv.mood || 0), 0, 100)
+	const leave = { type, day: today, startAt: now, endAt, hours: hrs, reason: String((event.reason || '')).slice(0, 50) }
+	const leaveLog = (pet.leaveLog || []).concat([{ date: today, type, hours: hrs, deduct }])
+	// 病假允许事后补请：把“带病没请假”导致的旷工记录撤销，今日欠薪重算
+	let absentLog = pet.absentLog || []
+	const wallet = normalizeWallet(pet.wallet)
+	let clearedAbsence = false
+	if (type === 'sick' && absentLog.indexOf(today) >= 0) {
+		absentLog = absentLog.filter(d => d !== today)
+		wallet.unpaid = wallet.unpaid.filter(u => u.date !== today)
+		clearedAbsence = true
+	}
 	pet.leave = leave
-	const label = cfg.leave[type].label
-	await addDiary(pet._id, 'work', `杯蜜请了${label}${hrs}小时 🙋 ${type === 'sick' ? '（病假无需审核）' : ''}`)
-	return ok({ leave, label }, `已提交${label}`)
+	pet.leaveLog = leaveLog
+	pet.absentLog = absentLog
+	pet.wallet = wallet
+	pet.coin = coin
+	pet.happiness = happiness
+	pet.status = computeStatus(pet, now, cfg)
+	await db.collection(PETS).doc(pet._id).update({ leave, leaveLog, absentLog, wallet, coin, happiness, status: pet.status })
+	const span = endAt > now ? `（${hmOf(now)}–${hmOf(endAt)}，只占今天的上班时间）` : '（今日已下班，只记当日账，不影响作息状态）'
+	await addDiary(pet._id, 'work', `杯蜜请了${lv.label}${hrs}小时 ${span}${deduct > 0 ? `，当场扣了 ${deduct} 杯蜜币（余额 ${coin}）` : '，病假不扣钱'}，工资还是等下班后按全额发放～ 🙋`, `${lv.label}中`)
+	if (clearedAbsence) await addDiary(pet._id, 'work', '病假条补上了，今天的旷工记录撤销，工资照发 🥺', '补请病假')
+	return ok({ leave, label: lv.label, deduct, coin, wallet, leaveLog, status: pet.status, statusInfo: buildStatusInfo(pet, cfg), salary: buildSalaryInfo(pet, now) }, `已提交${lv.label}${deduct > 0 ? `，当场扣 ${deduct} 币` : ''}`)
 }
 
 // ================= 作息自定义（上班时段 / 睡眠时段）=================
@@ -940,6 +1172,7 @@ async function setWorkPlan(event, cfg) {
 	const job = (cfg.jobs || {})[pet.job]
 	if (!job) return err(2001, '未知职业')
 	const old = pet.workPlan || {}
+	const sleep = activeSleep(pet, cfg)
 	let workPlan
 	if (job.custom) {
 		const list = Array.isArray(customShifts) ? customShifts.slice(0, 5) : []
@@ -947,12 +1180,18 @@ async function setWorkPlan(event, cfg) {
 			if (!s || !HM_RE.test(String(s.start || '')) || !HM_RE.test(String(s.end || ''))) return err(2001, '班次起止时间格式不正确')
 			if (!validWeekdays(s.weekdays)) return err(2001, '班次星期不合法')
 		}
+		// 硬拦截：上班时段与睡觉时间重叠就保存不了（夜班必须和睡眠错开）
+		const bad = findSleepConflict(list, sleep)
+		if (bad) return err(2001, conflictMsg(bad, sleep, `把${shiftTitle(bad)}和睡觉时间错开（或到「睡眠时段」改作息）`))
 		workPlan = { shiftKey: '', customShifts: list.map(s => ({ name: String(s.name || '').slice(0, 8), start: s.start, end: s.end, weekdays: s.weekdays || [] })) }
 	} else {
 		const list = job.shifts || []
 		if (!list.length) return err(2001, '该职业按全局日程上班，无需选择')
 		const key = shiftKey || ''
 		if (key && !list.some(s => s.key === key)) return err(2001, '没有这个班次')
+		const chosen = key ? list.filter(s => s.key === key) : list
+		const bad = findSleepConflict(chosen, sleep)
+		if (bad) return err(2001, conflictMsg(bad, sleep, key ? '换一个班次，或先把睡眠时段错开' : `只上不与睡眠重叠的班次（如${(list.filter(s => !findSleepConflict([s], sleep))[0] || { name: '可选班次' }).name}）`))
 		workPlan = { shiftKey: key, customShifts: old.customShifts || [] }
 	}
 	pet.workPlan = workPlan
@@ -971,6 +1210,9 @@ async function setSleepPlan(event, cfg) {
 	if (on) {
 		if (!HM_RE.test(String(start || '')) || !HM_RE.test(String(end || ''))) return err(2001, '睡眠时间格式不正确')
 		if (!validWeekdays(weekdays) || !(weekdays && weekdays.length)) return err(2001, '至少选择一个星期')
+		// 硬拦截：自定义睡觉时间不能和当前上班班次重叠（否则夜班永远被睡觉盖住）
+		const bad = pet.job ? findSleepConflict(activeWorkShifts(pet, cfg).shifts || [], { start, end, weekdays }) : null
+		if (bad) return err(2001, conflictMsg(bad, { start, end, weekdays }, `把睡觉时间错开${bad.name ? `（或先改成不撞上它的${((pet.workPlan && pet.workPlan.shiftKey) ? '班次' : '上班时段')}）` : ''}`))
 		sleepPlan = { on: true, start, end, weekdays }
 	}
 	pet.sleepPlan = sleepPlan
@@ -1162,15 +1404,15 @@ async function travel(event, cfg) {
 	const cost = Math.round((place.cost || 0) * (cfg.rules.TRAVEL_COST_RATIO || 1))
 	if ((pet.coin || 0) < cost) return err(2001, `旅行需消耗 ${cost} 杯蜜币，余额不足，先工作赚点吧`)
 	const today = dayStr(now)
-	// 上班期间旅行且未请假 => 旷工
-	if (pet.status === 'working') {
-		const onLeave = pet.leave && pet.leave.type && pet.leave.endAt > now
-		if (!onLeave) {
-			const absentLog = (pet.absentLog || []).concat([today])
-			await db.collection(PETS).doc(pet._id).update({ absentLog })
-			pet.absentLog = absentLog
-			await addDiary(pet._id, 'work', `上班期间跑去旅行，今天按旷工处理 🫥（结算时扣工资）`)
-		}
+	// 上班期间旅行且当天没请假 => 旷工（当天欠薪重算，结算时工资 0）
+	if (pet.status === 'working' && !hasLeaveToday(pet, today)) {
+		const absentLog = (pet.absentLog || []).concat([today])
+		const wallet = normalizeWallet(pet.wallet)
+		wallet.unpaid = wallet.unpaid.filter(u => u.date !== today)
+		await db.collection(PETS).doc(pet._id).update({ absentLog, wallet })
+		pet.absentLog = absentLog
+		pet.wallet = wallet
+		await addDiary(pet._id, 'work', '上班期间跑去旅行，也没请假，今天按旷工处理 🫥（结算时工资 0）', '旷工')
 	}
 	await db.collection(PETS).doc(pet._id).update({ coin: clamp((pet.coin || 0) - cost, 0, 999999), travel: { place: place.key, placeName: place.name, startAt: now, endAt: now + place.ms, cost } })
 	await addDiary(pet._id, 'travel', `杯蜜出发去${place.name}旅行啦 🎒，花费 ${cost} 杯蜜币，预计 ${Math.round(place.ms / 60000)} 分钟后回来`)
@@ -1231,6 +1473,19 @@ async function equip(event, cfg) {
 	await db.collection(PETS).doc(pet._id).update({ equippedItems: equipped })
 	return ok({ equippedItems: equipped }, on ? `杯蜜戴上了${cfg.decor.items[itemKey].name}` : `卸下了${cfg.decor.items[itemKey].name}`)
 }
+// 配色清洗：只保留调色板内的色值，其余归为空串（配饰=跟随衣服色，眼睛=跟随线条色）
+function sanitizeSlots(slots, src) {
+	const one = src || {}
+	const out = {}
+	for (const slot of slots) out[slot] = LOOK_PARTS.themeColors.indexOf(one[slot]) >= 0 ? one[slot] : ''
+	return out
+}
+function sanitizeAccColors(src) {
+	const out = {}
+	for (const part of Object.keys(LOOK_PARTS.accParts)) out[part] = sanitizeSlots(LOOK_PARTS.accParts[part], (src || {})[part])
+	return out
+}
+const sanitizeEyeColors = (src) => sanitizeSlots(LOOK_PARTS.eyeSlots, src)
 async function customizeLook(event, cfg) {
 	const { userId, look } = event
 	if (!userId) return err(1001)
@@ -1253,13 +1508,45 @@ async function customizeLook(event, cfg) {
 		clothColor: theme(look.clothColor, base.clothColor),
 		hairColor: theme(look.hairColor, base.hairColor),
 		hair: look.hair || base.hair,
-		outfit: look.outfit || base.outfit
+		outfit: look.outfit || base.outfit,
+		// 眼睛左右分色由本页选，配饰色属于衣橱：两者都是“本页不改但 next 是重建对象”，必须把旧值带上否则会丢色
+		eyeColors: sanitizeEyeColors(look.eyeColors || (pet.look && pet.look.eyeColors)),
+		accColors: sanitizeAccColors(look.accColors || (pet.look && pet.look.accColors))
 	}
 	await db.collection(PETS).doc(pet._id).update({ look: next })
 	pet.look = next
 	const cn = (v) => LOOK_PARTS.COLOR_NAMES[v] || v
-	await addDiary(pet._id, 'unlock', `换了新造型：${next.gender === 'f' ? '女生' : '男生'} · 衣服「${cn(next.clothColor)}」发型「${LOOK_PARTS.HAIR_NAMES[next.hair] || next.hair}」${next.hair === 'none' ? '' : `发色「${cn(next.hairColor)}」`}`)
+	const eyeCn = (v) => (v ? (LOOK_PARTS.COLOR_NAMES[v] || v) : '跟线条色')
+	const eyeTxt = (next.eyeColors.l || next.eyeColors.r)
+		? `，${LOOK_PARTS.EYE_SLOT_NAMES.l}「${eyeCn(next.eyeColors.l)}」${LOOK_PARTS.EYE_SLOT_NAMES.r}「${eyeCn(next.eyeColors.r)}」` : ''
+	await addDiary(pet._id, 'unlock', `换了新造型：${next.gender === 'f' ? '女生' : '男生'} · 衣服「${cn(next.clothColor)}」发型「${LOOK_PARTS.HAIR_NAMES[next.hair] || next.hair}」${next.hair === 'none' ? '' : `发色「${cn(next.hairColor)}」`}${eyeTxt}`)
 	return ok({ pet }, '新造型登场！')
+}
+/**
+ * 配饰配色：帽子/围巾整体一色（slot=main），眼镜左右镜片可分开（slot=l/r），传空串则该处回到跟随衣服色。
+ * 色值存于 look.accColors（与形象同字段流到主面板/造型间/衣橱/明信片所有渲染入口）。
+ */
+async function setAccColor(event, cfg) {
+	const { userId, part, slot, color } = event
+	if (!userId) return err(1001)
+	const slots = LOOK_PARTS.accParts[part]
+	if (!slots) return err(2001, '未知配饰')
+	if (slots.indexOf(slot) < 0) return err(2001, '未知配色部位')
+	const clean = LOOK_PARTS.themeColors.indexOf(color) >= 0 ? color : ''
+	const now = Date.now()
+	const { pet } = await loadAndDecay(userId, now, cfg)
+	if (!pet) return err(5002)
+	const lock = assertNotLocked(pet, '上班/睡觉中不能改配饰配色，休息时再试吧。'); if (lock) return lock
+	const item = cfg.decor.items[part] || {}
+	if (!(pet.equippedItems || []).includes(part)) return err(2001, `杯蜜现在没戴${item.name || '这件配饰'}，先戴上再调色`)
+	const oldAcc = (pet.look && pet.look.accColors) || {}
+	const accColors = sanitizeAccColors(Object.assign({}, oldAcc, { [part]: Object.assign({}, oldAcc[part], { [slot]: clean }) }))
+	const look = Object.assign({}, pet.look || {}, { accColors })
+	await db.collection(PETS).doc(pet._id).update({ look })
+	pet.look = look
+	const cn = (v) => (v ? (LOOK_PARTS.COLOR_NAMES[v] || v) : '跟随衣服色')
+	await addDiary(pet._id, 'unlock', `把${item.name || '配饰'}的${LOOK_PARTS.ACC_SLOT_NAMES[slot]}换成「${cn(clean)}」`)
+	return ok({ pet, look }, '配色更新')
 }
 
 // ================= 设置 =================
@@ -1281,16 +1568,21 @@ async function setJob(event, cfg) {
 	const res = await db.collection(PETS).where({ user_id: userId }).limit(1).get()
 	if (!res.data.length) return err(5002)
 	const pet = res.data[0]
-	// 换职业后原选定班次失效，重置 shiftKey（保留自由职业自定义段）；同时清空残留请假（不工作不存在请假）
-	const workPlan = { shiftKey: '', customShifts: (pet.workPlan && pet.workPlan.customShifts) || [] }
-	const leave = { type: '', startAt: 0, endAt: 0, reason: '' }
+	// 换职业后原选定班次失效：按当前睡眠时段自动避开冲突班次（保留自由职业自定义段）；同时清空残留请假（不工作不存在请假）
+	const sleep = activeSleep(pet, cfg)
+	const newJob = job ? cfg.jobs[job] : null
+	const plan = newJob && !newJob.custom ? planJobShifts(newJob, cfg, sleep) : { shiftKey: '', note: '', error: '' }
+	if (plan.error) return err(2001, plan.error)
+	const workPlan = { shiftKey: plan.shiftKey, customShifts: (pet.workPlan && pet.workPlan.customShifts) || [] }
+	const leave = { type: '', day: '', startAt: 0, endAt: 0, hours: 0, reason: '' }
 	const now = Date.now()
 	pet.job = job || ''
 	pet.workPlan = workPlan
 	pet.leave = leave
 	pet.status = computeStatus(pet, now, cfg)
 	await db.collection(PETS).doc(pet._id).update({ job: job || '', workPlan, leave, status: pet.status })
-	return ok({ job: job || '', workPlan, status: pet.status }, job ? `杯蜜成为了${cfg.jobs[job].name}！` : '杯蜜退役啦')
+	const tip = job ? `杯蜜成为了${cfg.jobs[job].name}！` : '杯蜜退役啦'
+	return ok({ job: job || '', workPlan, status: pet.status, note: plan.note }, plan.note ? `${tip}（${plan.note}）` : tip)
 }
 async function setNotify(event) {
 	const { userId, on } = event
