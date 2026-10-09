@@ -370,6 +370,22 @@
 		}
 	},
 	{
+		"path": "pages/concert/seat-select",
+		"style": {
+			"navigationBarTitleText": "在线选座",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/concert/seat-config",
+		"style": {
+			"navigationBarTitleText": "座位表配置",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/footprint/detail",
 		"style": {
 			"navigationBarTitleText": "青宇打卡",

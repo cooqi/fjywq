@@ -83,16 +83,12 @@
 			"forceDefaultValue": ""
 		},
 		"creatTime": {
-			"bsonType": "string",
-			"description": "创建时间",
-			"trim": "both",
-			"forceDefaultValue": ""
+			"bsonType": "timestamp",
+			"description": "创建时间（毫秒时间戳）"
 		},
 		"upTime": {
-			"bsonType": "string",
-			"description": "更新时间",
-			"trim": "both",
-			"forceDefaultValue": ""
+			"bsonType": "timestamp",
+			"description": "更新时间（毫秒时间戳）"
 		},
 		"imgs": {
 			"bsonType": "string",

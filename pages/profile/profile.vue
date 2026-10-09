@@ -5,6 +5,7 @@
 			<view class="login-content">
 				<view class="login-title">欢迎使用宇青青宇备忘录</view>
 				<view class="login-desc">登录后可以记录你的追星历程，还有更多 surprises 等你来发现</view>
+				<view class="login-desc">登录即是认同青宇/宇青</view>
 				<button class="login-btn" @click="getUserInfo">立即登录</button>
 			</view>
 		</view>

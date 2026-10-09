@@ -50,6 +50,21 @@
 		"bz": {
 			"bsonType": "string",
 			"description": "备注"
+		},
+		"seat_enabled": {
+			"bsonType": "bool",
+			"description": "是否已配置座位表并开放选座",
+			"defaultValue": false
+		},
+		"max_seats_per_user": {
+			"bsonType": "int",
+			"description": "单人最多可选座位数，0 表示不限制",
+			"defaultValue": 6
+		},
+		"seat_version": {
+			"bsonType": "int",
+			"description": "座位表版本号，结构性改版（行列数变化/分区增删）时 +1",
+			"defaultValue": 1
 		}
 	}
 }

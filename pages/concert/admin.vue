@@ -38,9 +38,11 @@
 			>
 				<view class="item-header">
 					<view class="item-type" :class="getTypeClass(item.type)">{{item.type}}</view>
-					<view class="item-actions" v-if="canEditCalendar">
-						<view class="action-btn edit" @click.stop="editConcert(item)">编辑</view>
-						<view class="action-btn delete" @click.stop="deleteConcert(item)">删除</view>
+					<view class="item-actions">
+						<view class="action-btn seat" v-if="item.seat_enabled" @click.stop="goSeatSelect(item)">选座</view>
+						<view class="action-btn seat-cfg" v-if="canEditCalendar" @click.stop="openSeatConfig(item)">设置座位表</view>
+						<view class="action-btn edit" v-if="canEditCalendar" @click.stop="editConcert(item)">编辑</view>
+						<view class="action-btn delete" v-if="canEditCalendar" @click.stop="deleteConcert(item)">删除</view>
 					</view>
 				</view>
 				
@@ -222,7 +224,8 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 					img: ''
 				},
 				userInfo: {},
-				canEditCalendar: false
+				canEditCalendar: false,
+				listLoaded: false
 			}
 		},
 		onLoad() {
@@ -234,6 +237,13 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 				this.canEditCalendar = hasCalendarPermission(this.userInfo, 'add') || hasCalendarPermission(this.userInfo, 'edit')
 			} catch (e) {
 				// error
+			}
+		},
+		onShow() {
+			// 从座位表配置页返回时刷新列表（seat_enabled 可能已变更）
+			if (this.listLoaded) {
+				this.page = 1
+				this.loadData(true)
 			}
 		},
 		onPullDownRefresh() {
@@ -279,6 +289,7 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 							}
 							this.totalCount = res.result.data.total || 0
 							this.hasMore = this.concertList.length < this.totalCount
+							this.listLoaded = true
 						} else {
 							uni.showToast({
 								title: res.result.message || '加载失败',
@@ -499,6 +510,20 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 			goDetail(item) {
 				uni.navigateTo({
 					url: '/pages/concert/detail?id=' + item._id
+				})
+			},
+			
+			// 跳转选座页
+			goSeatSelect(item) {
+				uni.navigateTo({
+					url: '/pages/concert/seat-select?id=' + item._id
+				})
+			},
+			
+			// 打开座位表配置（独立页面）
+			openSeatConfig(item) {
+				uni.navigateTo({
+					url: '/pages/concert/seat-config?id=' + item._id
 				})
 			},
 			
@@ -818,6 +843,19 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 			background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
 			color: #fff;
 		}
+	}
+}
+
+// 选座按钮样式
+.item-actions .action-btn {
+	&.seat {
+		background: linear-gradient(135deg, #FF6B9D 0%, #F4357A 100%);
+		color: #fff;
+	}
+
+	&.seat-cfg {
+		background: #ede7f6;
+		color: #7E57C2;
 	}
 }
 </style>

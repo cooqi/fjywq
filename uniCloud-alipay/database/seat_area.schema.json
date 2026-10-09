@@ -1,0 +1,114 @@
+{
+	"bsonType": "object",
+	"required": ["concertId", "name", "rows", "cols"],
+	"permission": {
+		"read": true,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"concertId": {
+			"bsonType": "string",
+			"description": "所属演唱会ID",
+			"foreignKey": "Concert._id"
+		},
+		"name": {
+			"bsonType": "string",
+			"description": "分区名称，如 A区、VIP区",
+			"trim": "both"
+		},
+		"rows": {
+			"bsonType": "int",
+			"description": "排数",
+			"minimum": 1,
+			"maximum": 100
+		},
+		"cols": {
+			"bsonType": "int",
+			"description": "每排座位数（列数）",
+			"minimum": 1,
+			"maximum": 100
+		},
+		"rowLabelType": {
+			"bsonType": "int",
+			"description": "排号显示格式：1=数字 2=字母",
+			"defaultValue": 1,
+			"enum": [
+				{ "text": "数字", "value": 1 },
+				{ "text": "字母", "value": 2 }
+			]
+		},
+		"price": {
+			"bsonType": "number",
+			"description": "该区票价（元），0 表示不显示金额",
+			"defaultValue": 0,
+			"minimum": 0
+		},
+		"color": {
+			"bsonType": "string",
+			"description": "分区主题色",
+			"defaultValue": "#4A90D9",
+			"trim": "both"
+		},
+		"sort": {
+			"bsonType": "int",
+			"description": "排序序号，越小越靠前",
+			"defaultValue": 0
+		},
+		"gridX": {
+			"bsonType": "number",
+			"description": "分区左上角在画布上的X坐标（单位：格，允许小数用于微调）",
+			"defaultValue": 0
+		},
+		"gridY": {
+			"bsonType": "number",
+			"description": "分区左上角在画布上的Y坐标（单位：格，允许小数用于微调）",
+			"defaultValue": 0
+		},
+		"isStage": {
+			"bsonType": "bool",
+			"description": "是否为舞台/装饰区（不渲染座位，用户端不可点击）",
+			"defaultValue": false
+		},
+		"stageW": {
+			"bsonType": "number",
+			"description": "舞台/装饰区宽度（格），isStage=true 时生效",
+			"defaultValue": 0
+		},
+		"stageH": {
+			"bsonType": "number",
+			"description": "舞台/装饰区高度（格），isStage=true 时生效",
+			"defaultValue": 0
+		},
+		"rowLabels": {
+			"bsonType": "array",
+			"description": "排号显示数组，长度=rows，如 [\"1排\",\"2排\"]；为空时按 rowLabelType 自动生成"
+		},
+		"colLabels": {
+			"bsonType": "array",
+			"description": "列号显示数组，长度=cols，如 [\"1\",\"3\",\"5\"]；为空时按列序号自动生成"
+		},
+		"labelRule": {
+			"bsonType": "object",
+			"description": "编号生成规则 {row:{type,start,step,prefix,suffix,pad},col:{...}}，仅用于管理端回显与重新生成"
+		},
+		"createTime": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"updateTime": {
+			"bsonType": "timestamp",
+			"description": "更新时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		}
+	}
+}

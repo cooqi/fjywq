@@ -45,7 +45,7 @@
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
 				</view>
 			</view>
-			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系管理员：【我的】-【杯杯儿信箱】</view>
+			<view v-if="!dayInfo.length">当前日期暂无宇青当天事件，如需补充，请联系我们</view>
 		</view>
 		<view v-if="current === 1" class="about">
 			<view v-for="item in dayAboutInfo" :key="item._id" class="event-card "  >
@@ -73,7 +73,7 @@
 					<image @click="preImg(item.imgurl,index)" v-for="(img,index) in item.imgurl.split(';')" :key="index" class="img" :src="img" mode="aspectFill"></image>
 				</view>
 			</view>
-			<view v-if="!dayAboutInfo.length">当前日期暂无宇青相关事件，如需补充，请联系管理员：【我的】-【杯杯儿信箱】</view>
+			<view v-if="!dayAboutInfo.length">当前日期暂无宇青相关事件，如需补充，请联系我们</view>
 		</view>
 		
 		<view class="edit" @click="edit" v-if="canEditCalendar">编辑</view>

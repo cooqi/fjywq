@@ -18,11 +18,12 @@
 		<!-- 演唱会/音乐节选择（仅在选择音乐节或演唱会时显示） -->
 		<view class="section-box" v-if="['音乐节', '演唱会', '见面会'].includes(formData.payType)">
 			<view class="section-title">选择场次 <text class="required">*</text></view>
-			<picker @change="onConcertChange" :value="concertIndex" :range="concertList" range-key="displayName">
+			<picker @change="onConcertChange" :value="concertIndex" :range="concertRange" range-key="displayName">
 				<view class="form-picker">
-					{{selectedConcert ? selectedConcert.displayName : '请选择演唱会/音乐节'}}
+					{{selectedLabel}}
 				</view>
 			</picker>
+			<view class="booked-tip" v-if="bookedList.length > 0">您已添加过 {{bookedList.length}} 个该类型场次，列表中标了「已添加」的场次不能重复选择</view>
 			
 			<!-- 显示选中场次的详细信息 -->
 			<view class="concert-info" v-if="selectedConcert">
@@ -232,6 +233,8 @@
 				concertList: [], // 演唱会/音乐节列表
 				concertIndex: -1, // 选中的演唱会索引
 				selectedConcert: null, // 选中的演唱会对象
+				bookedList: [], // 当前用户已添加过的场次记录（编辑模式下不含本条记录）
+				saving: false, // 防重复提交
 				formData: {
 					payTime: this.getCurrentDate(),
 					payType: '音乐节',
@@ -272,8 +275,38 @@
 				this.recordId = options.id
 				this.getRecordDetail(options.id)
 			} else {
-				// 新增模式，加载演唱会/音乐节列表
-				this.loadConcertList()
+				// 新增模式：支持从选座页携带预填参数进入（payType/concertID/payPrice/SeatNumber）
+				const prefillType = options.payType ? decodeURIComponent(options.payType) : ''
+				if (['音乐节', '演唱会', '见面会'].includes(prefillType)) {
+					this.formData.payType = prefillType
+				}
+				if (options.SeatNumber) {
+					this.formData.SeatNumber = decodeURIComponent(options.SeatNumber)
+				}
+				if (options.payPrice) {
+					const pp = decodeURIComponent(options.payPrice)
+					this.formData.payPrice = pp
+					this.formData.payAmount = (parseFloat(pp) || 0).toFixed(2)
+				}
+				// 加载演唱会/音乐节列表与已添加记录；列表就绪后按 concertID 自动选中场次
+				this.loadConcertList().then(() => {
+					if (options.concertID) {
+						const cid = decodeURIComponent(options.concertID)
+						const idx = this.concertList.findIndex(c => c._id === cid)
+						if (idx > -1) {
+							const item = this.concertList[idx]
+							this.concertIndex = idx
+							this.selectedConcert = item
+							this.formData.payName = item.displayName
+							this.formData.adress = (item.Province || '') + (item.address || '')
+							this.formData.Province = item.Province || ''
+							this.formData.concertID = item._id || ''
+						}
+					}
+					this.loadBookedList()
+				}).catch(() => {
+					this.loadBookedList()
+				})
 			}
 		},
 		onShow() {
@@ -285,6 +318,35 @@
 					uni.navigateBack()
 				}
 		
+		},
+		computed: {
+			// 是否属于需要选择场次的类型
+			isConcertType() {
+				return ['音乐节', '演唱会', '见面会'].includes(this.formData.payType)
+			},
+			// 已添加过的场次索引：concertID 与 payName 两个维度
+			bookedMap() {
+				const ids = {}
+				const names = {}
+				this.bookedList.forEach(item => {
+					if (item.concertID) ids[item.concertID] = true
+					if (item.payName) names[item.payName] = true
+				})
+				return {
+					ids,
+					names
+				}
+			},
+			// picker 展示用：已添加的场次加后缀，保持与 concertList 下标对齐
+			concertRange() {
+				return this.concertList.map(item => ({
+					displayName: this.isItemBooked(item) ? `${item.displayName}（已添加）` : item.displayName
+				}))
+			},
+			selectedLabel() {
+				if (!this.selectedConcert) return '请选择演唱会/音乐节/见面会'
+				return this.isItemBooked(this.selectedConcert) ? `${this.selectedConcert.displayName}（已添加）` : this.selectedConcert.displayName
+			}
 		},
 		watch: {
 			showDatePicker(newVal) {
@@ -336,6 +398,9 @@
 				// 如果选择的是音乐节或演唱会，加载列表
 				if (type === '音乐节' || type === '演唱会' || type === '见面会') {
 					this.loadConcertList()
+					this.loadBookedList()
+				} else {
+					this.bookedList = []
 				}
 			},
 			// 清空表单数据
@@ -420,6 +485,37 @@
 					})
 				})
 			},
+			// 判断某个场次是否已添加过记录
+			isItemBooked(item) {
+				if (!item) return false
+				const map = this.bookedMap
+				if (item._id && map.ids[item._id]) return true
+				if (item.displayName && map.names[item.displayName]) return true
+				return false
+			},
+			// 加载当前类型下已添加过的场次（用于选场次时提前拦截重复）
+			loadBookedList() {
+				if (!this.userInfo._id || !this.isConcertType) {
+					this.bookedList = []
+					return Promise.resolve()
+				}
+				
+				return uniCloud.callFunction({
+					name: 'pay-record',
+					data: {
+						type: 'get',
+						userId: this.userInfo._id,
+						payType: this.formData.payType
+					}
+				}).then((res) => {
+					const list = (res.result && res.result.code === 0 && res.result.data) ? res.result.data : []
+					// 编辑时本条记录自身不算重复
+					this.bookedList = this.isEdit ? list.filter(item => item._id !== this.recordId) : list
+				}).catch((err) => {
+					console.error('加载已添加场次失败', err)
+					this.bookedList = []
+				})
+			},
 			// 选择是否入场
 			selectEntry(value) {
 				this.formData.isEntry = value
@@ -433,18 +529,29 @@
 			// 选择演唱会/音乐节
 			onConcertChange(e) {
 				const index = e.detail.value
-				this.concertIndex = index
-				this.selectedConcert = this.concertList[index]
+				const item = this.concertList[index]
 				
-				if (this.selectedConcert) {
-					// 自动填充名称、地址和省份
-					this.formData.payName = this.selectedConcert.displayName
-					this.formData.adress = this.selectedConcert.Province+this.selectedConcert.address || ''
-					
-					this.formData.concertID = this.selectedConcert._id || ''
-					
-					console.log('选中的演唱会:', this.selectedConcert)
+				if (!item) return
+				
+				// 已添加过的场次不允许重复选择
+				if (this.isItemBooked(item)) {
+					uni.showModal({
+						content: `您已添加过「${item.displayName}」的记录，同一场次不能重复添加`,
+						showCancel: false
+					})
+					return
 				}
+				
+				this.concertIndex = index
+				this.selectedConcert = item
+				
+				// 自动填充名称、地址和省份
+				this.formData.payName = item.displayName
+				this.formData.adress = (item.Province || '') + (item.address || '')
+				this.formData.Province = item.Province || ''
+				this.formData.concertID = item._id || ''
+				
+				console.log('选中的演唱会:', item)
 			},
 			calculateTotal() {
 				if (this.formData.payType === '音乐节' || this.formData.payType === '演唱会' || this.formData.payType === '见面会') {
@@ -517,7 +624,7 @@
 														
 						// 如果是音乐节或演唱会类型，需要加载列表并匹配选中的项
 						if (data.payType === '音乐节' || data.payType === '演唱会' || data.payType === '见面会') {
-							await this.loadConcertList()
+							await Promise.all([this.loadConcertList(), this.loadBookedList()])
 							let matchedIndex = -1
 							if (data.concertID) {
 								matchedIndex = this.concertList.findIndex(item => item._id === data.concertID)
@@ -547,6 +654,16 @@
 				})
 			},
 			async saveRecord() {
+				// 防重复提交：上一次保存未完成前忽略点击
+				if (this.saving) return
+				this.saving = true
+				try {
+					await this.submitRecord()
+				} finally {
+					this.saving = false
+				}
+			},
+			async submitRecord() {
 				if (!this.userInfo._id) {
 					uni.showModal({
 						content: '请先登录',
@@ -584,16 +701,16 @@
 						return
 					}
 					
-					// 检查是否重复添加（同一用户、同一场次、同一天只能添加一次）
-					if (!this.isEdit) {
-						const isDuplicate = await this.checkDuplicateRecord()
-						if (isDuplicate) {
-							uni.showModal({
-								content: '您今天已经添加过该场次的记录了，不能重复添加',
-								showCancel: false
-							})
-							return
-						}
+					// 检查是否重复添加（同一用户、同一场次只能有一条记录）
+					// 编辑时需排除自身，避免改其他字段时误判为重复
+					const dupResult = await this.checkDuplicateRecord()
+					if (dupResult.isDuplicate) {
+						const name = (dupResult.record && dupResult.record.payName) ? dupResult.record.payName : ''
+						uni.showModal({
+							content: name ? `您已添加过「${name}」的记录，同一场次不能重复添加` : '您已添加过该场次的记录，同一场次不能重复添加',
+							showCancel: false
+						})
+						return
 					}
 				} else {
 					// 其他类型：必须输入名称
@@ -614,7 +731,8 @@
 							
 				// 保存记录
 				uni.showLoading({
-					title: '保存中...'
+					title: '保存中...',
+					mask: true
 				})
 				
 				const actionType = this.isEdit ? 'update' : 'add'
@@ -627,7 +745,7 @@
 					data.id = this.recordId
 				}
 				
-				uniCloud.callFunction({
+				await uniCloud.callFunction({
 					name: 'pay-record',
 					data: data
 				}).then((res) => {
@@ -705,7 +823,7 @@
 				})
 			},
 			
-			// 检查是否重复添加
+			// 检查是否重复添加（返回 {isDuplicate, record}）
 			checkDuplicateRecord() {
 				return new Promise((resolve) => {
 					uniCloud.callFunction({
@@ -714,17 +832,29 @@
 							type: 'checkDuplicate',
 							userId: this.userInfo._id,
 							concertID: this.formData.concertID,
-							payTime: this.formData.payTime
+							payName: this.formData.payName,
+							// 编辑时传入自身ID以排除
+							excludeId: this.isEdit ? this.recordId : ''
 						}
 					}).then((res) => {
 						if (res.result.code === 0) {
-							resolve(res.result.isDuplicate || false)
+							resolve({
+								isDuplicate: !!res.result.isDuplicate,
+								record: res.result.data || null
+							})
 						} else {
-							resolve(false)
+							// 校验接口异常时不阻断保存，交由云函数 add 兜底
+							resolve({
+								isDuplicate: false,
+								record: null
+							})
 						}
 					}).catch((err) => {
 						console.error('检查重复记录失败', err)
-						resolve(false)
+						resolve({
+							isDuplicate: false,
+							record: null
+						})
 					})
 				})
 			}
@@ -823,6 +953,16 @@
 	line-height: 80rpx;
 	color: #333;
 	overflow: hidden;
+}
+
+.booked-tip {
+	margin-top: 16rpx;
+	padding: 14rpx 20rpx;
+	background: #fdecec;
+	border-radius: 12rpx;
+	font-size: 24rpx;
+	color: #c62828;
+	line-height: 1.5;
 }
 
 .concert-info {

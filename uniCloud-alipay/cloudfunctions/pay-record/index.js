@@ -2,6 +2,42 @@
 const db = uniCloud.database()
 const dbCmd = db.command
 
+// 需要按场次去重的消费类型：同一用户同一场次只能有一条记录
+const CONCERT_TYPES = ['音乐节', '演唱会', '见面会']
+
+// 查找重复的场次记录；excludeId 用于编辑时排除记录自身
+async function findDuplicateConcert({
+	userId,
+	concertID,
+	payName,
+	excludeId
+}) {
+	const pick = (list) => (list || []).find(item => !excludeId || item._id !== excludeId) || null
+	
+	// 1、按场次ID查重
+	if (concertID) {
+		const res = await db.collection('payRecord').where({
+			userId: userId,
+			concertID: concertID
+		}).limit(50).get()
+		const hit = pick(res.data)
+		if (hit) return hit
+	}
+	
+	// 2、兼容历史数据（早期记录未写入 concertID），按名称+类型查重
+	if (payName) {
+		const res = await db.collection('payRecord').where({
+			userId: userId,
+			payName: payName,
+			payType: dbCmd.in(CONCERT_TYPES)
+		}).limit(50).get()
+		const hit = pick(res.data)
+		if (hit) return hit
+	}
+	
+	return null
+}
+
 exports.main = async (event, context) => {
 	// event为客户端上传的参数
 	const collection = db.collection('payRecord')
@@ -22,16 +58,25 @@ exports.main = async (event, context) => {
 			}
 			
 			// 检查是否重复添加（同一用户、同一场次不能重复添加）
-			if (event.concertID) {
-				const duplicateCheck = await collection.where({
-					userId: userId,
-					concertID: event.concertID
-				}).get()
-				
-				if (duplicateCheck.data && duplicateCheck.data.length > 0) {
+			if (CONCERT_TYPES.includes(event.payType)) {
+				if (!event.concertID) {
 					return {
 						code: 1,
-						message: '您已经添加过该场次的记录了，不能重复添加'
+						message: '请选择演唱会/音乐节/见面会场次'
+					}
+				}
+				
+				const duplicate = await findDuplicateConcert({
+					userId: userId,
+					concertID: event.concertID,
+					payName: event.payName
+				})
+				
+				if (duplicate) {
+					return {
+						code: 1,
+						message: `您已添加过「${duplicate.payName || event.payName}」的记录，同一场次不能重复添加`,
+						data: duplicate
 					}
 				}
 			}
@@ -52,8 +97,8 @@ exports.main = async (event, context) => {
 				bz: event.bz || '',
 				adress: event.adress || '',
 				Province: event.Province || '',
-				creatTime: now.toString(),
-				upTime: now.toString(),
+				creatTime: now,
+				upTime: now,
 				imgs: event.imgs || '',
 				sdUrl: event.sdUrl || '',
 				concertID: event.concertID || '',
@@ -108,6 +153,31 @@ exports.main = async (event, context) => {
 				}
 			}
 			
+			// 改成其他场次时同样要校验重复（排除自身）
+			if (CONCERT_TYPES.includes(event.payType)) {
+				if (!event.concertID) {
+					return {
+						code: 1,
+						message: '请选择演唱会/音乐节/见面会场次'
+					}
+				}
+				
+				const duplicate = await findDuplicateConcert({
+					userId: userId,
+					concertID: event.concertID,
+					payName: event.payName,
+					excludeId: event.id
+				})
+				
+				if (duplicate) {
+					return {
+						code: 1,
+						message: `您已添加过「${duplicate.payName || event.payName}」的记录，同一场次不能重复添加`,
+						data: duplicate
+					}
+				}
+			}
+			
 			const now = new Date().getTime()
 			const data = {
 				payTime: event.payTime,
@@ -123,7 +193,7 @@ exports.main = async (event, context) => {
 				bz: event.bz || '',
 				adress: event.adress || '',
 				Province: event.Province || '',
-				upTime: now.toString(),
+				upTime: now,
 				imgs: event.imgs || '',
 				sdUrl: event.sdUrl || '',
 				concertID: event.concertID || '',
@@ -355,7 +425,7 @@ exports.main = async (event, context) => {
 				}
 			}
 			
-			if (!event.concertID) {
+			if (!event.concertID && !event.payName) {
 				return {
 					code: 0,
 					isDuplicate: false
@@ -363,14 +433,22 @@ exports.main = async (event, context) => {
 			}
 			
 			// 查询是否存在相同用户和场次的记录
-			const checkRes = await collection.where({
+			const duplicate = await findDuplicateConcert({
 				userId: userId,
-				concertID: event.concertID
-			}).get()
+				concertID: event.concertID,
+				payName: event.payName,
+				excludeId: event.excludeId
+			})
 			
 			return {
 				code: 0,
-				isDuplicate: checkRes.data && checkRes.data.length > 0
+				isDuplicate: !!duplicate,
+				data: duplicate ? {
+					id: duplicate._id,
+					payName: duplicate.payName || '',
+					payType: duplicate.payType || '',
+					payTime: duplicate.payTime || ''
+				} : null
 			}
 		} catch (err) {
 			console.error('检查重复记录失败:', err)
@@ -378,6 +456,83 @@ exports.main = async (event, context) => {
 				code: 1,
 				message: '检查失败：' + err.message,
 				isDuplicate: false
+			}
+		}
+	}
+	
+	// 历史数据迁移：把字符串类型的 creatTime/upTime 转成 timestamp（毫秒数字）
+	// 上线后只需执行一次，调用参数：{ type: 'migrateTime', userId, secret: 'payRecord-time-v1' }
+	if (type === 'migrateTime') {
+		try {
+			if (!userId) {
+				return {
+					code: 1,
+					message: '请先登录'
+				}
+			}
+			
+			if (event.secret !== 'payRecord-time-v1') {
+				return {
+					code: 1,
+					message: '无权限执行迁移'
+				}
+			}
+			
+			const TIME_FIELDS = ['creatTime', 'upTime']
+			// 只接受 13 位毫秒时间戳，其他格式（如空字符串）单独统计便于人工确认
+			const toNum = (val) => /^\d{13}$/.test(String(val === null || val === undefined ? '' : val).trim()) ? Number(String(val).trim()) : null
+			
+			let migrated = 0
+			let skipped = 0
+			const pageSize = 200
+			let page = 0
+			let hasMore = true
+			
+			while (hasMore) {
+				const res = await collection
+					.where({ userId: userId })
+					.skip(page * pageSize)
+					.limit(pageSize)
+					.field({ creatTime: true, upTime: true })
+					.get()
+				const list = res.data || []
+				hasMore = list.length === pageSize
+				page++
+				
+				for (const item of list) {
+					const patch = {}
+					
+					TIME_FIELDS.forEach(field => {
+						if (typeof item[field] === 'number') return
+						
+						const num = toNum(item[field])
+						if (num === null) {
+							skipped++
+							return
+						}
+						patch[field] = num
+					})
+					
+					if (Object.keys(patch).length === 0) continue
+					
+					await collection.doc(item._id).update(patch)
+					migrated++
+				}
+			}
+			
+			return {
+				code: 0,
+				message: `迁移完成：更新 ${migrated} 条，异常值 ${skipped} 个`,
+				data: {
+					migrated,
+					skipped
+				}
+			}
+		} catch (err) {
+			console.error('时间字段迁移失败:', err)
+			return {
+				code: 1,
+				message: '迁移失败：' + err.message
 			}
 		}
 	}
