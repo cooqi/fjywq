@@ -34,7 +34,6 @@
 					<view class="feature-name">手机灯牌</view>
 					<view class="feature-desc">滚动应援牌 · 保存分享</view>
 				</view>
-				<view class="feature-tag">敬请期待</view>
 				<view class="feature-arrow">›</view>
 			</view>
 
@@ -45,7 +44,6 @@
 					<view class="feature-name">谁是卧底</view>
 					<view class="feature-desc">经典桌面推理游戏</view>
 				</view>
-				<view class="feature-tag">敬请期待</view>
 				<view class="feature-arrow">›</view>
 			</view>
 		</view>
@@ -70,7 +68,9 @@ export default {
 		go(type) {
 			const routes = {
 				'txz': '/pages/game/xianxia/txz/txz-index',
-				'huhuan': '/pages/game/xianxia/huhuan/huhuan'
+				'huhuan': '/pages/game/xianxia/huhuan/huhuan',
+				'led': '/pages/game/xianxia/led/led-index',
+				'undercover': '/pages/game/xianxia/wodi/wodi'
 			}
 			if (routes[type]) {
 				uni.navigateTo({ url: routes[type] })

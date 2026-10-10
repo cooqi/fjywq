@@ -354,6 +354,64 @@
 		}
 	},
 	{
+		"path": "pages/game/xianxia/led/led",
+		"style": {
+			"navigationBarTitleText": "手机灯牌",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5",
+			"backgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/led/led-index",
+		"style": {
+			"navigationBarTitleText": "手机灯牌",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/led/led-editor",
+		"style": {
+			"navigationBarTitleText": "灯牌编辑",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/led/led-display",
+		"style": {
+			"navigationBarTitleText": "全屏展示",
+			"navigationStyle": "custom",
+			"disableScroll": true,
+			"backgroundColor": "#000000"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/wodi/wodi",
+		"style": {
+			"navigationBarTitleText": "谁是卧底",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/wodi/wodi-room",
+		"style": {
+			"navigationBarTitleText": "游戏房间",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/wodi/wodi-admin",
+		"style": {
+			"navigationBarTitleText": "题库管理",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/payRecord/record",
 		"style": {
 			"navigationBarTitleText": "消费记录",

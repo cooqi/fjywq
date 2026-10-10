@@ -150,6 +150,17 @@
 				</view>
 			</view>
 		</block>
+
+		<!-- 座位操作菜单：微信小程序 showActionSheet 不支持 alertText 头部；用自带遮罩的固定弹层（避免 uni-popup 在本页 flex 容器内定位异常） -->
+		<view class="seat-menu-mask" v-if="seatMenuInfo.open" @click="closeSeatMenu">
+			<view class="seat-menu" @click.stop>
+				<view class="sm-card">
+					<view class="sm-head" v-if="seatMenuInfo.title">{{ seatMenuInfo.title }}</view>
+					<view class="sm-item" v-for="(it, i) in seatMenuInfo.items" :key="i" @click="onSeatMenuTap(i)">{{ it }}</view>
+				</view>
+				<view class="sm-cancel" @click="closeSeatMenu">取消</view>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -219,6 +230,8 @@
 				// 画布可视区高度（px）与底部选座车高度（px），运行时量得
 				mapH: 340,
 				cartH: 0,
+				// 自定义座位操作菜单：微信 showActionSheet 不支持 alertText 头部，改用自带遮罩的固定弹层
+				seatMenuInfo: { open: false, title: '', items: [], seat: null, rec: null, action: '' },
 			}
 		},
 		computed: {
@@ -481,7 +494,7 @@
 				const c = this.colLabelOf(area, col)
 				const rText = /[排座]$/.test(r) ? r : `${r}排`
 				const cText = /[号座]$/.test(c) ? c : `${c}号`
-				return `${area.name}${rText}${cText}`
+				return `${area.name} ${rText}${cText}`
 			},
 
 			areaStyle(area) {
@@ -875,13 +888,11 @@
 				if (seat.state === 'mine') {
 					// 自己的座位：菜单顶部直接展示当前备注，可修改或释放后重选
 					const rec = this.mySeatSet[seat.key] || {}
-					uni.showActionSheet({
-						alertText: seat.label + ' 备注：' + (this.clipText(rec.remark) || '无'),
-						itemList: ['修改备注', '释放座位'],
-						success: (r) => {
-							if (r.tapIndex === 0) this.editSeatRemark(seat)
-							else if (r.tapIndex === 1) this.confirmReleaseMine(seat)
-						}
+					this.openSeatMenu({
+						action: 'mine',
+						seat: seat,
+						title: seat.label + ' 备注：' + (this.clipText(rec.remark) || '无'),
+						items: ['修改备注', '释放座位']
 					})
 					return
 				}
@@ -891,13 +902,12 @@
 					if (this.isAdmin) {
 						// 管理员可改任何人备注、释放任何人的座位；菜单顶部展示占座人与备注摘要
 						const who = rec.nickname ? '占座人：' + this.clipText(rec.nickname) + '，' : ''
-						uni.showActionSheet({
-							alertText: seat.label + ' ' + who + '备注：' + (this.clipText(rec.remark) || '无'),
-							itemList: ['修改备注', '释放座位'],
-							success: (r) => {
-								if (r.tapIndex === 0) this.editSeatRemark(seat)
-								else if (r.tapIndex === 1) this.confirmReleaseAny(seat, rec)
-							}
+						this.openSeatMenu({
+							action: 'admin',
+							seat: seat,
+							rec: rec,
+							title: seat.label + ' ' + who + '备注：' + (this.clipText(rec.remark) || '无'),
+							items: ['修改备注', '释放座位']
 						})
 						return
 					}
@@ -931,6 +941,36 @@
 				})
 				// 座位上不再印编号，回显完整座位号供确认
 				uni.showToast({ title: '已选 ' + seat.label, icon: 'none' })
+			},
+
+			// ===== 自定义座位操作菜单（自带遮罩的固定底部弹层）=====
+			openSeatMenu(cfg) {
+				this.seatMenuInfo = {
+					open: true,
+					title: cfg.title || '',
+					items: cfg.items || [],
+					seat: cfg.seat || null,
+					rec: cfg.rec || null,
+					action: cfg.action || ''
+				}
+			},
+			closeSeatMenu() {
+				this.seatMenuInfo = Object.assign({}, this.seatMenuInfo, { open: false })
+			},
+			onSeatMenuTap(i) {
+				const m = this.seatMenuInfo
+				const seat = m.seat
+				const rec = m.rec
+				const action = m.action
+				this.closeSeatMenu()
+				if (!seat) return
+				if (action === 'mine') {
+					if (i === 0) this.editSeatRemark(seat)
+					else if (i === 1) this.confirmReleaseMine(seat)
+				} else if (action === 'admin') {
+					if (i === 0) this.editSeatRemark(seat)
+					else if (i === 1) this.confirmReleaseAny(seat, rec)
+				}
 			},
 
 			removeSeat(seat) {
@@ -1629,5 +1669,57 @@
 			&[disabled] { opacity: 0.5; }
 		}
 	}
+}
+
+/* 自定义座位操作菜单（微信小程序 showActionSheet 不支持 alertText 头部） */
+.seat-menu-mask {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.45);
+	z-index: 9999;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+.seat-menu {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0 20rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.sm-card {
+	background: #ffffff;
+	border-radius: 24rpx;
+	overflow: hidden;
+}
+.sm-head {
+	padding: 26rpx 24rpx;
+	text-align: center;
+	font-size: 26rpx;
+	color: #8a86a8;
+	line-height: 1.5;
+	background: #fafafc;
+	border-bottom: 1rpx solid #eeeeee;
+}
+.sm-item {
+	padding: 32rpx 24rpx;
+	text-align: center;
+	font-size: 32rpx;
+	color: #2c3e50;
+	border-bottom: 1rpx solid #f0f0f0;
+	&:last-child { border-bottom: none; }
+	&:active { background: #f5f5f7; }
+}
+.sm-cancel {
+	margin-top: 16rpx;
+	padding: 32rpx 24rpx;
+	text-align: center;
+	font-size: 32rpx;
+	color: #2c3e50;
+	background: #ffffff;
+	border-radius: 24rpx;
+	&:active { background: #f5f5f7; }
 }
 </style>

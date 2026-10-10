@@ -202,13 +202,13 @@ export default {
 			ctx.setLineWidth(3)
 			ctx.strokeRect(8, 8, PW - 16, PH - 16)
 
-			// 标题 & 目的地
+			// 标题 & 目的地（canvas fillText 不能渲染彩色 emoji，图标只保留在页面 DOM，这里用纯中文）
 			ctx.setFillStyle('#b06ab3')
 			ctx.setFontSize(16)
-			ctx.fillText('✉️ 杯蜜的旅行明信片', 24, 34)
+			ctx.fillText('杯蜜的旅行明信片', 24, 34)
 			ctx.setFontSize(22)
 			ctx.setFillStyle('#6a5acd')
-			ctx.fillText(`${p.emoji || '📮'} ${p.placeName}`, 24, 70)
+			ctx.fillText(this.clean(p.placeName), 24, 70)
 
 			// 霓虹舞台底板（线条形象在亮底上会看不清，给一块暗色底板）
 			ctx.setFillStyle('#0d151c')
@@ -231,7 +231,7 @@ export default {
 			let y = STAGE_Y + STAGE_H + 26
 			ctx.setFontSize(14)
 			ctx.setFillStyle('#666')
-			ctx.fillText(`📅 ${p.date || ''}    ${p.weather || ''}`, 24, y)
+			ctx.fillText(`${this.clean(p.date || '')}  ·  ${this.clean(p.weather || '')}`, 24, y)
 			y += 26
 			const moodLabel = (MOOD_MAP[p.mood] || MOOD_MAP.normal).label
 			ctx.fillText(`心情：${moodLabel}    花费：${p.cost || 0} 杯蜜币`, 24, y)
@@ -240,7 +240,7 @@ export default {
 			// 正文（自动换行）
 			ctx.setFontSize(15)
 			ctx.setFillStyle('#555')
-			y = this.wrapText(ctx, p.card || '', 24, y, PW - 48, 24)
+			y = this.wrapText(ctx, this.clean(p.card || ''), 24, y, PW - 48, 24)
 
 			// 水印
 			ctx.setFontSize(11)
@@ -250,6 +250,13 @@ export default {
 			// 恢复并一次性 flush
 			ctx.draw = realDraw
 			ctx.draw()
+		},
+		/** 去掉 emoji/变体选择符/ZWJ：小程序 canvas fillText 无法渲染彩色 emoji，会画成方块/空白 */
+		clean(s) {
+			return String(s == null ? '' : s)
+				.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}\u{3030}\u{303D}]/gu, '')
+				.replace(/\s{2,}/g, ' ')
+				.trim()
 		},
 		wrapText(ctx, text, x, y, maxW, lh) {
 			const chars = String(text).split('')
