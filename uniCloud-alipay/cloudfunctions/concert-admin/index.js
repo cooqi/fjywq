@@ -194,6 +194,20 @@ function normalizeLabelRule(rule) {
 	};
 }
 
+// 座位状态配色清洗：只保留合法 #RRGGBB，全部缺省存空对象（前端回退内置默认配色）
+const SEAT_COLOR_KEYS = ['avail', 'selected', 'taken', 'mine'];
+
+function normalizeSeatColors(input) {
+	const src = input && typeof input === 'object' ? input : {};
+	const out = {};
+	SEAT_COLOR_KEYS.forEach(key => {
+		const v = String(src[key] == null ? '' : src[key]).trim();
+		if (/^#[0-9a-fA-F]{6}$/.test(v)) out[key] = v.toLowerCase();
+	});
+	
+	return out;
+}
+
 exports.main = async (event, context) => {
 	const { action } = event;
 	
@@ -482,7 +496,8 @@ async function getSeatConfig(event) {
 					time: concert.time || '',
 					seat_enabled: !!concert.seat_enabled,
 					max_seats_per_user: Number(concert.max_seats_per_user) || 0,
-					seat_version: Number(concert.seat_version) || 1
+					seat_version: Number(concert.seat_version) || 1,
+					seat_colors: concert.seat_colors || {}
 				},
 				areas: areaList,
 				canvasW: canvas.canvasW,
@@ -716,12 +731,18 @@ async function saveSeatConfig(event) {
 		
 		const nextVersion = structuralChanged ? (Number(concert.seat_version) || 1) + 1 : (Number(concert.seat_version) || 1);
 		
-		await db.collection('Concert').doc(concertId).update({
+		const concertUpdate = {
 			seat_enabled: true,
 			max_seats_per_user: maxPerUser,
 			seat_version: nextVersion,
 			updateTime: now
-		});
+		};
+		// 旧版客户端不传 seatColors 时保持原配色不动；传了则按清洗结果覆盖（空对象=全部默认）
+		if (event.seatColors !== undefined) {
+			concertUpdate.seat_colors = normalizeSeatColors(event.seatColors);
+		}
+		
+		await db.collection('Concert').doc(concertId).update(concertUpdate);
 		
 		const tips = [];
 		if (clearedSelections > 0) tips.push(`同时清理了 ${clearedSelections} 条选座记录`);

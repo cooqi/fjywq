@@ -65,6 +65,10 @@
 			"bsonType": "int",
 			"description": "座位表版本号，结构性改版（行列数变化/分区增删）时 +1",
 			"defaultValue": 1
+		},
+		"seat_colors": {
+			"bsonType": "object",
+			"description": "座位状态配色 {avail,selected,taken,mine}，值需为 #RRGGBB；缺失/为空表示用默认配色"
 		}
 	}
 }

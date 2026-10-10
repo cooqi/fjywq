@@ -54,11 +54,11 @@
         <text class="game-desc">寻找你的答案</text>
       </view>
 
-      <!-- 青宇宇宙通行证 -->
-      <view class="game-card" @click="goToGame('txz')">
-        <view class="game-icon txz-icon">🎫</view>
-        <text class="game-name">宇宙通行证</text>
-        <text class="game-desc">嗑学水平测试</text>
+      <!-- 杯杯儿互动 -->
+      <view class="game-card" @click="goToGame('xianxia')">
+        <view class="game-icon xianxia-icon">🥤</view>
+        <text class="game-name">杯杯儿互动</text>
+        <text class="game-desc">通行证·互换·灯牌·卧底</text>
       </view>
 
       <!-- 电子杯蜜 -->
@@ -113,7 +113,7 @@ export default {
         'new2048': '/pages/game/new2048/new2048',
         'qa': '/pages/game/QA/qa-exam',
         'answerBook': '/pages/game/answer-book',
-        'txz': '/pages/game/txz/txz-index',
+        'xianxia': '/pages/game/xianxia/xianxia',
         'loveQY': '/pages/game/loveQY/loveQY'
       }
       
@@ -226,6 +226,10 @@ export default {
 
 .txz-icon {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.xianxia-icon {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
 }
 
 .beemore-icon {

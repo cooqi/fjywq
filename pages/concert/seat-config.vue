@@ -32,6 +32,8 @@
 					</view>
 				</view>
 
+				
+
 				<!-- 布局总览：整场馆一张画布，分区可拖拽摆位 -->
 				<view class="section">
 					<view class="section-head">
@@ -250,6 +252,29 @@
 					<view class="seat-total">座位总数：{{ seatTotalSeats }} 座（不含舞台区）</view>
 				</view>
 
+				<!-- 座位状态配色：管理员自定义，留空则用内置默认 -->
+				<view class="section">
+					<view class="section-head">
+						<text class="section-title">座位颜色</text>
+						<text class="mini-btn gray" @click="resetSeatColors">恢复默认</text>
+					</view>
+					<view class="color-row" v-for="c in seatColorDefs" :key="c.key">
+						<view class="color-swatch" :style="{ background: effectiveColor(c.key) }"></view>
+						<text class="color-name">{{ c.name }}</text>
+						<view class="color-presets">
+							<view
+								class="color-preset"
+								v-for="p in colorPresets"
+								:key="p"
+								:style="{ background: p }"
+								@click="pickSeatColor(c.key, p)"
+							></view>
+						</view>
+						<input class="color-hex" v-model="seatColors[c.key]" @input="dirty = true" placeholder="可自定义" maxlength="7" />
+					</view>
+					<text class="color-tip">选预设色或手填 #RRGGBB；留空为默认配色</text>
+				</view>
+
 				<!-- 已选座位管理 -->
 				<view class="section">
 					<view class="section-head" @click="toggleSeatSelections">
@@ -283,6 +308,15 @@
 </template>
 
 <script>
+	// 座位状态内置默认配色（与选座页 seat-select.vue 保持一致；留空/非法均回退此默认）
+	const SEAT_COLOR_DEFAULTS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' }
+	const SEAT_COLOR_DEFS = [
+		{ key: 'avail', name: '可选' },
+		{ key: 'selected', name: '预选' },
+		{ key: 'taken', name: '锁定' },
+		{ key: 'mine', name: '我的' }
+	]
+	const SEAT_COLOR_PRESETS = ['#dfe4ea', '#b39ddb', '#80deea', '#ffd54f',  '#a5d6a7', '#ef9a9a', '#90caf9']
 	// 预览画布：1 格基准边长（rpx），再乘 previewScale 缩放
 	const PREVIEW_CELL = 24
 	const CANVAS_PAD = 20
@@ -300,6 +334,10 @@
 				seatEnabled: false,
 				seatVersion: 1,
 				seatMaxPerUser: '6',
+				seatColorDefs: SEAT_COLOR_DEFS,
+				colorPresets: SEAT_COLOR_PRESETS,
+				// 座位状态配色：空字符串表示用默认，保存时只提交合法 #RRGGBB
+				seatColors: { avail: '', selected: '', taken: '', mine: '' },
 				seatAreas: [],
 				seatSelectionCount: 0,
 				seatSelections: [],
@@ -453,6 +491,23 @@
 				return { type, start: 1, step: 1, prefix: '', suffix, pad: 0 }
 			},
 
+			// 生效配色：合法自定义值优先，否则用内置默认（与选座页回退规则一致）
+			effectiveColor(key) {
+				const v = String(this.seatColors[key] || '').trim()
+				return /^#[0-9a-fA-F]{6}$/.test(v) ? v : SEAT_COLOR_DEFAULTS[key]
+			},
+
+			pickSeatColor(key, p) {
+				this.seatColors[key] = p
+				this.dirty = true
+			},
+
+			resetSeatColors() {
+				SEAT_COLOR_DEFS.forEach(c => { this.seatColors[c.key] = '' })
+				this.dirty = true
+				uni.showToast({ title: '已恢复默认配色，保存后生效', icon: 'none' })
+			},
+
 			loadSeatConfig() {
 				this.loading = true
 				uniCloud.callFunction({
@@ -484,6 +539,12 @@
 								labelRule: a.labelRule || null
 							}))
 							this.seatMaxPerUser = String(d.concert.max_seats_per_user != null ? d.concert.max_seats_per_user : 6)
+							// 座位配色回显：只回填已保存的合法值，其余置空（展示时回退默认）
+							const savedColors = d.concert.seat_colors || {}
+							SEAT_COLOR_DEFS.forEach(c => {
+								const v = String(savedColors[c.key] || '')
+								this.seatColors[c.key] = /^#[0-9a-fA-F]{6}$/.test(v) ? v : ''
+							})
 							this.seatSelectionCount = d.selectionCount || 0
 							// 配置变更后已选记录需重新拉取
 							this.seatLoadedSelections = false
@@ -921,12 +982,49 @@
 					return
 				}
 				const rule = area.labelRule.col
+				if (mode === 'desc') {
+					// 倒序 = 反转当前列号，保留刚生成的单/双号等结果；没有有效编号时才按 cols…1 重建
+					const list = (area.colLabels || []).slice(0, cols)
+					if (list.length === cols && list.some(t => String(t).trim() !== '')) {
+						list.reverse()
+						area.colLabels = list
+						this.syncRuleFromLabels(rule, list)
+						uni.showToast({ title: '已倒序当前列号', icon: 'none' })
+					} else {
+						rule.type = 'number'
+						rule.start = cols
+						rule.step = -1
+						area.colLabels = this.genLabels(rule, cols)
+						uni.showToast({ title: '已生成倒序列号', icon: 'none' })
+					}
+					area.editingKind = ''
+					this.dirty = true
+					return
+				}
 				rule.type = 'number'
 				if (mode === 'odd') { rule.start = 1; rule.step = 2 }
-				else if (mode === 'even') { rule.start = 2; rule.step = 2 }
-				else { rule.start = cols; rule.step = -1 }
+				else { rule.start = 2; rule.step = 2 }
 				area.colLabels = this.genLabels(rule, cols)
+				area.editingKind = ''
 				this.dirty = true
+			},
+
+			// 用编号数组反推生成规则：倒序后保持单/双号步长，“批量生成”不会又变回升序
+			syncRuleFromLabels(rule, list) {
+				const nums = list.map(t => {
+					const m = String(t).match(/-?\d+(?:\.\d+)?/)
+					return m ? Number(m[0]) : NaN
+				})
+				const step = nums.length > 1 ? nums[1] - nums[0] : -1
+				const uniform = step !== 0 && nums.every((n, i) => isFinite(n) && n === nums[0] + i * step)
+				if (uniform) {
+					rule.type = 'number'
+					rule.start = nums[0]
+					rule.step = step
+				} else {
+					// 非等差（手动混编）标记为自定义，避免再点批量生成把倒序结果冲掉
+					rule.type = 'custom'
+				}
 			},
 
 			toggleLabelEdit(idx, kind) {
@@ -1014,6 +1112,15 @@
 					uni.showToast({ title: errMsg, icon: 'none' })
 					return
 				}
+				// 配色格式前端先拦一道（非法且非空才报错），服务端 normalizeSeatColors 会再清洗一次
+				const badColor = SEAT_COLOR_DEFS.find(c => {
+					const v = String(this.seatColors[c.key] || '').trim()
+					return v !== '' && !/^#[0-9a-fA-F]{6}$/.test(v)
+				})
+				if (badColor) {
+					uni.showToast({ title: badColor.name + '颜色格式应为 #RRGGBB', icon: 'none' })
+					return
+				}
 				this.savingSeat = true
 				uni.showLoading({ title: '保存中' })
 				uniCloud.callFunction({
@@ -1023,6 +1130,7 @@
 						concertId: this.concertId,
 						areas: this.seatAreas,
 						maxSeatsPerUser: this.seatMaxPerUser,
+						seatColors: this.seatColors,
 						force,
 						userId: this.userInfo._id
 					},
@@ -1268,6 +1376,60 @@
 			font-size: 28rpx;
 			text-align: right;
 		}
+	}
+
+	/* 座位状态配色编辑 */
+	.color-row {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-top: 16rpx;
+
+		.color-swatch {
+			width: 44rpx;
+			height: 44rpx;
+			border-radius: 8rpx;
+			border: 1rpx solid rgba(0, 0, 0, 0.12);
+			flex-shrink: 0;
+		}
+
+		.color-name {
+			font-size: 26rpx;
+			color: #666;
+			width: 64rpx;
+			flex-shrink: 0;
+		}
+
+		.color-presets {
+			display: flex;
+			gap: 8rpx;
+			flex: 1;
+			flex-wrap: wrap;
+
+			.color-preset {
+				width: 40rpx;
+				height: 40rpx;
+				border-radius: 8rpx;
+				border: 1rpx solid rgba(0, 0, 0, 0.08);
+			}
+		}
+
+		.color-hex {
+			width: 160rpx;
+			height: 56rpx;
+			background: #f5f5f5;
+			border-radius: 10rpx;
+			padding: 0 12rpx;
+			font-size: 24rpx;
+			flex-shrink: 0;
+		}
+	}
+
+	.color-tip {
+		display: block;
+		margin-top: 12rpx;
+		font-size: 22rpx;
+		color: #999;
 	}
 
 	.add-area-btn {

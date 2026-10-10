@@ -45,14 +45,14 @@
 			<!-- 实时统计 + 图例 + 缩放：合并为一行 -->
 			<view class="stat-bar">
 				<view class="legend">
-					<view class="lg-item"><view class="lg-box avail"></view><text>可选</text></view>
-					<view class="lg-item"><view class="lg-box selected"></view><text>已选</text></view>
-					<view class="lg-item"><view class="lg-box taken"></view><text>他人</text></view>
-					<view class="lg-item"><view class="lg-box mine"></view><text>我的</text></view>
-					<text class="lg-admin" v-if="isAdmin && scale >= 1">点他人座位可释放</text>
-					<text class="lg-warn" v-if="scale < 1">放大至100%可选座</text>
+					<view class="lg-item"><view class="lg-box avail" :style="{background: seatColorMap.avail}"></view><text>可选</text></view>
+					<view class="lg-item"><view class="lg-box selected" :style="{background: seatColorMap.selected}"></view><text>预选</text></view>
+					<view class="lg-item"><view class="lg-box taken" :style="{background: seatColorMap.taken}"></view><text>锁定</text></view>
+					<view class="lg-item"><view class="lg-box mine" :style="{background: seatColorMap.mine}"></view><text>我的</text></view>
+					
 				</view>
 				<view class="zoom-ctrl">
+					<text class="zc-btn refresh" :class="{busy: refreshing}" @click="refreshSeatMap">刷新</text>
 					<text class="zc-btn" @click="zoom(-0.25)">－</text>
 					<text class="zc-scale">{{ Math.round(scale * 100) }}%</text>
 					<text class="zc-btn" @click="zoom(0.25)">＋</text>
@@ -60,22 +60,18 @@
 				</view>
 			</view>
 
-			<!-- 整场馆总览画布：分区按管理员排摆放置，支持双指捏合缩放 -->
-			<scroll-view
+			<!-- 整场馆总览画布：座位固定按100%布局渲染，捏合缩放/拖拽平移只改外层 transform -->
+			<view
 				class="map-scroll"
-				scroll-x
-				scroll-y
 				:style="{ height: mapH + 'px' }"
-				:scroll-left="scrollLeft"
-				:scroll-top="scrollTop"
-				:scroll-with-animation="animateScroll"
-				@scroll="onMapScroll"
-				@touchstart="onCanvasTouchStart"
-				@touchmove="onCanvasTouchMove"
-				@touchend="onCanvasTouchEnd"
-				@touchcancel="onCanvasTouchEnd"
+				:gs="gestureState"
+				:change:gs="seatCanvas.sync"
+				@touchstart="seatCanvas.start"
+				@touchmove="seatCanvas.move"
+				@touchend="seatCanvas.end"
+				@touchcancel="seatCanvas.end"
 			>
-				<view class="map-canvas" :style="{width: canvasPx.w + 'rpx', height: canvasPx.h + 'rpx'}">
+				<view class="map-canvas" :style="canvasStyle">
 					<view
 						class="area-block"
 						:class="{ stage: area.isStage, active: focusIndex === area.index }"
@@ -116,7 +112,7 @@
 								:key="seat.key"
 								class="seat"
 								:class="seat.state"
-								:style="{left: seat.left + 'rpx', top: seat.top + 'rpx', width: seat.size + 'rpx', height: seat.size + 'rpx', fontSize: seat.font + 'rpx', lineHeight: seat.size + 'rpx'}"
+								:style="{left: seat.left + 'rpx', top: seat.top + 'rpx', width: seat.size + 'rpx', height: seat.size + 'rpx', fontSize: seat.font + 'rpx', lineHeight: seat.size + 'rpx', background: seatColorMap[seat.state], color: seatFg(seat.state)}"
 								@click.stop="onSeatTap(seat)"
 							></view>
 							<!-- 座位备注（超过10字隐藏，点击可查看完整） -->
@@ -132,21 +128,18 @@
 						<text class="stage-text" v-else :style="{fontSize: titleFont + 'rpx'}">{{area.name}}</text>
 					</view>
 				</view>
-			</scroll-view>
+			</view>
 
-			<!-- 底部选座车 -->
+			<!-- 底部选座车：每个座位单独填备注 -->
 			<view class="cart">
 				<view class="cart-list" v-if="selectedSeats.length > 0">
-					<view class="cart-seat" v-for="s in selectedSeats" :key="s.key">
-						<text>{{s.label}}</text>
+					<view class="cart-seat-row" v-for="s in selectedSeats" :key="s.key">
+						<text class="cs-label">{{s.label}}</text>
+						<input class="cs-remark" v-model="s.remark" maxlength="100" placeholder="备注（选填，公开展示在座位上）" />
 						<text class="cs-del" @click="removeSeat(s)">×</text>
 					</view>
 				</view>
 				<view class="cart-seat empty" v-if="selectedSeats.length === 0">还没有选座位，点击上方座位选座</view>
-
-				<view class="cart-remark">
-					<input class="cart-remark-input" v-model="remarkInput" maxlength="100" placeholder="备注（选填，公开展示在座位上）" />
-				</view>
 
 				<view class="cart-bottom">
 					<view class="cart-sum">
@@ -160,19 +153,34 @@
 	</view>
 </template>
 
+<!-- 手势下沉到视图层：touchmove 全程 wxs 直接 setStyle，不走逻辑层 setData，拖动/捏合才能真跟手丝滑 -->
+<script module="seatCanvas" lang="wxs" src="./seat-map-gesture.wxs"></script>
+
 <script>
 	// 画布尺寸基准（rpx）：1 格 = SEAT_BASE + GAP_BASE
 	const SEAT_BASE = 24
 	const GAP_BASE = 4
 	const CELL_BASE = SEAT_BASE + GAP_BASE
 	const CANVAS_PAD = 16
-	const AXIS_MIN_CELL = 22 // 格子小于该值时不显示编号轴与座位号
 	const MIN_TAP_SCALE = 1 // 选座/取消选的最低缩放：小于 100% 座位太小，容易误触
+	// 座位状态内置默认配色（管理员可在座位配置页覆盖，存 Concert.seat_colors）
+	const DEFAULT_SEAT_COLORS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' }
+	const DEFAULT_SEAT_TEXT = { avail: '#37474f', selected: '#311b92', taken: '#006064', mine: '#6d4c41' }
+	// 按背景感知亮度自动选前景色：深色底用白字，浅色底沿用同状态默认深色字
+	function seatTextColor(bg, fallback) {
+		const m = /^#([0-9a-fA-F]{6})$/.exec(bg || '')
+		if (!m) return fallback
+		const n = parseInt(m[1], 16)
+		const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255
+		return lum < 0.5 ? '#ffffff' : fallback
+	}
 
 	export default {
 		data() {
 			return {
 				loading: true,
+				// 刷新中：只重拉占用状态，不整页重加载
+				refreshing: false,
 				submitting: false,
 				concertId: '',
 				userId: '',
@@ -183,27 +191,28 @@
 				maxSeatsPerUser: 0,
 				seatVersion: 1,
 				seatEnabled: false,
+				// 管理员配置的座位状态配色 {avail,selected,taken,mine}，空/非法值回退内置默认
+				seatColors: {},
 				totalSelected: 0,
 				totalCapacity: 0,
-				remarkInput: '',
 				emptyText: '座位表暂未开放',
 				// 占座/我的/选中，均以 `${areaId}-${row}-${col}` 为 key 的普通对象，保证 Vue3 响应式
 				takenSet: {},
 				mySeatSet: {},
 				selectedSet: {},
-				selectedSeats: [], // 选座车 [{areaId,row,col,label,price,key}]
-				// 总览缩放与滚动定位
+				selectedSeats: [], // 选座车 [{areaId,row,col,label,price,key,remark}]，备注逐座独立
+				// 缩放与平移：画布永远按 100% 布局，手势只改 scale/tx/ty 驱动容器 transform
 				scale: 1,
+				tx: 0,
+				ty: 0,
+				animOn: true,
 				focusIndex: -1,
-				scrollLeft: 0,
-				scrollTop: 0,
 				lastTapKey: '',
 				lastTapAt: 0,
-				// 捏合缩放：手势中的基准距离/缩放与锚点格坐标，不用于渲染
-				pinch: null,
-				animateScroll: true,
-				sl: 0,
-				st: 0,
+				// 拖拽平移结束时刻（手势结束时由 wxs 回写），用于抑制拖拽后紧随的误触点击
+				dragAt: 0,
+				// 画布视口顶部位置（px），measureLayout 量得，捏合起始同步取锚点用
+				vpTop: 0,
 				viewW: 375,
 				// 可用屏幕高度（px），用于计算画布高度
 				winH: 660,
@@ -213,33 +222,34 @@
 			}
 		},
 		computed: {
+			// 几何全部按 100% 基准渲染，缩放靠 transform 放大，不再逐帧重算座位节点
 			cell() {
-				return CELL_BASE * this.scale
+				return CELL_BASE
 			},
 			seatSize() {
-				return SEAT_BASE * this.scale
+				return SEAT_BASE
 			},
 			axisFont() {
-				return Math.max(10, Math.round(14 * this.scale))
+				return 14
 			},
 			titleFont() {
-				return Math.max(12, Math.round(18 * this.scale))
+				return 18
 			},
 			noteFont() {
-				return Math.max(10, Math.round(14 * this.scale))
+				return 14
 			},
 			showAxis() {
-				return this.cell >= AXIS_MIN_CELL
+				return true
 			},
 			// 顶部分两行预留：区名 + 列号
 			titleH() {
-				return this.showAxis ? this.titleFont + 4 : 0
+				return this.titleFont + 4
 			},
 			axisH() {
-				return this.showAxis ? this.axisFont + 2 : 0
+				return this.axisFont + 2
 			},
 			gutLeft() {
-				return this.showAxis ? Math.round(34 * this.scale) : 0
+				return 34
 			},
 			gutTop() {
 				return this.titleH + this.axisH
@@ -262,12 +272,48 @@
 					h: CANVAS_PAD * 2 + this.canvasGrid.h * this.cell + this.gutTop
 				}
 			},
+			// 管理员配色覆盖内置默认；仅接受合法 #RRGGBB，其余回退默认
+			seatColorMap() {
+				const sc = this.seatColors || {}
+				const out = {}
+				Object.keys(DEFAULT_SEAT_COLORS).forEach(k => {
+					out[k] = /^#[0-9a-fA-F]{6}$/.test(String(sc[k] || '')) ? sc[k] : DEFAULT_SEAT_COLORS[k]
+				})
+				return out
+			},
+			// 推给 wxs 的视图状态：缩放/平移（rpx）+ 视口与画布尺寸 + 过渡开关；每次逻辑层变更后 change:gs 触发同步
+			gestureState() {
+				return {
+					s: this.scale,
+					tx: this.tx,
+					ty: this.ty,
+					cw: this.canvasPx.w,
+					ch: this.canvasPx.h,
+					vpW: 750,
+					vpH: this.viewHRpx(),
+					k: 750 / (this.viewW || 375), // 事件坐标 px → rpx 换算系数
+					vpTop: this.vpTop,
+					min: 0.4,
+					max: 2.4,
+					tr: this.animOn ? 'transform 0.2s ease' : 'none'
+				}
+			},
+			// 整块画布仅此一个动态样式：程序化定位时由逻辑层改这一条 transform，走 GPU 合成；手势期间由 wxs 在视图层覆写
+			canvasStyle() {
+				const st = {
+					width: this.canvasPx.w + 'rpx',
+					height: this.canvasPx.h + 'rpx',
+					transform: 'translate3d(' + this.tx + 'rpx, ' + this.ty + 'rpx, 0) scale(' + this.scale + ')'
+				}
+				if (this.animOn) st.transition = 'transform 0.2s ease'
+				return st
+			},
 			// 预处理成画布上的绝对定位分区，座位在分区容器内相对定位
 			layoutAreas() {
 				const cell = this.cell
 				const size = this.seatSize
 				const showLabel = this.showAxis
-				const font = Math.max(9, Math.round(13 * this.scale))
+				const font = 13
 				const gutLeft = this.gutLeft
 				const gutTop = this.gutTop
 				const titleH = this.titleH
@@ -405,6 +451,10 @@
 			this.loadSeatMap()
 		},
 		methods: {
+			// 座位前景色：根据生效背景亮度自动选白/深色，保证自定义配色下编号仍可读
+			seatFg(state) {
+				return seatTextColor(this.seatColorMap[state], DEFAULT_SEAT_TEXT[state] || '#37474f')
+			},
 			// ===== 编号展示：优先用分区自定义编号数组 =====
 			rowLabelOf(area, row) {
 				const arr = area.rowLabels || []
@@ -445,103 +495,69 @@
 				}
 			},
 
-			// ===== 缩放与定位 =====
+			// ===== 缩放与平移 =====
 			zoom(delta) {
 				const next = Math.round((this.scale + delta) * 100) / 100
-				this.scale = Math.min(Math.max(next, 0.4), 2.4)
+				const s = Math.min(Math.max(next, 0.4), 2.4)
+				if (s === this.scale) return
+				this.animOn = true
+				// 以视口中心为锚点，缩放后画面不会“跑偏”
+				this.zoomTo(s, 375, this.viewHRpx() / 2)
 			},
 
-			// 让整个场馆可见（缩放比例按 rpx 计算：可视区宽度固定为 750rpx）
+			// 缩放到 s，并保持视口 (vx, vy) 下方的画布点不动
+			zoomTo(s, vx, vy) {
+				const ax = (vx - this.tx) / this.scale
+				const ay = (vy - this.ty) / this.scale
+				this.scale = s
+				this.tx = vx - ax * s
+				this.ty = vy - ay * s
+				this.clampView()
+			},
+
+			// 平移夹紧：不允许把画布边缘拖出视口留白；内容比视口小时贴回左上
+			clampView() {
+				const vpW = 750
+				const vpH = this.viewHRpx()
+				const cw = this.canvasPx.w * this.scale
+				const ch = this.canvasPx.h * this.scale
+				this.tx = cw <= vpW ? 0 : Math.min(0, Math.max(vpW - cw, this.tx))
+				this.ty = ch <= vpH ? 0 : Math.min(0, Math.max(vpH - ch, this.ty))
+			},
+
+			// 让整个场馆可见（画布按 100% 尺寸布局，缩放只改 scale：可视区宽度固定 750rpx）
 			fitOverview() {
 				this.focusIndex = -1
-				const fitW = 750 / (this.canvasGrid.w * CELL_BASE)
-				const fitH = this.viewHRpx() / (this.canvasGrid.h * CELL_BASE)
-				const s = Math.min(fitW, fitH, 2.4)
+				this.animOn = true
+				const s = Math.min(750 / this.canvasPx.w, this.viewHRpx() / this.canvasPx.h, 2.4)
 				this.scale = Math.round(Math.max(s, 0.4) * 100) / 100
-				this.scrollTo(0, 0)
-			},
-
-			scrollTo(leftRpx, topRpx) {
-				const l = Math.max(0, uni.upx2px(leftRpx))
-				const t = Math.max(0, uni.upx2px(topRpx))
-				// 目标值与当前一致时 scroll-view 不会重新滚动，补极小偏移触发
-				this.scrollLeft = this.scrollLeft === l ? l + 0.1 : l
-				this.scrollTop = this.scrollTop === t ? t + 0.1 : t
+				this.tx = 0
+				this.ty = 0
+				this.clampView()
 			},
 
 			focusOverview() {
 				this.fitOverview()
 			},
 
-			// ===== 双指捏合缩放 =====
-			pxToRpx(px) {
-				return px * 750 / (this.viewW || 375)
+			// ===== 手势已下沉到 seat-map-gesture.wxs（视图层零 setData 跟手），这里只接收结束回写 =====
+			// wxs 全程按 rpx 坐标系连续计算，与逻辑层 tx/ty/scale 同一套值，回写后按钮缩放/双击定位从此视角续算
+			onGestureEnd(d) {
+				if (!d) return
+				this.scale = d.s
+				this.tx = d.tx
+				this.ty = d.ty
+				if (d.moved) this.dragAt = Date.now()
 			},
 
-			touchDistance(touches) {
-				const dx = touches[0].clientX - touches[1].clientX
-				const dy = touches[0].clientY - touches[1].clientY
-				return Math.sqrt(dx * dx + dy * dy)
-			},
-
-			// 记下真实滚动量，缩放时才能把锚点算准
-			onMapScroll(e) {
-				const d = (e && e.detail) || {}
-				this.sl = Number(d.scrollLeft) || 0
-				this.st = Number(d.scrollTop) || 0
-			},
-
-			onCanvasTouchStart(e) {
-				this.pinch = null
-				const t = e && e.touches
-				if (!t || t.length < 2) return
-				const dist = this.touchDistance(t)
-				if (dist < 12) return
-				// 捏合期间关掉滚动动画，避免逐帧追赶延迟
-				this.animateScroll = false
-				const cx = (t[0].clientX + t[1].clientX) / 2
-				const cy = (t[0].clientY + t[1].clientY) / 2
-				const sl = this.sl
-				const st = this.st
-				uni.createSelectorQuery().in(this).select('.map-scroll').boundingClientRect(rect => {
-					if (!rect) return
-					const viewX = this.pxToRpx(cx - (rect.left || 0))
-					const viewY = this.pxToRpx(cy - (rect.top || 0))
-					this.pinch = {
-						dist: dist,
-						scale: this.scale,
-						viewX: viewX,
-						viewY: viewY,
-						// 锚点对应的画布格坐标与缩放无关，缩放后据此回算滚动量保持锚点不动
-						gridX: (this.pxToRpx(sl) + viewX - CANVAS_PAD) / this.cell,
-						gridY: (this.pxToRpx(st) + viewY - CANVAS_PAD) / this.cell
-					}
-				}).exec()
-			},
-
-			onCanvasTouchMove(e) {
-				const p = this.pinch
-				if (!p) return
-				const t = e && e.touches
-				if (!t || t.length < 2) return
-				const dist = this.touchDistance(t)
-				if (dist < 12) return
-				const next = Math.min(Math.max(p.scale * (dist / p.dist), 0.4), 2.4)
-				const s = Math.round(next * 100) / 100
-				if (s === this.scale) return
-				this.scale = s
-				this.scrollTo(CANVAS_PAD + p.gridX * this.cell - p.viewX, CANVAS_PAD + p.gridY * this.cell - p.viewY)
-			},
-
-			onCanvasTouchEnd(e) {
-				const t = (e && e.touches) || []
-				if (t.length >= 2) return
-				this.pinch = null
-				this.animateScroll = true
+			// 拖拽手势刚结束时抑制紧随的 click，避免选座页误选/误切区
+			justDragged() {
+				return Date.now() - this.dragAt < 300
 			},
 
 			// 总览下单击分区区块选中，双击则进入并放大该区（座位自己的点击已 stop 冒泡）
 			onAreaTap(idx) {
+				if (this.justDragged()) return
 				const now = Date.now()
 				const key = 'area-' + idx
 				if (this.lastTapKey === key && now - this.lastTapAt < 350) {
@@ -565,31 +581,22 @@
 				const fitW = 750 / (cols * CELL_BASE)
 				const fitH = this.viewHRpx() / (rows * CELL_BASE)
 				const fit = Math.min(fitW, fitH)
-				// 100% 能装下就放大到 100%–200%；装不下就整区适配，但不低于 minScale（默认 0.8，再小编号轴会被隐藏）
+				// 100% 能装下就放大到 100%–200%；装不下就整区适配，但不低于 minScale（默认 0.8，再小字就看不清了）
 				const floor = Number(minScale) > 0 ? Number(minScale) : 0.8
 				const s = fit < 1 ? Math.max(fit, floor) : Math.min(fit, 2)
 				this.scale = Math.round(s * 100) / 100
 				this.centerArea(idx)
 			},
 
-			// 把指定分区滚到可视区中央（缩放改完要等 cell 更新，故放在 nextTick 里）
+			// 把指定分区放到视口中央（画布按 100% 布局，直接由分区中心反解平移量）
 			centerArea(idx) {
-				const area = this.areas[idx]
-				if (!area) return
-				this.$nextTick(() => {
-					const cell = this.cell
-					const viewH = this.viewHRpx()
-					const w = (area.isStage ? (Number(area.stageW) || 0) : (Number(area.cols) || 0)) * cell
-					const h = (area.isStage ? (Number(area.stageH) || 0) : (Number(area.rows) || 0)) * cell + this.gutTop
-					const left = CANVAS_PAD + (Number(area.gridX) || 0) * cell
-					const top = CANVAS_PAD + (Number(area.gridY) || 0) * cell
-					// 夹紧到可滚范围，小屏下“居中”才不会跳过头留下空白
-					const maxL = Math.max(0, this.canvasPx.w - 750)
-					const maxT = Math.max(0, this.canvasPx.h - viewH)
-					const l = Math.min(Math.max(0, left + w / 2 - 375), maxL)
-					const t = Math.min(Math.max(0, top + h / 2 - viewH / 2), maxT)
-					this.scrollTo(l, t)
-				})
+				const b = this.layoutAreas[idx]
+				if (!b) return
+				this.animOn = true
+				const s = this.scale
+				this.tx = 375 - (b.left + b.width / 2) * s
+				this.ty = this.viewHRpx() / 2 - (b.top + b.height / 2) * s
+				this.clampView()
 			},
 
 			viewHRpx() {
@@ -597,15 +604,12 @@
 				return Math.round(this.mapH * 750 / this.viewW)
 			},
 
-			// 把画布坐标 (xRpx, yRpx) 滚到可视区中央，并夹紧到可滚范围
+			// 把画布坐标 (xRpx, yRpx) 移到视口中央，并夹紧到可平移范围
 			centerPoint(xRpx, yRpx) {
-				const viewH = this.viewHRpx()
-				const maxL = Math.max(0, this.canvasPx.w - 750)
-				const maxT = Math.max(0, this.canvasPx.h - viewH)
-				this.scrollTo(
-					Math.min(Math.max(0, xRpx - 375), maxL),
-					Math.min(Math.max(0, yRpx - viewH / 2), maxT)
-				)
+				this.animOn = true
+				this.tx = 375 - xRpx * this.scale
+				this.ty = this.viewHRpx() / 2 - yRpx * this.scale
+				this.clampView()
 			},
 
 			// 底部选座车是 fixed 的会盖住画布下沿：量它的高度，把画布高度刚好填满剩余屏幕
@@ -625,6 +629,8 @@
 						winH = uni.getSystemInfoSync().windowHeight || winH
 					} catch (e) {}
 					this.cartH = Math.round(cart.height || 0)
+					// 缓存视口顶部，捏合起始时同步取锚点，不再异步查询
+					this.vpTop = Math.round(map.top || 0)
 					// 再减掉 pagePad 的 12px 安全边距，让整页恰好一屏不需滚动
 					const h = Math.round(winH - this.cartH - (this.cartH > 0 ? 12 : 110) - (map.top || 0))
 					// 量不到合理值时保底 200px，高度差小于 4px 不反复改，避免震荡
@@ -664,6 +670,7 @@
 							this.areas = d.areas || []
 							this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
 							this.seatVersion = Number(d.seatVersion) || 1
+							this.seatColors = d.seatColors || {}
 							this.isAdmin = !!d.isAdmin
 							this.focusIndex = -1
 
@@ -693,6 +700,77 @@
 						this.loading = false
 						console.error('加载座位图失败', err)
 						uni.showToast({ title: '加载失败', icon: 'none' })
+					}
+				})
+			},
+
+			// 手动刷新：重拉占用/我的座位/统计/配色，保留当前缩放视角与选座车；车内失效座位自动剔除
+			refreshSeatMap() {
+				if (this.refreshing) return
+				this.refreshing = true
+				uni.showLoading({ title: '刷新中', mask: true })
+				uniCloud.callFunction({
+					name: 'seat-select',
+					data: { action: 'getSeatMap', concertId: this.concertId, userId: this.userId },
+					success: (res) => {
+						this.refreshing = false
+						uni.hideLoading()
+						if (res.result.code !== 0) {
+							uni.showToast({ title: res.result.message || '刷新失败', icon: 'none' })
+							return
+						}
+						const d = res.result.data
+						if (!d.seatEnabled) {
+							this.seatEnabled = false
+							this.emptyText = '座位表已关闭'
+							return
+						}
+						// 结构性改版：格子坐标已不可信，退回整页重载（重置视图与选座车）
+						if ((Number(d.seatVersion) || 1) !== this.seatVersion) {
+							uni.showToast({ title: '座位表已更新，重新载入', icon: 'none' })
+							this.loadSeatMap()
+							return
+						}
+						this.concert = d.concert || this.concert
+						this.areas = d.areas || []
+						this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
+						this.seatColors = d.seatColors || {}
+						this.isAdmin = !!d.isAdmin
+
+						const taken = {}
+						;(d.taken || []).forEach(s => { taken[`${s.areaId}-${s.row}-${s.col}`] = { remark: s.remark || '', nickname: s.nickname || '' } })
+						this.takenSet = taken
+
+						const mine = {}
+						;(d.mySeats || []).forEach(s => { mine[`${s.areaId}-${s.row}-${s.col}`] = { remark: s.remark || '' } })
+						this.mySeatSet = mine
+
+						this.totalSelected = Number(d.totalSelected) || 0
+						this.totalCapacity = Number(d.totalCapacity) || this.areas.reduce((sum, a) => sum + (a.isStage ? 0 : (a.rows || 0) * (a.cols || 0)), 0)
+
+						// 选座车清洗：已是“我的”（如其它端已下单）静默出车；被他人抢占则移除并提醒
+						const lost = []
+						const kept = this.selectedSeats.filter(s => {
+							if (mine[s.key]) return false
+							if (taken[s.key]) { lost.push(s.label); return false }
+							return true
+						})
+						const nextSet = {}
+						kept.forEach(s => { nextSet[s.key] = true })
+						this.selectedSet = nextSet
+						this.selectedSeats = kept
+
+						uni.showToast({
+							title: lost.length > 0 ? `已刷新，${lost.join('、')} 被抢占移出选座车` : '已刷新最新座位状态',
+							icon: 'none',
+							duration: lost.length > 0 ? 3000 : 1500
+						})
+					},
+					fail: (err) => {
+						this.refreshing = false
+						uni.hideLoading()
+						console.error('刷新座位图失败', err)
+						uni.showToast({ title: '刷新失败，请稍后再试', icon: 'none' })
 					}
 				})
 			},
@@ -776,32 +854,33 @@
 				if (this.scale >= MIN_TAP_SCALE) return true
 				const idx = this.areas.findIndex(a => a._id === seat.areaId)
 				if (idx >= 0) this.focusArea(idx, MIN_TAP_SCALE)
-				else this.scale = MIN_TAP_SCALE
-				// 缩放生效后再把被点的座位挪到视线中央，方便再点一次
-				this.$nextTick(() => {
-					const area = this.areas[idx] || {}
-					const cell = this.cell
-					const x = CANVAS_PAD + (Number(area.gridX) || 0) * cell + this.gutLeft + (seat.col - 1) * cell + cell / 2
-					const y = CANVAS_PAD + (Number(area.gridY) || 0) * cell + this.gutTop + (seat.row - 1) * cell + cell / 2
-					this.centerPoint(x, y)
-				})
+				else {
+					this.scale = MIN_TAP_SCALE
+					this.clampView()
+				}
+				// 放大后把被点的座位挪到视线中央，方便再点一次
+				const area = this.areas[idx] || {}
+				const x = CANVAS_PAD + (Number(area.gridX) || 0) * CELL_BASE + this.gutLeft + (seat.col - 1) * CELL_BASE + CELL_BASE / 2
+				const y = CANVAS_PAD + (Number(area.gridY) || 0) * CELL_BASE + this.gutTop + (seat.row - 1) * CELL_BASE + CELL_BASE / 2
+				this.centerPoint(x, y)
 				uni.showToast({ title: '已放大至 100%，请再点一次该座位', icon: 'none' })
 				return false
 			},
 
 			onSeatTap(seat) {
-				// 可选/已选中的座位是无确认弹窗的直接写入，先检查缩放够不够
-				if ((seat.state === 'avail' || seat.state === 'selected') && !this.ensureReadableForTap(seat)) return
+				// 拖拽/捏合手势刚结束的紧随 click 一律忽略，防误选
+				if (this.justDragged()) return
+				// 只有可选座位是无确认弹窗直接写入选座车的，先检查缩放够不够
+				if (seat.state === 'avail' && !this.ensureReadableForTap(seat)) return
 				if (seat.state === 'mine') {
-					// 自己的座位：保存后可修改（释放后重新选）
+					// 自己的座位：菜单顶部直接展示当前备注，可修改或释放后重选
 					const rec = this.mySeatSet[seat.key] || {}
-					uni.showModal({
-						title: seat.label,
-						content: (rec.remark ? '您的备注：' + rec.remark + '\n' : '') + '是否释放该座位？释放后可以重新选择其他座位。',
-						confirmText: '释放座位',
-						cancelText: '取消',
-						success: (m) => {
-							if (m.confirm) this.releaseMySeat(seat)
+					uni.showActionSheet({
+						alertText: seat.label + ' 备注：' + (this.clipText(rec.remark) || '无'),
+						itemList: ['修改备注', '释放座位'],
+						success: (r) => {
+							if (r.tapIndex === 0) this.editSeatRemark(seat)
+							else if (r.tapIndex === 1) this.confirmReleaseMine(seat)
 						}
 					})
 					return
@@ -810,31 +889,29 @@
 					// 备注超过 10 字已在座位上隐藏，点击弹窗看完整内容
 					const rec = this.takenSet[seat.key] || {}
 					if (this.isAdmin) {
-						// 管理员可释放任何人的座位
-						uni.showModal({
-							title: seat.label,
-							content: (rec.nickname ? '占座人：' + rec.nickname + '\n' : '') +
-								(rec.remark ? '备注：' + rec.remark + '\n' : '') +
-								'管理员可释放任何人的座位，释放后该座位立即变为可选。',
-							confirmText: '释放座位',
-							cancelText: '取消',
-							success: (m) => {
-								if (m.confirm) this.releaseAnySeat(seat)
+						// 管理员可改任何人备注、释放任何人的座位；菜单顶部展示占座人与备注摘要
+						const who = rec.nickname ? '占座人：' + this.clipText(rec.nickname) + '，' : ''
+						uni.showActionSheet({
+							alertText: seat.label + ' ' + who + '备注：' + (this.clipText(rec.remark) || '无'),
+							itemList: ['修改备注', '释放座位'],
+							success: (r) => {
+								if (r.tapIndex === 0) this.editSeatRemark(seat)
+								else if (r.tapIndex === 1) this.confirmReleaseAny(seat, rec)
 							}
 						})
 						return
 					}
 					uni.showModal({
 						title: seat.label,
-						content: (rec.remark ? '备注：' + rec.remark + '\n' : '') + '该座位已被他人选择，如需沟通可截图发到群聊。',
+						content: (rec.remark ? '备注：' + rec.remark + '\n' : '占座人未留备注\n') + '该座位已被他人选择，如需沟通可截图发到群聊。',
 						confirmText: '我知道了',
 						showCancel: false
 					})
 					return
 				}
 				if (seat.state === 'selected') {
-					this.removeSeat(seat)
-					uni.showToast({ title: '已取消 ' + seat.label, icon: 'none' })
+					// 已在选座车的座位点击不取消，防误触；移除只能去选座车点 ×
+					uni.showToast({ title: seat.label + ' 已在选座车，如需移除请点车里的 ×', icon: 'none' })
 					return
 				}
 				// avail：写入选座车（重建对象保证 Vue3 响应式）
@@ -849,7 +926,8 @@
 					col: seat.col,
 					label: seat.label,
 					price: seat.price,
-					key: seat.key
+					key: seat.key,
+					remark: ''
 				})
 				// 座位上不再印编号，回显完整座位号供确认
 				uni.showToast({ title: '已选 ' + seat.label, icon: 'none' })
@@ -863,9 +941,105 @@
 				this.selectedSeats = this.selectedSeats.filter(s => s.key !== key)
 			},
 
+			// 释放自己的座位：二次确认后执行
+			confirmReleaseMine(seat) {
+				const rec = this.mySeatSet[seat.key] || {}
+				uni.showModal({
+					title: seat.label,
+					content: (rec.remark ? '您的备注：' + rec.remark + '\n' : '') + '是否释放该座位？释放后可以重新选择其他座位。',
+					confirmText: '释放座位',
+					cancelText: '取消',
+					success: (m) => {
+						if (m.confirm) this.releaseMySeat(seat)
+					}
+				})
+			},
+
+			// 管理员释放任意人的座位：二次确认后执行
+			confirmReleaseAny(seat, rec) {
+				uni.showModal({
+					title: seat.label,
+					content: (rec.nickname ? '占座人：' + rec.nickname + '\n' : '') +
+						(rec.remark ? '备注：' + rec.remark + '\n' : '') +
+						'管理员可释放任何人的座位，释放后该座位立即变为可选。',
+					confirmText: '释放座位',
+					cancelText: '取消',
+					success: (m) => {
+						if (m.confirm) this.releaseAnySeat(seat)
+					}
+				})
+			},
+
+			// 修改已选座位的备注：本人改自己的，管理员可改任意人的（服务端二次校验）
+			editSeatRemark(seat) {
+				const rec = this.mySeatSet[seat.key] || this.takenSet[seat.key] || {}
+				uni.showModal({
+					title: seat.label,
+					editable: true,
+					placeholderText: '备注（选填，公开展示在座位上）',
+					content: rec.remark || '',
+					success: (m) => {
+						if (!m.confirm) return
+						// 低版本基础库不支持 editable，拿不到输入内容时直接返回，避免误清空
+						if (m.content == null) {
+							uni.showToast({ title: '当前微信版本过低，无法编辑备注', icon: 'none' })
+							return
+						}
+						const remark = String(m.content).trim().slice(0, 100)
+						uni.showLoading({ title: '保存中' })
+						uniCloud.callFunction({
+							name: 'seat-select',
+							data: {
+								action: 'updateRemark',
+								concertId: this.concertId,
+								seat: { areaId: seat.areaId, row: seat.row, col: seat.col },
+								remark,
+								userId: this.userId
+							},
+							success: (res) => {
+								uni.hideLoading()
+								if (res.result.code === 0) {
+									// 同步本地缓存，座位状态与备注弹窗即时刷新
+									if (this.mySeatSet[seat.key]) {
+										const mine = Object.assign({}, this.mySeatSet)
+										mine[seat.key] = Object.assign({}, mine[seat.key], { remark })
+										this.mySeatSet = mine
+									} else if (this.takenSet[seat.key]) {
+										const taken = Object.assign({}, this.takenSet)
+										taken[seat.key] = Object.assign({}, taken[seat.key], { remark })
+										this.takenSet = taken
+									}
+									uni.showToast({ title: '备注已更新', icon: 'none' })
+								} else if (res.result.code === 401) {
+									this.requireLogin()
+								} else if (res.result.code === 403) {
+									// 服务端判定非本人且非管理员：同步失效本地管理员标识
+									this.isAdmin = false
+									uni.showToast({ title: res.result.message || '无权限修改该备注', icon: 'none' })
+								} else {
+									uni.showToast({ title: res.result.message || '备注保存失败', icon: 'none' })
+								}
+							},
+							fail: () => {
+								uni.hideLoading()
+								uni.showToast({ title: '备注保存失败', icon: 'none' })
+							}
+						})
+					}
+				})
+			},
+
 			shortNote(note) {
 				if (!note) return ''
 				return note.length > 10 ? note.slice(0, 10) + '…' : note
+			},
+
+			// 菜单 alertText 只有一行展示空间，长文本截断后再展示（完整内容在修改/释放弹窗里可见）
+			clipText(text, max) {
+				const t = String(text || '').trim().replace(/\n/g, ' ')
+				if (!t) return ''
+				const m = max || 20
+				return t.length > m ? t.slice(0, m) + '…' : t
 			},
 
 			// 释放自己的已选座位
@@ -940,7 +1114,7 @@
 				if (this.selectedSeats.length === 0 || this.submitting) return
 				this.submitting = true
 				uni.showLoading({ title: '提交中' })
-				const seats = this.selectedSeats.map(s => ({ areaId: s.areaId, row: s.row, col: s.col }))
+				const seats = this.selectedSeats.map(s => ({ areaId: s.areaId, row: s.row, col: s.col, remark: (s.remark || '').trim() }))
 				uniCloud.callFunction({
 					name: 'seat-select',
 					data: {
@@ -948,7 +1122,6 @@
 						concertId: this.concertId,
 						seats,
 						seatVersion: this.seatVersion,
-						remark: (this.remarkInput || '').trim(),
 						userId: this.userId
 					},
 					success: (res) => this.handleSubmitResult(res.result),
@@ -989,7 +1162,6 @@
 					this.mySeatSet = mine
 					this.totalSelected += addedNow
 					this.selectedSeats = []
-					this.remarkInput = ''
 					this.guidExpense(data)
 					return
 				}
@@ -1227,6 +1399,17 @@
 				background: #e3f2fd;
 				padding: 0 14rpx;
 			}
+
+			&.refresh {
+				font-size: 22rpx;
+				color: #2e7d32;
+				background: #e8f5e9;
+				padding: 0 14rpx;
+
+				&.busy {
+					opacity: 0.5;
+				}
+			}
 		}
 
 		.zc-scale {
@@ -1246,10 +1429,16 @@
 	background: #fff;
 	border-top: 1rpx solid #eee;
 	border-bottom: 1rpx solid #eee;
+	/* 自绘平移缩放：超出视口的部分靠 transform 移进来，不外泄滚动；H5 靠 touch-action 屏蔽浏览器手势 */
+	touch-action: none;
+	overflow: hidden;
 }
 
 .map-canvas {
 	position: relative;
+	/* 缩放基准点固定在左上角，tx/ty 与 scale 才能用同一套锚点公式反解 */
+	transform-origin: 0 0;
+	will-change: transform;
 }
 
 .area-block {
@@ -1360,47 +1549,57 @@
 	padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
 	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
 
-	/* 已选座位自动换行，全部可见，不靠左右滑动 */
+	/* 已选座位逐座填备注：改为一行一座，不再用胶囊换行 */
 	.cart-list {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 12rpx;
+		flex-direction: column;
+		gap: 8rpx;
 		margin-bottom: 10rpx;
 	}
 
-	.cart-seat {
+	.cart-seat-row {
 		display: flex;
 		align-items: center;
-		flex-shrink: 0;
 		background: #ede7f6;
-		color: #5e35b1;
-		font-size: 24rpx;
-		border-radius: 24rpx;
-		padding: 6rpx 16rpx;
+		border-radius: 12rpx;
+		padding: 4rpx 12rpx;
 
-		.cs-del {
-			margin-left: 10rpx;
-			font-size: 30rpx;
-			color: #90a4ae;
+		.cs-label {
+			width: 220rpx;
+			flex-shrink: 0;
+			font-size: 22rpx;
+			color: #5e35b1;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
-		&.empty {
-			background: transparent;
-			color: #999;
-			padding: 8rpx 0;
+		.cs-remark {
+			flex: 1;
+			height: 56rpx;
+			background: #fff;
+			border-radius: 8rpx;
+			padding: 0 14rpx;
+			font-size: 22rpx;
+		}
+
+		.cs-del {
+			margin-left: 12rpx;
+			font-size: 30rpx;
+			color: #90a4ae;
+			padding: 0 8rpx;
 		}
 	}
 
-	.cart-remark {
-		margin-bottom: 8rpx;
-
-		.cart-remark-input {
-			height: 56rpx;
-			background: #f5f5f5;
-			border-radius: 12rpx;
-			padding: 0 20rpx;
-			font-size: 24rpx;
-		}
+	.cart-seat.empty {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+		background: transparent;
+		color: #999;
+		font-size: 24rpx;
+		border-radius: 24rpx;
+		padding: 8rpx 0;
 	}
 
 	.cart-bottom {

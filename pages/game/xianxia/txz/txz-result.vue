@@ -99,7 +99,7 @@ export default {
 	onShareAppMessage() {
 		return {
 			title: `${this.nick} 拿下「${this.title || '嗑学认证'}」，${this.score}/${this.totalScore} 分，来挑战我！`,
-			path: '/pages/game/txz/txz-index?shareCode=' + this.examCode
+			path: '/pages/game/xianxia/txz/txz-index?shareCode=' + this.examCode
 		}
 	},
 	onShareTimeline() {

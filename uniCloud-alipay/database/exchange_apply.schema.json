@@ -1,0 +1,64 @@
+{
+	"bsonType": "object",
+	"required": ["listing_id", "owner_id", "applicant_id", "nickname", "qty"],
+	"permission": {
+		"read": false,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"listing_id": {
+			"bsonType": "string",
+			"description": "关联的发布单ID"
+		},
+		"owner_id": {
+			"bsonType": "string",
+			"description": "发布人（A）的用户ID"
+		},
+		"applicant_id": {
+			"bsonType": "string",
+			"description": "申请人（B）的用户ID"
+		},
+		"nickname": {
+			"bsonType": "string",
+			"description": "B 填写的昵称（快照，线下常用圈名）"
+		},
+		"qty": {
+			"bsonType": "int",
+			"description": "B 申请份数",
+			"minimum": 1
+		},
+		"remark": {
+			"bsonType": "string",
+			"description": "B 的备注"
+		},
+		"offer_item": {
+			"bsonType": "string",
+			"description": "B 用于互换的物料；发布单 allow_free=false 时必填"
+		},
+		"status": {
+			"bsonType": "int",
+			"description": "状态：0待处理 1已互换 2已删除",
+			"defaultValue": 0
+		},
+		"applied_at": {
+			"bsonType": "timestamp",
+			"description": "申请时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"confirmed_at": {
+			"bsonType": "timestamp",
+			"description": "确认互换时间"
+		},
+		"deleted_at": {
+			"bsonType": "timestamp",
+			"description": "删除时间"
+		}
+	}
+}

@@ -3,9 +3,10 @@
  * 选座云函数（需登录后选座）
  * action:
  *   - getSeatMap  : 读取座位图（分区含已选统计 + 已占座位含备注 + 我的座位，管理员额外返回 isAdmin 与占座人昵称）
- *   - submit      : 提交选座（应用层先查后写 + 失败回滚，支持备注）
+ *   - submit      : 提交选座（应用层先查后写 + 失败回滚，每座位独立备注，整批备注字段仅作旧版兼容）
  *   - releaseMine : 释放自己的已选座位（选座保存后可修改）
  *   - releaseAny  : 管理员释放任意人的座位（服务端二次校验管理员身份）
+ *   - updateRemark: 修改已选座位的备注（本人可改自己的，管理员可改任意人的，服务端二次校验）
  * 说明：uniCloud-支付宝云不支持数据库事务，故采用「提交前重新查询已占集合 → 逐条写入 →
  * 任一条失败则删除本次已写入记录」的方式实现整批原子效果。
  */
@@ -118,6 +119,8 @@ exports.main = async (event, context) => {
 			return await releaseMine(event);
 		case 'releaseAny':
 			return await releaseAny(event);
+		case 'updateRemark':
+			return await updateRemark(event);
 		default:
 			return { code: -1, message: '未知的操作类型' };
 	}
@@ -212,6 +215,8 @@ async function getSeatMap(event) {
 				},
 				maxSeatsPerUser: Number(concert.max_seats_per_user) || 0,
 				seatVersion: Number(concert.seat_version) || 1,
+				// 管理员配置的座位状态配色；空对象表示前端用内置默认
+				seatColors: concert.seat_colors || {},
 				totalSelected: selections.length,
 				totalCapacity: capacity,
 				canvasW: canvas.canvasW,
@@ -251,7 +256,8 @@ async function submit(event) {
 			return { code: 401, message: '请先登录后再选座' };
 		}
 		
-		const remarkText = String(remark || '').trim().slice(0, 100);
+		// 整批备注仅作旧版客户端兼容回退；新版逐座位携带 seats[i].remark
+		const fallbackRemark = String(remark || '').trim().slice(0, 100);
 		if (!concertId) {
 			return { code: -1, message: '缺少演唱会ID' };
 		}
@@ -329,7 +335,9 @@ async function submit(event) {
 			const key = seatKey(area._id, row, col);
 			if (seen[key]) continue;
 			seen[key] = true;
-			wanted.push({ areaId: area._id, row, col, area });
+			// 每个座位独立备注（选填，最长 100 字）；旧版客户端不带 item.remark 时回退整批备注
+			const seatRemark = (item.remark == null ? fallbackRemark : String(item.remark).trim()).slice(0, 100);
+			wanted.push({ areaId: area._id, row, col, area, remark: seatRemark });
 		}
 		
 		// 幂等：属于自己的座位视为已选成功，不重复写入
@@ -404,7 +412,7 @@ async function submit(event) {
 					row: item.row,
 					col: item.col,
 					seatLabel,
-					remark: remarkText,
+					remark: item.remark,
 					userId,
 					nickname,
 					avatar,
@@ -417,7 +425,7 @@ async function submit(event) {
 					row: item.row,
 					col: item.col,
 					seatLabel,
-					remark: remarkText,
+					remark: item.remark,
 					price: item.area.price
 				});
 			}
@@ -444,6 +452,52 @@ async function submit(event) {
 		console.error('选座提交失败:', err);
 		await rollback();
 		return { code: -1, message: '选座失败，请重试：' + err.message };
+	}
+}
+
+// 修改已选座位的备注：本人或管理员可操作（不信任前端角色，服务端二次校验）
+async function updateRemark(event) {
+	try {
+		const { concertId, seat = {}, remark = '', userId } = event;
+		
+		if (!userId) {
+			return { code: 401, message: '请先登录后再操作' };
+		}
+		if (!concertId || !seat.areaId) {
+			return { code: -1, message: '参数不完整' };
+		}
+		const row = parseInt(seat.row);
+		const col = parseInt(seat.col);
+		if (!(row >= 1) || !(col >= 1)) {
+			return { code: -1, message: '座位参数不正确' };
+		}
+		const remarkText = String(remark || '').trim().slice(0, 100);
+		
+		const res = await db.collection(SELECT_COLLECTION)
+			.where({ concertId, areaId: seat.areaId, row, col })
+			.limit(10)
+			.get();
+		const docs = res.data || [];
+		if (docs.length === 0) {
+			return { code: -1, message: '该座位还没有选座记录' };
+		}
+		
+		const isAdmin = await isAdminUser(userId);
+		let updated = 0;
+		for (const doc of docs) {
+			// 普通用户只能改自己的；管理员不带 userId 条件即可改任意人
+			if (doc.userId !== userId && !isAdmin) continue;
+			await db.collection(SELECT_COLLECTION).doc(doc._id).update({ remark: remarkText });
+			updated++;
+		}
+		if (updated === 0) {
+			return { code: 403, message: '只能修改自己的座位备注' };
+		}
+		
+		return { code: 0, message: '备注已更新', data: { updated, remark: remarkText } };
+	} catch (err) {
+		console.error('修改座位备注失败:', err);
+		return { code: -1, message: '备注保存失败，请重试：' + err.message };
 	}
 }
 

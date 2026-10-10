@@ -1,0 +1,151 @@
+/**
+ * 座位图手势 wxs（运行在视图层，零 setData 跟手）
+ * 双指捏合缩放 + 单指拖拽平移全程在视图层直接 setStyle 改 transform，
+ * 手势结束才 callMethod 回写逻辑层，避免每帧「逻辑层↔视图层」通信折损。
+ * 注意：wxs 是 ES5 受限语法，不能用 let/箭头函数/模板字符串。
+ */
+
+// S = ins.getState()，per-页面实例的私有状态
+// S.gs：视图几何状态（单位 rpx，与逻辑层 tx/ty/scale 同一坐标系）
+// S.g  ：进行中的手势 { m:1|2, ... }，非空表示手势期间，逻辑层数据推送不覆写视图
+
+function dist(t) {
+	var dx = t[0].clientX - t[1].clientX
+	var dy = t[0].clientY - t[1].clientY
+	return Math.sqrt(dx * dx + dy * dy)
+}
+
+function ensure(S) {
+	if (!S.gs) {
+		S.gs = { s: 1, tx: 0, ty: 0, cw: 0, ch: 0, vpW: 750, vpH: 600, k: 2, vpTop: 0, min: 0.4, max: 2.4, tr: 'none' }
+	}
+	return S.gs
+}
+
+// 每帧唯一一次样式写入：只动 transform，合成层内完成，不触发布局/重绘
+function apply(ins) {
+	var S = ins.getState()
+	var gs = ensure(S)
+	var el = ins.selectComponent('.map-canvas')
+	if (!el) return
+	var t = 'translate3d(' + gs.tx + 'rpx, ' + gs.ty + 'rpx, 0) scale(' + gs.s + ')'
+	el.setStyle({
+		webkitTransform: t,
+		transform: t,
+		transition: gs.tr
+	})
+}
+
+// 平移夹紧：画布比视口小的轴贴回 0，其余不允许拖出留白
+function clampView(S) {
+	var gs = ensure(S)
+	var cw = gs.cw * gs.s
+	var ch = gs.ch * gs.s
+	gs.tx = cw <= gs.vpW ? 0 : Math.min(0, Math.max(gs.vpW - cw, gs.tx))
+	gs.ty = ch <= gs.vpH ? 0 : Math.min(0, Math.max(gs.vpH - ch, gs.ty))
+}
+
+// 逻辑层 -> 视图层同步（初始化、按钮缩放、程序化定位、手势结束回写后的对齐）
+function sync(v, o, ins) {
+	if (!v) return
+	var S = ins.getState()
+	var gs = ensure(S)
+	gs.s = v.s
+	gs.tx = v.tx
+	gs.ty = v.ty
+	gs.cw = v.cw
+	gs.ch = v.ch
+	gs.vpW = v.vpW
+	gs.vpH = v.vpH
+	gs.k = v.k
+	gs.vpTop = v.vpTop
+	gs.min = v.min
+	gs.max = v.max
+	gs.tr = v.tr
+	// 手势进行中不回写，免得刷新等数据推送打断跟手
+	if (S.g) return
+	apply(ins)
+}
+
+function start(e, ins) {
+	var S = ins.getState()
+	S.g = null
+	var t = e.touches
+	if (!t || t.length < 1) return
+	var gs = ensure(S)
+	if (t.length >= 2) {
+		var d = dist(t)
+		if (d < 12) return
+		var cx = (t[0].clientX + t[1].clientX) / 2 * gs.k
+		var cy = ((t[0].clientY + t[1].clientY) / 2 - gs.vpTop) * gs.k
+		// 锚点 = 捏合中心对应的未缩放画布坐标，缩放后据此反解平移量保持该点钉在手指下
+		S.g = { m: 2, d0: d, s0: gs.s, cx: cx, cy: cy, ax: (cx - gs.tx) / gs.s, ay: (cy - gs.ty) / gs.s, mv: false }
+	} else {
+		S.g = { m: 1, x0: t[0].clientX, y0: t[0].clientY, tx0: gs.tx, ty0: gs.ty, mv: false }
+	}
+	// 手势期间关掉过渡，transform 直接跟手
+	gs.tr = 'none'
+	apply(ins)
+}
+
+function move(e, ins) {
+	var S = ins.getState()
+	var g = S.g
+	if (!g) return
+	var t = e.touches
+	if (!t || t.length < 1) return
+	var gs = ensure(S)
+	if (g.m == 2 && t.length >= 2) {
+		var d = dist(t)
+		if (d < 12) return
+		// 不取整、不设步进：缩放比连续变化，才能做到跟手丝滑
+		var s = g.s0 * d / g.d0
+		if (s < gs.min) s = gs.min
+		if (s > gs.max) s = gs.max
+		gs.s = s
+		gs.tx = g.cx - g.ax * s
+		gs.ty = g.cy - g.ay * s
+		g.mv = true
+		clampView(S)
+		apply(ins)
+		// return false = stopPropagation + preventDefault，阻止页面随后滚动
+		return false
+	}
+	if (g.m == 1 && t.length == 1) {
+		var dxp = t[0].clientX - g.x0
+		var dyp = t[0].clientY - g.y0
+		if (!g.mv && (Math.abs(dxp) + Math.abs(dyp)) * gs.k > 4) g.mv = true
+		gs.tx = g.tx0 + dxp * gs.k
+		gs.ty = g.ty0 + dyp * gs.k
+		clampView(S)
+		apply(ins)
+		return false
+	}
+}
+
+function end(e, ins) {
+	var S = ins.getState()
+	var g = S.g
+	var t = e.touches
+	if (t && t.length >= 2) return
+	if (t && t.length == 1 && g) {
+		// 双指变单指：从当前位置接续平移，避免视图跳动
+		var gs = ensure(S)
+		S.g = { m: 1, x0: t[0].clientX, y0: t[0].clientY, tx0: gs.tx, ty0: gs.ty, mv: g.mv }
+		return
+	}
+	S.g = null
+	var gs2 = ensure(S)
+	// 恢复过渡，之后的程序化定位（进区/适应屏幕）走 0.2s 动画
+	gs2.tr = 'transform 0.2s ease'
+	apply(ins)
+	// 手势结束后一次性把视图状态回写逻辑层（rpx 坐标系一致），供按钮缩放/双击定位续算
+	ins.callMethod('onGestureEnd', { s: gs2.s, tx: gs2.tx, ty: gs2.ty, moved: g ? g.mv : false })
+}
+
+module.exports = {
+	sync: sync,
+	start: start,
+	move: move,
+	end: end
+}

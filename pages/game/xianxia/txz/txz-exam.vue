@@ -139,7 +139,7 @@ export default {
 	},
 	onUnload() { this.clearTimer() },
 	onShareAppMessage() {
-		return { title: '青宇宇宙通行证 · 嗑学水平测试', path: '/pages/game/txz/txz-index?shareCode=' + this.examCode }
+		return { title: '青宇宇宙通行证 · 嗑学水平测试', path: '/pages/game/xianxia/txz/txz-index?shareCode=' + this.examCode }
 	},
 	methods: {
 		typeLabel(type) {
@@ -272,7 +272,7 @@ export default {
 					if (res.result.code === 0) {
 						const d = res.result.data
 						uni.redirectTo({
-							url: '/pages/game/txz/txz-result?recordId=' + d.recordId +
+							url: '/pages/game/xianxia/txz/txz-result?recordId=' + d.recordId +
 								'&examCode=' + this.examCode +
 								'&nick=' + encodeURIComponent(this.nick) +
 								'&score=' + d.score + '&totalScore=' + d.totalScore +

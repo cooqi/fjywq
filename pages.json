@@ -290,7 +290,7 @@
 		}
 	},
 	{
-		"path": "pages/game/txz/txz-index",
+		"path": "pages/game/xianxia/txz/txz-index",
 		"style": {
 			"navigationBarTitleText": "青宇宇宙通行证",
 			"enablePullDownRefresh": false,
@@ -298,7 +298,7 @@
 		}
 	},
 	{
-		"path": "pages/game/txz/txz-exam",
+		"path": "pages/game/xianxia/txz/txz-exam",
 		"style": {
 			"navigationBarTitleText": "嗑学水平测试",
 			"enablePullDownRefresh": false,
@@ -306,9 +306,49 @@
 		}
 	},
 	{
-		"path": "pages/game/txz/txz-result",
+		"path": "pages/game/xianxia/txz/txz-result",
 		"style": {
 			"navigationBarTitleText": "认证证书",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/xianxia",
+		"style": {
+			"navigationBarTitleText": "杯杯儿互动",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/huhuan/huhuan",
+		"style": {
+			"navigationBarTitleText": "物料互换",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/huhuan/huhuan-publish",
+		"style": {
+			"navigationBarTitleText": "发布互换",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/huhuan/huhuan-apply",
+		"style": {
+			"navigationBarTitleText": "申请互换",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/xianxia/huhuan/huhuan-manage",
+		"style": {
+			"navigationBarTitleText": "互换管理",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#cff8f5"
 		}

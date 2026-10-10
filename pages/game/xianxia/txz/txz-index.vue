@@ -267,7 +267,7 @@ export default {
 		const code = this.created.examCode || ''
 		return {
 			title: '青宇宇宙通行证 · 嗑学水平测试' + (code ? '（考试码 ' + code + '）' : ''),
-			path: code ? '/pages/game/txz/txz-index?shareCode=' + code : '/pages/game/txz/txz-index'
+			path: code ? '/pages/game/xianxia/txz/txz-index?shareCode=' + code : '/pages/game/xianxia/txz/txz-index'
 		}
 	},
 	onShareTimeline() {
@@ -294,7 +294,7 @@ export default {
 			const nick = (this.joinForm.nick || '').trim()
 			if (!code) { uni.showToast({ title: '请输入考试码', icon: 'none' }); return }
 			if (!nick) { uni.showToast({ title: '请输入昵称', icon: 'none' }); return }
-			uni.navigateTo({ url: '/pages/game/txz/txz-exam?examCode=' + code + '&nick=' + encodeURIComponent(nick) })
+			uni.navigateTo({ url: '/pages/game/xianxia/txz/txz-exam?examCode=' + code + '&nick=' + encodeURIComponent(nick) })
 		},
 
 		// 创建考试
@@ -461,7 +461,7 @@ export default {
 		},
 		// 打开我参与的成绩（跳转证书页）
 		openJoined(item) {
-			const url = '/pages/game/txz/txz-result?recordId=&examCode=' + item.exam_code +
+			const url = '/pages/game/xianxia/txz/txz-result?recordId=&examCode=' + item.exam_code +
 				'&nick=' + encodeURIComponent(item.nick || '') +
 				'&score=' + (item.score || 0) + '&totalScore=' + (item.total_score || 0) +
 				'&passScore=' + (item.pass_score || 0) + '&passed=' + (item.passed ? 'true' : 'false') +

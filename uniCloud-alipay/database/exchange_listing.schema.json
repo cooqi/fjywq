@@ -1,0 +1,75 @@
+{
+	"bsonType": "object",
+	"required": ["user_id", "code", "name", "total_qty", "expire_at"],
+	"permission": {
+		"read": false,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"user_id": {
+			"bsonType": "string",
+			"description": "发布人（A）的用户ID"
+		},
+		"code": {
+			"bsonType": "string",
+			"description": "互换物料码（8位大写字母数字，唯一）"
+		},
+		"name": {
+			"bsonType": "string",
+			"description": "物料名称"
+		},
+		"image": {
+			"bsonType": "string",
+			"description": "物料图片（单张，可选，云存储URL）"
+		},
+		"total_qty": {
+			"bsonType": "int",
+			"description": "互换数量 N（总共放出几份）",
+			"minimum": 1
+		},
+		"used_qty": {
+			"bsonType": "int",
+			"description": "已分配份数（冗余计数，避免每次统计）",
+			"defaultValue": 0
+		},
+		"applicant_cnt": {
+			"bsonType": "int",
+			"description": "申请人数（冗余计数）",
+			"defaultValue": 0
+		},
+		"remark": {
+			"bsonType": "string",
+			"description": "A 的备注（想换什么、地点等）"
+		},
+		"allow_free": {
+			"bsonType": "bool",
+			"description": "是否允许伸手；false 时申请人必须填写用于互换的物料（旧数据无此字段视为允许）",
+			"defaultValue": true
+		},
+		"expire_at": {
+			"bsonType": "timestamp",
+			"description": "过期时间戳"
+		},
+		"status": {
+			"bsonType": "int",
+			"description": "状态：1进行中 2已满 3已关闭 4已过期 5已删除",
+			"defaultValue": 1
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_date": {
+			"bsonType": "timestamp",
+			"description": "更新时间"
+		}
+	}
+}
