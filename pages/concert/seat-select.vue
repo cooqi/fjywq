@@ -206,7 +206,7 @@
 				seatColors: {},
 				totalSelected: 0,
 				totalCapacity: 0,
-				emptyText: '座位表暂未开放',
+				emptyText: '本场次不开放选座',
 				// 占座/我的/选中，均以 `${areaId}-${row}-${col}` 为 key 的普通对象，保证 Vue3 响应式
 				takenSet: {},
 				mySeatSet: {},
@@ -232,6 +232,13 @@
 				cartH: 0,
 				// 自定义座位操作菜单：微信 showActionSheet 不支持 alertText 头部，改用自带遮罩的固定弹层
 				seatMenuInfo: { open: false, title: '', items: [], seat: null, rec: null, action: '' },
+			}
+		},
+		onShareAppMessage() {
+			return {
+				title: this.concert.name,
+				path: '/pages/concert/seat-select?id=' + this.concertId,
+				imageUrl: this.concert.coverUrl
 			}
 		},
 		computed: {
@@ -438,7 +445,7 @@
 				this.userId = u._id || ''
 				this.userNick = u.nickName || ''
 			} catch (e) {
-				// error
+				
 			}
 			try {
 				const sys = uni.getSystemInfoSync()
@@ -678,7 +685,11 @@
 						if (res.result.code === 0) {
 							const d = res.result.data
 							this.seatEnabled = !!d.seatEnabled
-							if (!d.seatEnabled) return
+							if (!d.seatEnabled) {
+								// 未开放/已关闭：展示明确空态，页面不渲染座位图与选座车
+								this.emptyText = res.result.message || '本场次不开放选座'
+								return
+							}
 							this.concert = d.concert || {}
 							this.areas = d.areas || []
 							this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
@@ -735,7 +746,7 @@
 						const d = res.result.data
 						if (!d.seatEnabled) {
 							this.seatEnabled = false
-							this.emptyText = '座位表已关闭'
+							this.emptyText = '本场次不开放选座'
 							return
 						}
 						// 结构性改版：格子坐标已不可信，退回整页重载（重置视图与选座车）

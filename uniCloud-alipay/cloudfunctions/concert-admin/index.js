@@ -194,15 +194,17 @@ function normalizeLabelRule(rule) {
 	};
 }
 
-// 座位状态配色清洗：只保留合法 #RRGGBB，全部缺省存空对象（前端回退内置默认配色）
+// 座位状态配色清洗：合法 #RRGGBB 采用自定义值，非法/缺省回填内置默认（始终存完整四键，避免空对象不清除旧值）
 const SEAT_COLOR_KEYS = ['avail', 'selected', 'taken', 'mine'];
+// 与选座页 seat-select.vue / 配置页 seat-config.vue 内置默认保持一致
+const SEAT_COLOR_FALLBACK = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' };
 
 function normalizeSeatColors(input) {
 	const src = input && typeof input === 'object' ? input : {};
 	const out = {};
 	SEAT_COLOR_KEYS.forEach(key => {
 		const v = String(src[key] == null ? '' : src[key]).trim();
-		if (/^#[0-9a-fA-F]{6}$/.test(v)) out[key] = v.toLowerCase();
+		out[key] = /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : SEAT_COLOR_FALLBACK[key];
 	});
 	
 	return out;
@@ -228,6 +230,8 @@ exports.main = async (event, context) => {
 			return await getSeatSelections(event);
 		case 'releaseSeats':
 			return await releaseSeats(event);
+		case 'setSeatEnabled':
+			return await setSeatEnabled(event);
 		default:
 			return {
 				code: -1,
@@ -732,12 +736,15 @@ async function saveSeatConfig(event) {
 		const nextVersion = structuralChanged ? (Number(concert.seat_version) || 1) + 1 : (Number(concert.seat_version) || 1);
 		
 		const concertUpdate = {
-			seat_enabled: true,
 			max_seats_per_user: maxPerUser,
 			seat_version: nextVersion,
 			updateTime: now
 		};
-		// 旧版客户端不传 seatColors 时保持原配色不动；传了则按清洗结果覆盖（空对象=全部默认）
+		// 首次保存座位表（该场次此前无任何分区）默认开放选座；之后开关只由配置页切换按钮控制，保存不再覆盖
+		if (oldAreas.length === 0) {
+			concertUpdate.seat_enabled = true;
+		}
+		// 旧版客户端不传 seatColors 时保持原配色不动；传了则按清洗结果整体覆盖（完整四键）
 		if (event.seatColors !== undefined) {
 			concertUpdate.seat_colors = normalizeSeatColors(event.seatColors);
 		}
@@ -865,5 +872,50 @@ async function releaseSeats(event) {
 	} catch (err) {
 		console.error('释放座位失败:', err);
 		return { code: -1, message: '释放座位失败：' + err.message };
+	}
+}
+
+// 开放/关闭选座：只改 Concert.seat_enabled，不动座位布局、版本号与已选记录（关闭后重新开放，已选座位保留）
+async function setSeatEnabled(event) {
+	try {
+		const { concertId, enabled = false, userId } = event;
+		
+		if (!(await isAdminUser(userId))) {
+			return { code: 403, message: '无管理员权限' };
+		}
+		
+		if (!concertId) {
+			return { code: -1, message: '缺少演唱会ID' };
+		}
+		
+		const concertRes = await db.collection('Concert').doc(concertId).get();
+		const concert = concertRes.data && concertRes.data[0];
+		if (!concert) {
+			return { code: -1, message: '演唱会不存在' };
+		}
+		
+		const next = !!enabled;
+		
+		// 开放前校验已配置座位分区，避免开了一张空座位表
+		if (next) {
+			const areaCount = await db.collection(AREA_COLLECTION).where({ concertId }).count();
+			if (!(areaCount.total || 0)) {
+				return { code: -1, message: '尚未配置座位表，无法开放选座' };
+			}
+		}
+		
+		await db.collection('Concert').doc(concertId).update({
+			seat_enabled: next,
+			updateTime: Date.now()
+		});
+		
+		return {
+			code: 0,
+			message: next ? '已开放选座' : '已关闭选座',
+			data: { seatEnabled: next }
+		};
+	} catch (err) {
+		console.error('设置选座开放状态失败:', err);
+		return { code: -1, message: '设置选座开放状态失败：' + err.message };
 	}
 }

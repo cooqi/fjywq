@@ -1,0 +1,66 @@
+{
+	"bsonType": "object",
+	"required": ["name", "frameUrl"],
+	"permission": {
+		"read": false,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"name": {
+			"bsonType": "string",
+			"description": "模板名称"
+		},
+		"category": {
+			"bsonType": "string",
+			"description": "分类：birthday/concert/daily/festival",
+			"defaultValue": "daily"
+		},
+		"frameUrl": {
+			"bsonType": "string",
+			"description": "相框原图（云存储 fileID，cloud:// 开头，透明 PNG）"
+		},
+		"thumbUrl": {
+			"bsonType": "string",
+			"description": "缩略图（云存储 fileID，缺省同 frameUrl）"
+		},
+		"photoArea": {
+			"bsonType": "object",
+			"description": "照片显示区相对坐标 0-1：{x,y,w,h}"
+		},
+		"sort": {
+			"bsonType": "int",
+			"description": "排序权重，越大越靠前",
+			"defaultValue": 0
+		},
+		"enabled": {
+			"bsonType": "bool",
+			"description": "是否启用",
+			"defaultValue": true
+		},
+		"useCount": {
+			"bsonType": "int",
+			"description": "使用次数（统计用）",
+			"defaultValue": 0
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_date": {
+			"bsonType": "timestamp",
+			"description": "更新时间"
+		},
+		"creator_user_id": {
+			"bsonType": "string",
+			"description": "上传模板的管理员 userId"
+		}
+	}
+}

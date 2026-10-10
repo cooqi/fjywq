@@ -152,7 +152,7 @@ export default {
 .scroll-track { display: inline-flex; white-space: nowrap; will-change: transform; }
 
 .exit-btn {
-	position: absolute; top: calc(24rpx + env(safe-area-inset-top)); right: 28rpx;
+	position: absolute; top: calc(54rpx + env(safe-area-inset-top)); right: 28rpx;
 	background: rgba(0, 0, 0, .45); color: #fff; font-size: 26rpx;
 	padding: 12rpx 26rpx; border-radius: 40rpx; z-index: 10;
 }

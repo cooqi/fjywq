@@ -46,6 +46,35 @@
 				<button class="ghost-btn" @click="goHome">🏠 返回首页</button>
 			</view>
 
+			<!-- 结束游戏 / 查看牌面 -->
+			<view class="btn-row">
+				<button v-if="status !== 'ended'" class="end-btn" @click="endGame">🏁 游戏结束</button>
+				<button v-else class="end-btn" @click="viewResult">🃏 查看牌面结果</button>
+			</view>
+
+			<!-- 牌面揭晓面板 -->
+			<view v-if="showResult && result" class="result-card">
+				<view class="rs-title">🎊 游戏结束 · 牌面揭晓</view>
+				<view class="rs-words">
+					<view class="rs-word">
+						<text class="rs-k">平民词</text>
+						<text class="rs-v civil">{{ result.civilianWord }}</text>
+					</view>
+					<view class="rs-word">
+						<text class="rs-k">卧底词</text>
+						<text class="rs-v spy">{{ result.spyWord }}</text>
+					</view>
+				</view>
+				<view class="rs-grid">
+					<view v-for="c in result.cards" :key="c.seat" class="rs-seat" :class="{ spy: c.isSpy }">
+						<text class="rs-seat-no">{{ c.seat }}号</text>
+						<text class="rs-seat-word">{{ c.word }}</text>
+						<text class="rs-seat-tag">{{ c.isSpy ? '🕵️ 卧底' : '👤 平民' }}</text>
+					</view>
+				</view>
+				<view class="rs-close" @click="showResult = false">收起结果</view>
+			</view>
+
 			<view class="play-tip" v-if="status === 'playing'">🎉 人已满，开始轮流描述、投票揪卧底吧！</view>
 			<view class="play-tip" v-else>把游戏码分享给好友，人满后自动开始。</view>
 		</view>
@@ -64,7 +93,10 @@ export default {
 			joinedCount: 0,
 			totalPlayers: 0,
 			status: 'waiting',
-			revealed: false
+			revealed: false,
+			// 牌面揭晓：{ civilianWord, spyWord, cards:[{seat,word,isSpy}] }，由 endGame 接口返回
+			result: null,
+			showResult: false
 		}
 	},
 	computed: {
@@ -145,6 +177,39 @@ export default {
 		},
 		reveal() { this.revealed = true },
 		hide() { this.revealed = false },
+		// 结束游戏：二次确认后请求接口改房间状态并揭晓牌面
+		endGame() {
+			uni.showModal({
+				title: '游戏结束',
+				content: '结束后将揭晓所有人的卧底/平民牌面，并关闭房间不可再继续加入。确定结束吗？',
+				confirmText: '立即结束',
+				success: (m) => { if (m.confirm) this.doEndGame() }
+			})
+		},
+		async doEndGame() {
+			uni.showLoading({ title: '结束中…', mask: true })
+			try {
+				const res = await uniCloud.callFunction({ name: 'wodi', data: { action: 'endGame', gameCode: this.gameCode } })
+				uni.hideLoading()
+				const r = res.result
+				if (r.code === 0) {
+					this.result = r.data
+					this.status = 'ended'
+					this.showResult = true
+				} else {
+					uni.showToast({ title: r.msg || '结束失败', icon: 'none' })
+				}
+			} catch (e) {
+				uni.hideLoading()
+				console.error('结束游戏失败:', e)
+				uni.showToast({ title: '结束失败，请重试', icon: 'none' })
+			}
+		},
+		// 已结束但本地还没牌面数据（如别人先结束的）：再次请求，服务端幂等返回
+		async viewResult() {
+			if (this.result) { this.showResult = true; return }
+			await this.doEndGame()
+		},
 		copyCode() {
 			uni.setClipboardData({ data: this.gameCode, success: () => uni.showToast({ title: '游戏码已复制', icon: 'none' }) })
 		},
@@ -205,5 +270,31 @@ export default {
 	background: #fff; color: #3a6ea5; border: 2rpx solid #3a6ea5;
 	border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 28rpx;
 }
+.end-btn {
+	background: linear-gradient(135deg, #f6685e, #e64d3f); color: #fff; border: none;
+	border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 28rpx;
+}
+
+/* 牌面揭晓 */
+.result-card { background: #fff; border-radius: 24rpx; padding: 28rpx 30rpx; margin-top: 30rpx; box-shadow: 0 8rpx 24rpx rgba(230, 77, 63, .12); }
+.rs-title { font-size: 32rpx; font-weight: bold; color: #333; text-align: center; }
+.rs-words { display: flex; gap: 20rpx; margin: 24rpx 0 8rpx; }
+.rs-word { flex: 1; border-radius: 18rpx; padding: 18rpx 0; text-align: center; }
+.rs-word .rs-k { display: block; font-size: 22rpx; color: #999; }
+.rs-word .rs-v { display: block; font-size: 38rpx; font-weight: bold; margin-top: 8rpx; }
+.rs-v.civil { color: #2e7d32; }
+.rs-v.spy { color: #e64d3f; }
+.rs-grid { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 20rpx; }
+.rs-seat {
+	width: calc((100% - 32rpx) / 3); box-sizing: border-box; border-radius: 16rpx;
+	background: #f2f7ff; border: 2rpx solid transparent;
+	display: flex; flex-direction: column; align-items: center; padding: 16rpx 4rpx;
+}
+.rs-seat.spy { background: #fff1f0; border-color: #f6685e; }
+.rs-seat-no { font-size: 22rpx; color: #888; }
+.rs-seat-word { font-size: 30rpx; font-weight: bold; color: #333; margin: 6rpx 0; }
+.rs-seat-tag { font-size: 20rpx; color: #999; }
+.rs-seat.spy .rs-seat-tag { color: #e64d3f; }
+.rs-close { text-align: center; font-size: 24rpx; color: #3a6ea5; margin-top: 20rpx; }
 .play-tip { text-align: center; font-size: 24rpx; color: #8a86a8; margin-top: 28rpx; line-height: 1.6; }
 </style>

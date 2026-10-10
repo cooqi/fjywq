@@ -11,7 +11,8 @@
 				<view class="ph-title">{{concertTitle}}</view>
 				<view class="ph-status">
 					<text class="status-tag on" v-if="seatEnabled">已开放选座</text>
-					<text class="status-tag off" v-else>未开放选座</text>
+					<text class="status-tag off" v-else>不开放选座</text>
+					<text class="status-toggle" :class="{off: !seatEnabled}" @click="toggleSeatEnabled">{{seatEnabled ? '关闭选座' : '开放选座'}}</text>
 					<text class="ph-version">座位表版本：v{{seatVersion}}</text>
 				</view>
 				<view class="ph-meta">
@@ -539,11 +540,11 @@
 								labelRule: a.labelRule || null
 							}))
 							this.seatMaxPerUser = String(d.concert.max_seats_per_user != null ? d.concert.max_seats_per_user : 6)
-							// 座位配色回显：只回填已保存的合法值，其余置空（展示时回退默认）
+							// 座位配色回显：云函数始终存完整四键；与内置默认相同的视为未设置（置空），仅自定义色差才回填
 							const savedColors = d.concert.seat_colors || {}
 							SEAT_COLOR_DEFS.forEach(c => {
-								const v = String(savedColors[c.key] || '')
-								this.seatColors[c.key] = /^#[0-9a-fA-F]{6}$/.test(v) ? v : ''
+								const v = String(savedColors[c.key] || '').toLowerCase()
+								this.seatColors[c.key] = (/^#[0-9a-fA-F]{6}$/.test(v) && v !== SEAT_COLOR_DEFAULTS[c.key]) ? v : ''
 							})
 							this.seatSelectionCount = d.selectionCount || 0
 							// 配置变更后已选记录需重新拉取
@@ -1162,6 +1163,41 @@
 				})
 			},
 
+			// ===== 开放/关闭选座 =====
+			// 只改 Concert.seat_enabled：关闭后用户端看不到选座入口，选座页展示「本场次不开放选座」；不动座位布局与已选记录
+			toggleSeatEnabled() {
+				const next = !this.seatEnabled
+				if (next && this.seatAreas.length === 0) {
+					uni.showToast({ title: '请先配置并保存座位表', icon: 'none' })
+					return
+				}
+				const doToggle = () => {
+					uniCloud.callFunction({
+						name: 'concert-admin',
+						data: { action: 'setSeatEnabled', concertId: this.concertId, enabled: next, userId: this.userInfo._id },
+						success: (res) => {
+							if (res.result.code === 0) {
+								this.seatEnabled = next
+								uni.showToast({ title: next ? '已开放选座' : '已关闭选座', icon: 'none' })
+							} else {
+								uni.showToast({ title: res.result.message || '操作失败', icon: 'none' })
+							}
+						},
+						fail: () => uni.showToast({ title: '操作失败', icon: 'none' })
+					})
+				}
+				if (next) {
+					doToggle()
+					return
+				}
+				uni.showModal({
+					title: '关闭选座',
+					content: '关闭后用户将看不到选座入口，选座页提示「本场次不开放选座」；已选座位记录保留，重新开放后继续有效。确定关闭吗？',
+					confirmText: '关闭选座',
+					success: (m) => { if (m.confirm) doToggle() }
+				})
+			},
+
 			// ===== 已选座位管理 =====
 			toggleSeatSelections() {
 				if (this.showSelections) {
@@ -1299,6 +1335,16 @@
 
 			&.on { background: #e8f5e9; color: #2e7d32; }
 			&.off { background: #f0f0f0; color: #888; }
+		}
+
+		.status-toggle {
+			font-size: 22rpx;
+			padding: 6rpx 18rpx;
+			border-radius: 20rpx;
+			margin-right: 16rpx;
+			background: #e3f2fd;
+			color: #1565c0;
+			&.off { background: #fff3e0; color: #ef6c00; }
 		}
 
 		.ph-version { font-size: 24rpx; color: #999; }
@@ -1911,6 +1957,7 @@
 	background: #fff;
 	padding: 16rpx 30rpx calc(16rpx + env(safe-area-inset-bottom));
 	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+	z-index:9;
 
 	.footer-btn {
 		flex: 1;

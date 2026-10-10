@@ -142,7 +142,7 @@ async function getSeatMap(event) {
 		}
 		
 		if (!concert.seat_enabled) {
-			return { code: 0, message: '座位表暂未开放', data: { seatEnabled: false, areas: [], taken: [], mySeats: [] } };
+			return { code: 0, message: '本场次不开放选座', data: { seatEnabled: false, areas: [], taken: [], mySeats: [] } };
 		}
 		
 		const areasRes = await db.collection(AREA_COLLECTION).where({ concertId }).get();
@@ -274,7 +274,7 @@ async function submit(event) {
 			return { code: -1, message: '演唱会不存在' };
 		}
 		if (!concert.seat_enabled) {
-			return { code: -1, message: '座位表暂未开放' };
+			return { code: -1, message: '本场次不开放选座' };
 		}
 		
 		const currentVersion = Number(concert.seat_version) || 1;

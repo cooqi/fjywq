@@ -61,7 +61,23 @@
 						<text class="sp-label">使用我的图片作贴图</text>
 						<switch :checked="skinOn" color="#e0566b" @change="onToggleSkin" />
 					</view>
-					<view class="sp-tip">按点选先后依次对应 Lv1→Lv{{ MAX_SELECTED }}（Lv1 最小、Lv{{ MAX_SELECTED }} 最大），缩略图左上角已标注其等级；选不满时高等级自动用默认图补足。图库可上传最多 {{ MAX_GALLERY }} 张（可多于 {{ MAX_SELECTED }} 张备用），但同时最多勾选 {{ MAX_SELECTED }} 张作贴图；需调整顺序时先取消再重新按序点选。</view>
+					<view class="sp-tip">按点选先后依次对应 Lv1→Lv{{ MAX_SELECTED }}（Lv1 最小、Lv{{ MAX_SELECTED }} 最大），缩略图左上角已标注其等级；选不满时高等级自动用默认图补足。Lv{{ MAX_LEVEL + 1 }}（大青宇）不参与排序，在下方单独设置。图库可上传最多 {{ MAX_GALLERY }} 张（可多于 {{ MAX_SELECTED }} 张备用），但同时最多勾选 {{ MAX_SELECTED }} 张作贴图；需调整顺序时先取消再重新按序点选。</view>
+
+					<!-- Lv12 专属贴图：预览当前生效图（默认或自定义），不参与顺序勾选 -->
+					<view class="lv12-row">
+						<view class="cell">
+							<image class="cell-img" :src="lv12Img || FRUITS[MAX_LEVEL].img" mode="aspectFill"></image>
+							<text class="cell-level">Lv{{ MAX_LEVEL + 1 }}</text>
+						</view>
+						<view class="lv12-info">
+							<text class="sp-label">Lv{{ MAX_LEVEL + 1 }} 大青宇专属贴图（{{ lv12Img ? '已自定义' : '默认图' }}）</text>
+							<view class="lv12-btns">
+								<text class="lv12-btn" :class="{ active: pickLv12 }" @click="startPickLv12">{{ pickLv12 ? '再点一下取消' : '从图库选择' }}</text>
+								<text class="lv12-btn gray" v-if="lv12Img && !pickLv12" @click="clearLv12">恢复默认</text>
+							</view>
+						</view>
+					</view>
+					<view v-if="pickLv12" class="lv12-picking">点击下方图库中的图片，将其设为 Lv{{ MAX_LEVEL + 1 }} 贴图（不影响 Lv1~Lv{{ MAX_SELECTED }} 的勾选）</view>
 
 					<scroll-view scroll-y class="sp-body">
 						<view class="grid">
@@ -99,7 +115,7 @@ const DEATH_Y = SPAWN_Y + 34 // 死亡线
 const BEST_KEY = 'new2048_best'
 const CLOUD_DOMAIN = 'https://env-00jy66xyyok3.normal.cloudstatic.cn'
 const SKIN_FN = 'game2048-skin'
-// 贴图数量限制：图库总量至多 MAX_GALLERY 张（与云函数一致）；勾选至多 MAX_SELECTED（=等级数，按等级从低到高依次套用，不足部分用默认图补足）、至少 1 张才可开启
+// 贴图数量限制：图库总量至多 MAX_GALLERY 张（与云函数一致）；勾选至多 MAX_SELECTED（=除满级外的等级数，按等级从低到高依次套用，不足用默认图补足）；Lv12 大青宇不参与排序，通过 lv12Img 单独自定义
 const MAX_GALLERY = 20
 const MAX_SELECTED = 11
 const MIN_SELECTED = 1
@@ -114,6 +130,7 @@ export default {
 			MAX_GALLERY,
 			MAX_SELECTED,
 			MIN_SELECTED,
+			MAX_LEVEL,
 			canvasW: 300,
 			canvasH: 420,
 			status: 'ready', // ready | playing | over
@@ -126,8 +143,11 @@ export default {
 			loggedIn: false,
 			userId: '',
 			gallery: [], // 当前用户已上传图片 [{_id,url,...}]
-			selected: [], // 勾选作为皮肤的 url 数组（按顺序）
+			selected: [], // 勾选作为皮肤的 url 数组（按顺序，对应 Lv1→Lv11）
 			skinOn: false, // 是否启用自定义贴图
+			// Lv12 大青宇专属贴图 url：空=用默认图；不受 skinOn 与顺序勾选影响
+			lv12Img: '',
+			pickLv12: false, // 选图模式：下次点图库图片时设为 Lv12 贴图而非顺序勾选
 			uploading: false
 		}
 	},
@@ -195,10 +215,12 @@ export default {
 				const saved = JSON.parse(uni.getStorageSync(SKIN_STORE_PREFIX + this.userId) || '{}')
 				this.skinOn = !!saved.on
 				this.selected = Array.isArray(saved.selected) ? saved.selected : []
-			} catch (e) { this.skinOn = false; this.selected = [] }
+				this.lv12Img = typeof saved.lv12 === 'string' ? saved.lv12 : ''
+			} catch (e) { this.skinOn = false; this.selected = []; this.lv12Img = '' }
 		},
-		// 当前第 i 级图片使用贴图：启用自定义时低等级依次用勾选的图，选够前用完则回退默认图补足
+		// 当前第 i 级图片使用贴图：Lv12 单独自定义优先；其余启用自定义时依次用勾选的图，不足则回退默认图补足
 		levelImg(i) {
+			if (i === MAX_LEVEL && this.lv12Img) return this.lv12Img
 			if (this.skinOn && this.selected && i < this.selected.length) return this.selected[i]
 			return FRUITS[i].img
 		},
@@ -208,6 +230,7 @@ export default {
 		},
 		closeSkin() {
 			this.skinVisible = false
+			this.pickLv12 = false
 			// canvas 隐藏后可能清屏， reopen 后重新量取位置并重绘（未在计时循环时需手动刷）
 			this.$nextTick(() => {
 				this.queryRect()
@@ -222,7 +245,28 @@ export default {
 		},
 		isSelected(url) { return this.selected.indexOf(url) !== -1 },
 		selIdx(url) { return this.selected.indexOf(url) },
+		// 开启/退出 Lv12 选图模式
+		startPickLv12() {
+			if (this.pickLv12) { this.pickLv12 = false; return }
+			if (!this.gallery.length) { uni.showToast({ title: '图库还没有图片，请先上传', icon: 'none' }); return }
+			this.pickLv12 = true
+		},
+		clearLv12() {
+			this.lv12Img = ''
+			this.persistSkin()
+			this.applySkin()
+			uni.showToast({ title: 'Lv12 已恢复默认贴图', icon: 'none' })
+		},
 		toggleSelect(item) {
+			// 选图模式：点击图库图设为 Lv12 专属贴图，不改动顺序勾选
+			if (this.pickLv12) {
+				this.lv12Img = item.url
+				this.pickLv12 = false
+				this.persistSkin()
+				this.applySkin()
+				uni.showToast({ title: '已设为 Lv12 贴图', icon: 'none' })
+				return
+			}
 			const idx = this.selected.indexOf(item.url)
 			if (idx === -1) {
 				if (this.selected.length >= MAX_SELECTED) { uni.showToast({ title: `最多勾选 ${MAX_SELECTED} 张`, icon: 'none' }); return }
@@ -249,6 +293,8 @@ export default {
 					this.callSkin({ action: 'remove', userId: this.userId, id: item._id }).then(res => {
 						if (res && res.code === 0) {
 							this.gallery = this.gallery.filter(g => g._id !== item._id)
+							// Lv12 专属贴图引用的也是图库 url，同步清理
+							if (this.lv12Img === item.url) { this.lv12Img = ''; this.persistSkin(); this.applySkin() }
 							const si = this.selected.indexOf(item.url)
 							if (si !== -1) { this.selected.splice(si, 1); if (this.selected.length < MIN_SELECTED) this.skinOn = false; this.persistSkin(); this.applySkin() }
 						} else uni.showToast({ title: (res && res.message) || '删除失败', icon: 'none' })
@@ -324,7 +370,7 @@ export default {
 		},
 		persistSkin() {
 			if (!this.loggedIn) return
-			try { uni.setStorageSync(SKIN_STORE_PREFIX + this.userId, JSON.stringify({ on: this.skinOn, selected: this.selected })) } catch (e) {}
+			try { uni.setStorageSync(SKIN_STORE_PREFIX + this.userId, JSON.stringify({ on: this.skinOn, selected: this.selected, lv12: this.lv12Img })) } catch (e) {}
 		},
 		callSkin(payload) {
 			return uniCloud.callFunction({ name: SKIN_FN, data: payload }).then(r => r.result)
@@ -566,6 +612,15 @@ export default {
 .sp-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
 .sp-label { font-size: 13px; color: #5d4f36; }
 .sp-tip { font-size: 11px; color: #9a8c6e; line-height: 1.6; margin-top: 6px; }
+/* Lv12 专属贴图槽 */
+.lv12-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; background: #fff; border-radius: 14px; }
+.lv12-row .cell { margin: 0; flex-shrink: 0; border: 2px solid #f2c8d0; }
+.lv12-info { flex: 1; min-width: 0; }
+.lv12-btns { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.lv12-btn { font-size: 12px; color: #fff; background: #e0566b; border-radius: 16px; padding: 5px 14px; }
+.lv12-btn.active { background: #b0566b; }
+.lv12-btn.gray { background: #f1e9d4; color: #9a8c6e; }
+.lv12-picking { margin-top: 8px; font-size: 11px; color: #e0566b; background: #fdeef1; border-radius: 10px; padding: 6px 10px; line-height: 1.5; }
 .sp-body { flex: 1; min-height: 120px; max-height: 46vh; margin-top: 12px; }
 .grid { display: flex; flex-wrap: wrap; }
 .cell { position: relative; width: 68px; height: 68px; margin: 0 8px 8px 0; border-radius: 12px; overflow: hidden; background: #fff; border: 2px solid transparent; box-sizing: border-box; }

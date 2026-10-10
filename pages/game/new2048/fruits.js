@@ -16,7 +16,8 @@ export const FRUITS = [
 	{ name: '菠萝', emoji: '🍍', r: 52, color: '#e8b93e', score: 256, img: IMG_BASE + 'qy8.jpg' },
 	{ name: '椰子', emoji: '🥥', r: 59, color: '#8d6e63', score: 512, img: IMG_BASE + 'qy9.png' },
 	{ name: '半个西瓜', emoji: '🍉', r: 67, color: '#66bb6a', score: 1024, img: IMG_BASE + 'qy10.jpg' },
-	{ name: '大西瓜', emoji: '🍉', r: 76, color: '#2e7d32', score: 2048, img: IMG_BASE + 'qy11.jpg' }
+	{ name: '大西瓜', emoji: '🍉', r: 76, color: '#2e7d32', score: 2048, img: IMG_BASE + 'qy11.jpg' },
+	{ name: '大青宇', emoji: '👑', r: 86, color: '#5d4037', score: 4096, img: IMG_BASE + 'qy12.jpg' }
 ]
 
 export const MAX_LEVEL = FRUITS.length - 1

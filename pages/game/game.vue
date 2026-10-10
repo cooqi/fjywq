@@ -58,7 +58,7 @@
       <view class="game-card" @click="goToGame('xianxia')">
         <view class="game-icon xianxia-icon">🥤</view>
         <text class="game-name">杯杯儿互动</text>
-        <text class="game-desc">通行证·互换·灯牌·卧底</text>
+        <text class="game-desc">互换·灯牌·卧底</text>
       </view>
 
       <!-- 电子杯蜜 -->
@@ -73,6 +73,13 @@
         <view class="game-icon new2048-icon">🍉</view>
         <text class="game-name">合成大青宇</text>
         <text class="game-desc">物理版 2048 挑战</text>
+      </view>
+
+      <!-- 大头贴 -->
+      <view class="game-card" @click="goToGame('photo')">
+        <view class="game-icon photo-icon">📸</view>
+        <text class="game-name">大头贴</text>
+        <text class="game-desc">选相框 拍美照</text>
       </view>
 
       <!-- 创意画板 -->
@@ -114,7 +121,8 @@ export default {
         'qa': '/pages/game/QA/qa-exam',
         'answerBook': '/pages/game/answer-book',
         'xianxia': '/pages/game/xianxia/xianxia',
-        'loveQY': '/pages/game/loveQY/loveQY'
+        'loveQY': '/pages/game/loveQY/loveQY',
+        'photo': '/pages/game/photo/home'
       }
       
       if (routes[gameType]) {
@@ -234,6 +242,10 @@ export default {
 
 .beemore-icon {
   background: linear-gradient(135deg, #ffd76e 0%, #ff9a3c 100%);
+}
+
+.photo-icon {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
 }
 
 .game-info {

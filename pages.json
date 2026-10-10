@@ -154,6 +154,39 @@
 		}
 	},
 	{
+		"path": "pages/game/photo/home",
+		"style": {
+			"navigationBarTitleText": "大头贴",
+			"enablePullDownRefresh": true,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/photo/camera",
+		"style": {
+			"navigationBarTitleText": "拍摄",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#0d0d12",
+			"navigationBarTextStyle": "white"
+		}
+	},
+	{
+		"path": "pages/game/photo/edit",
+		"style": {
+			"navigationBarTitleText": "合成",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/game/photo/admin",
+		"style": {
+			"navigationBarTitleText": "相框模板管理",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/game/loveQY/clinic",
 		"style": {
 			"navigationBarTitleText": "杯蜜诊所",

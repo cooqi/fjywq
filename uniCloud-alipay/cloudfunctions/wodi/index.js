@@ -38,6 +38,8 @@ exports.main = async (event, context) => {
 				return await joinRoom(event);
 			case 'getRoom':
 				return await getRoom(event);
+			case 'endGame':
+				return await endGame(event);
 			// ===== 题库管理（管理员） =====
 			case 'listQuestions':
 			case 'addQuestion':
@@ -207,6 +209,35 @@ async function getRoom(event) {
 			spyCount: room.spy_count,
 			status: room.status,
 			expireAt: room.expire_at
+		}
+	};
+}
+
+/* ================= 结束游戏：改状态并揭晓全部牌面（已结束则幂等返回，供房间内玩家随时查看） ================= */
+async function endGame(event) {
+	const gameCode = String(event.gameCode || '').trim();
+	if (!gameCode) return { code: -1, msg: '缺少游戏码' };
+	const res = await db.collection(ROOMS).where({ code: gameCode }).limit(1).get();
+	const room = res.data && res.data[0];
+	if (!room) return { code: -1, msg: '房间不存在' };
+
+	if (room.status !== ST_ENDED) {
+		// CAS：仅当未结束时写入，多人并发结束也只会成功一次；重复调用无副作用
+		await db.collection(ROOMS)
+			.where({ _id: room._id, status: dbCmd.neq(ST_ENDED) })
+			.update({ status: ST_ENDED, update_date: now() });
+	}
+
+	const cards = (room.cards || []).map(c => ({ seat: c.seat, word: c.word, isSpy: !!c.isSpy }));
+	return {
+		code: 0,
+		msg: 'ok',
+		data: {
+			gameCode: room.code,
+			status: ST_ENDED,
+			civilianWord: room.civilian_word || '',
+			spyWord: room.spy_word || '',
+			cards
 		}
 	};
 }
