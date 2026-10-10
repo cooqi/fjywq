@@ -49,17 +49,10 @@
 <script>
 import { callBeemore, getMyUserInfo } from './store/pet.js'
 import { TRAVEL_PLACES, fmtCountdown, STATUS_MAP, MOOD_MAP } from './beemore.js'
-import { expressionForMood } from './look.js'
-import { renderPet, CANVAS_W, CANVAS_H } from './renderer.js'
 
-// 海报画布尺寸（竖版明信片；形象改为高个线条小人，高度相应加大）
+// 海报画布尺寸（竖版明信片）
 const PW = 300
 const PH = 500
-// 形象在海报里的缩放与霓虹舞台底板尺寸
-const PET_SCALE = 2
-const PET_W = CANVAS_W * PET_SCALE
-const PET_H = CANVAS_H * PET_SCALE
-const STAGE_X = 20, STAGE_Y = 106, STAGE_W = PW - 40, STAGE_H = PET_H + 26
 
 export default {
 	data() {
@@ -86,6 +79,10 @@ export default {
 	onShareAppMessage() {
 		const p = this.postcard
 		return { title: p ? `杯蜜从「${p.placeName}」寄回的明信片 ✉️` : '我的电子闺蜜去旅行啦', path: '/pages/game/loveQY/loveQY' }
+	},
+	onShareTimeline() {
+		const p = this.postcard
+		return { title: p ? `杯蜜从「${p.placeName}」寄回的明信片 ✉️` : '我的电子闺蜜去旅行啦' }
 	},
 	methods: {
 		async load() {
@@ -182,73 +179,125 @@ export default {
 			if (res.code === 0 && res.data) this.applyState(res.data)
 		},
 
-		/** 用旧版 canvas-context 合成明信片海报：背景/边框/文字/形象/水印 */
+		/** 合成明信片海报：失败时把原因显示出来，不要静默空白 */
 		drawPoster() {
 			const p = this.postcard
 			if (!p) return
+			try {
+				this.paintPoster(p)
+			} catch (e) {
+				console.error('明信片绘制失败', e)
+				uni.showToast({ title: '明信片绘制失败：' + ((e && (e.errMsg || e.message)) || '未知错误'), icon: 'none' })
+			}
+		},
+		paintPoster(p) {
+			// 只用实测可靠的基础 API（fillRect/strokeRect/fillText + 样式设置），
+			// 不用 drawCircle/drawArc/drawLine/measureText（部分运行时旧 CanvasContext 无这些方法）
 			const ctx = uni.createCanvasContext('postcard', this)
-			// 暂存并挂起 renderPet 内部的 draw，最后统一 flush
-			const realDraw = ctx.draw
-			ctx.draw = function () {}
+			const mood = MOOD_MAP[p.mood] || MOOD_MAP.normal
+			const place = this.clean(p.placeName)
 
-			// 背景
-			ctx.setFillStyle('#fff6fb')
+			// === 底色：米白纸面 + 双线框 ===
+			ctx.setFillStyle('#fffaf6')
 			ctx.fillRect(0, 0, PW, PH)
-			// 顶部色带
-			ctx.setFillStyle('#ffe3ef')
-			ctx.fillRect(0, 0, PW, 96)
-			// 边框
 			ctx.setStrokeStyle('#f0a6c8')
 			ctx.setLineWidth(3)
 			ctx.strokeRect(8, 8, PW - 16, PH - 16)
-
-			// 标题 & 目的地（canvas fillText 不能渲染彩色 emoji，图标只保留在页面 DOM，这里用纯中文）
-			ctx.setFillStyle('#b06ab3')
-			ctx.setFontSize(16)
-			ctx.fillText('杯蜜的旅行明信片', 24, 34)
-			ctx.setFontSize(22)
-			ctx.setFillStyle('#6a5acd')
-			ctx.fillText(this.clean(p.placeName), 24, 70)
-
-			// 霓虹舞台底板（线条形象在亮底上会看不清，给一块暗色底板）
-			ctx.setFillStyle('#0d151c')
-			ctx.fillRect(STAGE_X, STAGE_Y, STAGE_W, STAGE_H)
-			ctx.setStrokeStyle('#2b3d4d')
+			ctx.setStrokeStyle('#f6cfe0')
 			ctx.setLineWidth(1)
-			ctx.strokeRect(STAGE_X, STAGE_Y, STAGE_W, STAGE_H)
-			// 底板上的淡网格（对齐 ren.html 背景；透明度写进颜色，不用 setGlobalAlpha）
-			ctx.setStrokeStyle('rgba(94, 234, 212, 0.08)')
-			for (let gx = STAGE_X + 26; gx < STAGE_X + STAGE_W; gx += 26) ctx.drawLine(gx, STAGE_Y, gx, STAGE_Y + STAGE_H)
-			for (let gy = STAGE_Y + 26; gy < STAGE_Y + STAGE_H; gy += 26) ctx.drawLine(STAGE_X, gy, STAGE_X + STAGE_W, gy)
+			ctx.strokeRect(13, 13, PW - 26, PH - 26)
 
-			// 形象（在底板里居中，明信片为一次性绘制，不传 time 即静态帧）
-			if (ctx.save) ctx.save()
-			if (ctx.translate) ctx.translate(STAGE_X + (STAGE_W - PET_W) / 2, STAGE_Y + (STAGE_H - PET_H) / 2)
-			renderPet(ctx, p.look, expressionForMood(p.mood), p.equippedItems || [], PET_SCALE)
-			if (ctx.restore) ctx.restore()
-
-			// 信息行
-			let y = STAGE_Y + STAGE_H + 26
-			ctx.setFontSize(14)
-			ctx.setFillStyle('#666')
-			ctx.fillText(`${this.clean(p.date || '')}  ·  ${this.clean(p.weather || '')}`, 24, y)
-			y += 26
-			const moodLabel = (MOOD_MAP[p.mood] || MOOD_MAP.normal).label
-			ctx.fillText(`心情：${moodLabel}    花费：${p.cost || 0} 杯蜜币`, 24, y)
-			y += 34
-
-			// 正文（自动换行）
-			ctx.setFontSize(15)
-			ctx.setFillStyle('#555')
-			y = this.wrapText(ctx, this.clean(p.card || ''), 24, y, PW - 48, 24)
-
-			// 水印
+			// === 刊头：英文标签 + 目的地 + 日期天气 ===
+			ctx.setFontSize(10)
+			ctx.setFillStyle('#c79bb2')
+			ctx.fillText('BEEMORE TRAVEL POSTCARD', 26, 36)
+			ctx.setFontSize(21)
+			ctx.setFillStyle('#6a5acd')
+			ctx.fillText('「' + place + '」', 26, 64)
 			ctx.setFontSize(11)
-			ctx.setFillStyle('#cc99aa')
-			ctx.fillText('—— 来自电子杯蜜 · 数字闺蜜 ——', 24, PH - 22)
+			ctx.setFillStyle('#a08ab0')
+			ctx.fillText(`${this.clean(p.date || '')} · ${this.clean(p.weather || '')}`, 26, 84)
 
-			// 恢复并一次性 flush
-			ctx.draw = realDraw
+			// === 右上角邮票 + 邮戳横线 ===
+			ctx.setFillStyle('#ffffff')
+			ctx.fillRect(PW - 66, 22, 44, 54)
+			ctx.setStrokeStyle('#cc99aa')
+			ctx.setLineWidth(2)
+			ctx.strokeRect(PW - 66, 22, 44, 54)
+			ctx.setStrokeStyle('#e3bcd0')
+			ctx.setLineWidth(1)
+			ctx.strokeRect(PW - 61, 27, 34, 44)
+			ctx.setFontSize(9)
+			ctx.setFillStyle('#b06ab3')
+			ctx.fillText('杯蜜邮政', PW - 58, 45)
+			ctx.setFontSize(13)
+			ctx.fillText('80分', PW - 54, 66)
+			// 邮戳双横线（压过邮票左缘）
+			ctx.setFillStyle('#b9a6c9')
+			ctx.fillRect(PW - 76, 34, 54, 2)
+			ctx.fillRect(PW - 76, 41, 54, 2)
+
+			// === 插画区（白卡纸留边 + 粉底内框）===
+			ctx.setFillStyle('#ffffff')
+			ctx.fillRect(22, 94, PW - 44, 172)
+			ctx.setFillStyle('#fdf0f6')
+			ctx.fillRect(30, 102, PW - 60, 156)
+			ctx.setStrokeStyle('#f0a6c8')
+			ctx.setLineWidth(1)
+			ctx.strokeRect(30, 102, PW - 60, 156)
+
+			// 主视觉：居中大号心情颜文字（按字符数估宽居中，CJK 字宽≈字号）
+			ctx.setFontSize(34)
+			ctx.setFillStyle('#6a5acd')
+			const faceW = mood.face.length * 34 * 0.62
+			ctx.fillText(mood.face, (PW - faceW) / 2, 178)
+			// 插画下方小字
+			ctx.setFontSize(11)
+			ctx.setFillStyle('#b06ab3')
+			const cap = '来自『' + place + '』的你'
+			ctx.fillText(cap, (PW - cap.length * 11) / 2, 246)
+
+			// === TO 收件区（书写线用实心细矩形）===
+			ctx.setFontSize(12)
+			ctx.setFillStyle('#8a6a9a')
+			ctx.fillText('TO：亲爱的你', 26, 288)
+			ctx.setFillStyle('#f0c6da')
+			ctx.fillRect(26, 298, PW - 52, 2)
+			ctx.fillRect(26, 316, PW - 52, 2)
+
+			// === 信息 + 正文 ===
+			ctx.setFontSize(11)
+			ctx.setFillStyle('#999999')
+			ctx.fillText(`心情：${mood.label}    花费：${p.cost || 0} 杯蜜币`, 26, 338)
+			ctx.setFontSize(14)
+			ctx.setFillStyle('#555555')
+			this.wrapText(ctx, this.clean(p.card || ''), 26, 362, PW - 52, 24)
+
+			// === 底部：条码 + 纪念章 + 水印 ===
+			// 条码：目的地+日期做种子，确定性生成疏密条纹
+			const seed = String(p.placeName || '') + String(p.date || '')
+			let bx = 26
+			ctx.setFillStyle('#9c7aa8')
+			for (let i = 0; i < 30 && bx < 146; i++) {
+				const code = (seed.charCodeAt(i % Math.max(1, seed.length)) || 7) + i * 7
+				const w = 1 + (code % 3)
+				ctx.fillRect(bx, 430, w, 24)
+				bx += w + 1 + (code % 3)
+			}
+			// 旅行已核销纪念章（红色方框叠在条码右侧）
+			ctx.setStrokeStyle('#e0607a')
+			ctx.setLineWidth(2)
+			ctx.strokeRect(PW - 72, 420, 46, 42)
+			ctx.setFontSize(11)
+			ctx.setFillStyle('#e0607a')
+			ctx.fillText('旅行', PW - 66, 438)
+			ctx.fillText('已核销', PW - 66, 454)
+			// 水印
+			ctx.setFontSize(10)
+			ctx.setFillStyle('#c79bb2')
+			ctx.fillText('—— 来自电子杯蜜 · 数字闺蜜 ——', 26, PH - 24)
+
+			// 一次性 flush 整帧
 			ctx.draw()
 		},
 		/** 去掉 emoji/变体选择符/ZWJ：小程序 canvas fillText 无法渲染彩色 emoji，会画成方块/空白 */

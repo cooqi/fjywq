@@ -579,6 +579,9 @@ export default {
 	},
 	onShareAppMessage() {
 		return { title: '合成大青宇：我的最高分 ' + this.best + '，来挑战！', path: '/pages/game/new2048/new2048' }
+	},
+	onShareTimeline() {
+		return { title: '合成大青宇：我的最高分 ' + this.best + '，来挑战！' }
 	}
 }
 </script>

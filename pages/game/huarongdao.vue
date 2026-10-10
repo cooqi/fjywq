@@ -235,6 +235,11 @@ export default {
       path: '/pages/game/huarongdao'
     }
   },
+  onShareTimeline() {
+    return {
+      title: '宇青青宇全肯定'
+    }
+  },
   methods: {
     // 选择难度
     selectLevel(level) {

@@ -141,6 +141,9 @@ export default {
 	onShareAppMessage() {
 		return { title: '青宇宇宙通行证 · 嗑学水平测试', path: '/pages/game/xianxia/txz/txz-index?shareCode=' + this.examCode }
 	},
+	onShareTimeline() {
+		return { title: '青宇宇宙通行证 · 嗑学水平测试' }
+	},
 	methods: {
 		typeLabel(type) {
 			return { single: '单选', multiple: '多选', judge: '判断', fill: '填空' }[type] || type

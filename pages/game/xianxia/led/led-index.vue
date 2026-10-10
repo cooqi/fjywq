@@ -55,6 +55,9 @@ export default {
 	onShareAppMessage() {
 		return { title: '手机灯牌 · 现场应援霓虹灯', path: '/pages/game/xianxia/led/led-index' }
 	},
+	onShareTimeline() {
+		return { title: '手机灯牌 · 现场应援霓虹灯' }
+	},
 	methods: {
 		createNew() {
 			uni.navigateTo({ url: '/pages/game/xianxia/led/led-editor' })

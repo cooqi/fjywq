@@ -228,6 +228,18 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 				listLoaded: false
 			}
 		},
+		onShareAppMessage() {
+			return {
+				title: '演唱会/音乐节管理',
+				path: '/pages/concert/admin'
+			}
+		},
+		onShareTimeline() {
+			return {
+				title: '演唱会/音乐节管理',
+				path: '/pages/concert/admin'
+			}
+		},
 		onLoad() {
 			this.loadData()
 			try {

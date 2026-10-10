@@ -49,7 +49,7 @@
 			<!-- 结束游戏 / 查看牌面 -->
 			<view class="btn-row">
 				<button v-if="status !== 'ended'" class="end-btn" @click="endGame">🏁 游戏结束</button>
-				<button v-else class="end-btn" @click="viewResult">🃏 查看牌面结果</button>
+				<button v-else class="end-btn" @click="viewResult">🃏 查看牌面结果 </button>
 			</view>
 
 			<!-- 牌面揭晓面板 -->
@@ -112,6 +112,11 @@ export default {
 		return {
 			title: '谁是卧底 · 输入游戏码 ' + this.gameCode + ' 加入我',
 			path: '/pages/game/xianxia/wodi/wodi-room?code=' + this.gameCode
+		}
+	},
+	onShareTimeline() {
+		return {
+			title: '谁是卧底 · 输入游戏码 ' + this.gameCode + ' 加入我'
 		}
 	},
 	methods: {

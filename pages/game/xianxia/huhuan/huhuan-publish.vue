@@ -113,6 +113,11 @@ export default {
 			path: '/pages/game/xianxia/huhuan/huhuan-apply?code=' + this.result.code
 		}
 	},
+	onShareTimeline() {
+		return {
+			title: '来跟我换物料吧：' + this.result.name + '（物料码 ' + this.result.code + '）'
+		}
+	},
 	methods: {
 		changeQty(delta) {
 			let n = parseInt(this.form.totalQty) || 0

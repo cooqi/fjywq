@@ -241,6 +241,11 @@
 				imageUrl: this.concert.coverUrl
 			}
 		},
+		onShareTimeline() {
+			return {
+				title: this.concert.name || '演唱会选座'
+			}
+		},
 		computed: {
 			// 几何全部按 100% 基准渲染，缩放靠 transform 放大，不再逐帧重算座位节点
 			cell() {

@@ -117,6 +117,9 @@ export default {
 	onShareAppMessage() {
 		return { title: '来跟我换物料吧：' + this.listing.name, path: '/pages/game/xianxia/huhuan/huhuan-apply?code=' + this.code }
 	},
+	onShareTimeline() {
+		return { title: '来跟我换物料吧：' + this.listing.name }
+	},
 	methods: {
 		loadData() {
 			if (!this.code) { this.loading = false; this.error = '缺少物料码'; return }

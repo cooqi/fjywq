@@ -242,6 +242,9 @@ export default {
 	onShareAppMessage() {
 		return { title: `我的电子闺蜜「${this.pet.name || ''}」超可爱`, path: '/pages/game/loveQY/loveQY' }
 	},
+	onShareTimeline() {
+		return { title: `我的电子闺蜜「${this.pet.name || ''}」超可爱` }
+	},
 	methods: {
 		async loadStatus() {
 			try {
