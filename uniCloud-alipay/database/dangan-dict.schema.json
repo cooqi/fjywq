@@ -1,0 +1,31 @@
+{
+	"bsonType": "object",
+	"required": ["key"],
+	"permission": {
+		"read": true,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"key": {
+			"bsonType": "string",
+			"title": "字典键",
+			"description": "如 worksType（作品类型）"
+		},
+		"values": {
+			"bsonType": "array",
+			"title": "字典选项",
+			"description": "字符串数组，由云函数 saveDict（管理员）维护"
+		},
+		"createTime": {
+			"bsonType": "timestamp"
+		},
+		"updateTime": {
+			"bsonType": "timestamp"
+		}
+	}
+}

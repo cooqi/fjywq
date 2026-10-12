@@ -13,6 +13,12 @@
 			</view>
 		</scroll-view>
 
+		<!-- 隐私提示 -->
+		<view class="privacy-tip">
+			<text class="privacy-tip-icon">🔒</text>
+			<text class="privacy-tip-text">为了保护大家的隐私安全，对照片不做任何存储。如果你已拍照打卡，请保存在自己的相册。否则无法找回</text>
+		</view>
+
 		<!-- 模板网格 -->
 		<view v-if="list.length" class="grid">
 			<view v-for="f in list" :key="f._id" class="cell" @click="choose(f)">
@@ -74,10 +80,10 @@ export default {
 		this.fetch(false)
 	},
 	onShareAppMessage() {
-		return { title: '大头贴 · 挑个相框拍一张', path: '/pages/game/photo/home' }
+		return { title: '青宇打卡 · 挑个相框拍一张', path: '/pages/game/photo/home' }
 	},
 	onShareTimeline() {
-		return { title: '大头贴 · 挑个相框拍一张' }
+		return { title: '青宇打卡 · 挑个相框拍一张' }
 	},
 	methods: {
 		categoryLabel,
@@ -154,6 +160,19 @@ export default {
 	background: linear-gradient(135deg, #fa709a, #fee140);
 	box-shadow: 0 6rpx 18rpx rgba(250, 112, 154, .35);
 }
+
+.privacy-tip {
+	margin-top: 20rpx;
+	padding: 20rpx 24rpx;
+	background: rgba(255, 255, 255, .75);
+	border: 2rpx solid rgba(250, 112, 154, .3);
+	border-radius: 20rpx;
+	display: flex;
+	align-items: flex-start;
+	gap: 12rpx;
+}
+.privacy-tip-icon { font-size: 28rpx; line-height: 1.5; }
+.privacy-tip-text { flex: 1; font-size: 24rpx; color: #6a6a86; line-height: 1.6; }
 
 .grid {
 	margin-top: 20rpx;

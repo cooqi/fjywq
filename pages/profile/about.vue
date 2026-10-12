@@ -66,6 +66,10 @@
 					<view class="contact-label">意见反馈</view>
 					<view class="contact-value" @click="goToSuggestion">杯杯儿信箱</view>
 				</view>
+				<view class="contact-item">
+					<view class="contact-label">隐私说明</view>
+					<view class="contact-value" @click="goPrivacy">查看</view>
+				</view>
 			</view>
 		</view>
 		
@@ -88,6 +92,11 @@
 			goToSuggestion() {
 				uni.navigateTo({
 					url: '/pages/myTodo/suggestion'
+				})
+			},
+			goPrivacy() {
+				uni.navigateTo({
+					url: '/pages/profile/privacy'
 				})
 			}
 		}

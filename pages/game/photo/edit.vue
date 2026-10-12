@@ -86,14 +86,14 @@ export default {
 	},
 	onShareAppMessage() {
 		return {
-			title: '我在大头贴拍了张照，快来试试',
+			title: '我在青宇打卡拍了张照，快来试试',
 			path: '/pages/game/photo/home',
 			imageUrl: this.resultPath || ''
 		}
 	},
 	onShareTimeline() {
 		return {
-			title: '我在大头贴拍了张照，快来试试'
+			title: '我在青宇打卡拍了张照，快来试试'
 		}
 	},
 	methods: {

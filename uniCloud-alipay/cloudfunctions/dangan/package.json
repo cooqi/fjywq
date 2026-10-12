@@ -1,0 +1,11 @@
+{
+	"name": "dangan",
+	"version": "1.0.0",
+	"description": "数据档案云函数（公开读，管理员写）",
+	"main": "index.js",
+	"dependencies": {},
+	"cloudfunction-config": {
+		"memorySize": 256,
+		"timeout": 10
+	}
+}

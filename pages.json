@@ -156,7 +156,7 @@
 	{
 		"path": "pages/game/photo/home",
 		"style": {
-			"navigationBarTitleText": "大头贴",
+			"navigationBarTitleText": "青宇打卡",
 			"enablePullDownRefresh": true,
 			"navigationBarBackgroundColor": "#cff8f5"
 		}
@@ -485,6 +485,14 @@
 		}
 	},
 	{
+		"path": "pages/profile/privacy",
+		"style": {
+			"navigationBarTitleText": "隐私说明",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/concert/admin",
 		"style": {
 			"navigationBarTitleText": "演唱会/音乐节管理",
@@ -531,6 +539,22 @@
 			"enablePullDownRefresh": true,
 			"navigationBarBackgroundColor": "#cff8f5"
 		}
+	},
+	{
+		"path": "pages/dangan/dangan",
+		"style": {
+			"navigationBarTitleText": "数据档案",
+			"enablePullDownRefresh": true,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
+		"path": "pages/dangan/admin",
+		"style": {
+			"navigationBarTitleText": "档案管理",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
 	}
     
 ],
@@ -551,7 +575,12 @@
         "selectedIconPath": "static/tabbar/lm1.png",
         "text": "公告聚合"
       },
-      
+      {
+        "pagePath": "pages/dangan/dangan",
+        "iconPath": "static/tabbar/hd.png",
+        "selectedIconPath": "static/tabbar/hd1.png",
+        "text": "档案"
+      },
       {
         "pagePath": "pages/profile/profile", 
         "iconPath": "/static/tabbar/Baby.png",
@@ -564,6 +593,7 @@
         "selectedIconPath": "static/tabbar/game1.png",
         "text": "休息"
       }
+      
     ]
   },
   "globalStyle": {

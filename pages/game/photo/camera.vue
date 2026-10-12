@@ -48,7 +48,7 @@ export default {
 		return {
 			frameId: '',
 			frame: null,
-			devicePosition: 'front',
+			devicePosition: 'back',
 			// 相框图原始宽高比（w/h）与预览区实测尺寸：叠加层按此比例 contain 居中
 			ratio: 0,
 			previewW: 0,

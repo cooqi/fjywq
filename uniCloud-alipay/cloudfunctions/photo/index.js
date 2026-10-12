@@ -1,6 +1,6 @@
 'use strict';
 /**
- * 大头贴相框模板 photo 云函数（uniCloud-alipay）
+ * 青宇打卡相框模板 photo 云函数（uniCloud-alipay）
  * 参照 wodi / exchange：单函数 + action 路由，统一返回 { code, msg, data }，code=0 成功。
  * 微信云开发文档已适配本项目：
  *   - 权限：不用 openid 白名单，改用 userId + userRole（s_admin / admin）门控管理员操作；

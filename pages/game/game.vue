@@ -75,10 +75,10 @@
         <text class="game-desc">物理版 2048 挑战</text>
       </view>
 
-      <!-- 大头贴 -->
+      <!-- 青宇打卡 -->
       <view class="game-card" @click="goToGame('photo')">
         <view class="game-icon photo-icon">📸</view>
-        <text class="game-name">大头贴</text>
+        <text class="game-name">青宇打卡</text>
         <text class="game-desc">选相框 拍美照</text>
       </view>
 

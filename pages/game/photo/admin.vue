@@ -108,7 +108,7 @@ export default {
 				thumbUrl: '',     // fileID
 				frameLocal: '',   // 预览用的本地临时路径
 				thumbLocal: '',
-				area: { x: '0.1', y: '0.1', w: '0.8', h: '0.7' }
+				area: { x: '0', y: '0', w: '1', h: '1' }
 			}
 		}
 	},

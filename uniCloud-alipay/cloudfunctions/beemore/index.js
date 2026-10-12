@@ -64,7 +64,7 @@ function segOverlap(a, b) {
 	}
 	return false
 }
-/** windows 里第一个与睡眠时段重叠的窗口（星期有交集且时间重叠）；无冲突返回 null */
+/** windows 里第一个与睡眠时段重叠的窗口（星期有青宇且时间重叠）；无冲突返回 null */
 function findSleepConflict(windows, sleep) {
 	if (!sleep || !sleep.start || !sleep.end) return null
 	const ALLD = [0, 1, 2, 3, 4, 5, 6]

@@ -1,0 +1,41 @@
+{
+	"bsonType": "object",
+	"required": ["subject", "category"],
+	"permission": {
+		"read": true,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"subject": {
+			"bsonType": "string",
+			"description": "档案主体：intersection(青宇) / wang(王青) / feng(冯建宇)"
+		},
+		"category": {
+			"bsonType": "string",
+			"description": "分类键，如 works/music/brands/events/honors/accounts/profile/stats/cpAccounts/doubleBrands/doubleSongs/doubleEvents"
+		},
+		"sort": {
+			"bsonType": "int",
+			"description": "同分类内排序，越小越靠前",
+			"defaultValue": 0
+		},
+		"data": {
+			"bsonType": "object",
+			"description": "该条记录的具体字段内容，字段随分类而变，由前端 SCHEMA 定义",
+			"additionalProperties": true
+		},
+		"createTime": {
+			"bsonType": "timestamp",
+			"description": "创建时间"
+		},
+		"updateTime": {
+			"bsonType": "timestamp",
+			"description": "更新时间"
+		}
+	}
+}
