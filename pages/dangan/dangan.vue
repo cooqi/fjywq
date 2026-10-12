@@ -563,7 +563,7 @@ export default {
 /* ============ 主题（原型 shell 类名硬编码，避免依赖 CSS 变量注入） ============ */
 .page-hint { display: none; }
 .tab-view { width: 100%; }
-.app-root{overflow-y: hidden;}
+.app-root{overflow-x: hidden;}
 /* 资料卡 */
 .profile-card { padding:48rpx 40rpx 40rpx; background:linear-gradient(160deg,#31eee0 0%,#14b8a6 50%,#0d9488 100%); border-radius:0 0 56rpx 56rpx; text-align:center; color:#fff; margin-bottom:28rpx; }
 .profile-card.purple-bg { background:linear-gradient(160deg,#9a9ad9 0%,#818cf8 50%,#6366f1 100%); }
