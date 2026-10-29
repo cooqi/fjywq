@@ -404,7 +404,7 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 			deleteConcert(item) {
 				uni.showModal({
 					title: '确认删除',
-					content: `确定要删除"${item.ychTheme || item.type}"吗？`,
+					content: `确定要删除"${item.ychTheme || item.type}"吗？座位表（含舞台）与用户已选座位将一并删除，不可恢复。`,
 					success: (res) => {
 						if (res.confirm) {
 							uni.showLoading({ title: '删除中' })
@@ -418,8 +418,8 @@ import imageUpload from '@/components/image-upload/image-upload.vue'
 									uni.hideLoading()
 									if (res.result.code === 0) {
 										uni.showToast({
-											title: '删除成功',
-											icon: 'success'
+											title: res.result.message || '删除成功',
+											icon: 'none'
 										})
 										this.page = 1
 										this.loadData(true)

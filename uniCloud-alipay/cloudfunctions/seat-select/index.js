@@ -171,6 +171,11 @@ async function getSeatMap(event) {
 		});
 		areas.sort((a, b) => a.sort - b.sort);
 		
+		// 座位表被清空（管理员一键删除全部分区）时给出明确空态，避免展示空选座图
+		if (areas.length === 0) {
+			return { code: 0, message: '本场次座位表未配置，暂不可选座', data: { seatEnabled: false, areas: [], taken: [], mySeats: [] } };
+		}
+		
 		const canvas = computeCanvas(areas);
 		const capacity = areas.reduce((sum, item) => sum + item.rows * item.cols, 0);
 		

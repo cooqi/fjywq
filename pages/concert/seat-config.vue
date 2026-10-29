@@ -20,7 +20,7 @@
 					<text class="ph-meta-item">{{seatTotalSeats}} 座</text>
 					<text class="ph-meta-item">画布 {{canvasGrid.w}}×{{canvasGrid.h}} 格</text>
 				</view>
-				<view class="ph-warn" v-if="seatSelectionCount > 0">已有 {{seatSelectionCount}} 条选座记录：改动行列数或增删分区会清理受影响记录；只调整分区位置、编号不影响已选座位</view>
+				<view class="ph-warn" v-if="seatSelectionCount > 0">已有 {{seatSelectionCount}} 条选座记录：改动行列数或增删分区（含舞台）会清理受影响记录；只调整分区位置、编号不影响已选座位</view>
 			</view>
 
 			<view class="content">
@@ -43,6 +43,7 @@
 							<text class="mini-btn" @click="addSeatArea(false)">+ 分区</text>
 							<text class="mini-btn purple" @click="addSeatArea(true)">+ 舞台</text>
 							<text class="mini-btn gray" @click="autoLayout">自动排布</text>
+							<text class="mini-btn danger" @click="clearAllLayout">清空布局</text>
 						</view>
 					</view>
 
@@ -92,7 +93,7 @@
 								<text class="lb-sub" v-else>舞台 {{item.stageW}}×{{item.stageH}}</text>
 								<text class="lb-pos" v-if="selectedIndex === item.index">X{{item.gridX}} Y{{item.gridY}}</text>
 							</view>
-							<view class="canvas-empty" v-if="layoutBlocks.length === 0">还没有分区，点击上方「+ 分区」开始配置</view>
+							<view class="canvas-empty" v-if="layoutBlocks.length === 0">布局已清空或还没有分区，点击上方「+ 分区」开始配置</view>
 						</view>
 					</scroll-view>
 					<view class="overlap-warn" v-if="overlapTips.length > 0">位置重叠：{{overlapTips.join('；')}}（保存时需确认）</view>
@@ -631,6 +632,29 @@
 				doRemove()
 			},
 
+			// 一键删除全部分区、舞台及所有已选座位：直接提交空布局，服务端同步清空并关闭选座
+			clearAllLayout() {
+				if (this.savingSeat) return
+				if (this.seatAreas.length === 0 && this.seatSelectionCount === 0) {
+					uni.showToast({ title: '布局已是空的', icon: 'none' })
+					return
+				}
+				const selTip = this.seatSelectionCount > 0 ? `，并删除 ${this.seatSelectionCount} 条用户已选座位记录` : ''
+				uni.showModal({
+					title: '清空布局',
+					content: `将删除全部 ${this.seatAreas.length} 个分区（含舞台）${selTip}，同时自动关闭选座。此操作不可撤销，确定继续吗？`,
+					confirmText: '一键删除',
+					confirmColor: '#c62828',
+					success: (m) => {
+						if (!m.confirm) return
+						this.seatAreas = []
+						this.selectedIndex = -1
+						this.dirty = true
+						this.saveSeatConfig(true)
+					}
+				})
+			},
+
 			selectArea(idx) {
 				this.selectedIndex = idx
 			},
@@ -1084,7 +1108,7 @@
 
 			// ===== 保存 =====
 			validateAreas() {
-				if (this.seatAreas.length === 0) return '至少配置一个分区'
+				// 允许保存空布局（= 一键删除全部分区与舞台）；非空时逐项校验
 				for (let i = 0; i < this.seatAreas.length; i++) {
 					const a = this.seatAreas[i]
 					const name = String(a.name || '').trim()
@@ -1404,6 +1428,7 @@
 
 		&.purple { background: linear-gradient(135deg, #7E57C2 0%, #5E35B1 100%); }
 		&.gray { background: #90a4ae; }
+		&.danger { background: linear-gradient(135deg, #ef5350 0%, #c62828 100%); }
 	}
 
 	.meta-row {

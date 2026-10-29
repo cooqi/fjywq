@@ -242,7 +242,10 @@ export default {
 		},
 		switchSubject(s) {
 			this.currentSubject = s
-			this.currentCat = this.categories[0]
+			// 不依赖 categories computed 的求值时序，直接从目标主体的 SCHEMA 取首项，
+			// 避免 currentCat 停留在旧主体分类上导致 chip 无高亮/看似跳回默认
+			const cats = Object.keys(SCHEMA[s] || {})
+			this.currentCat = cats.includes(this.currentCat) ? this.currentCat : cats[0]
 		},
 		switchCat(c) { this.currentCat = c },
 		schemaLabel(c) { return (SCHEMA[this.currentSubject][c] || {}).label || c },
@@ -451,7 +454,13 @@ export default {
 					if (res.result && res.result.code === 0) {
 						uni.showToast({ title: isEdit ? '已更新' : (pair ? '已归档到青宇' : '已添加'), icon: 'success' })
 						this.closeForm()
-						if (pair && !isEdit) { this.currentSubject = 'intersection'; this.currentCat = PAIR_MAP[this.currentCat] }
+						// 新增双人归档后切到青宇对应分类；编辑不跳主体，仅守卫 currentCat 在新主体下无效的情况
+						if (pair && !isEdit) {
+							this.currentSubject = 'intersection'
+							this.currentCat = PAIR_MAP[this.currentCat] || this.currentCat
+						}
+						const cats = Object.keys(SCHEMA[this.currentSubject] || {})
+						if (!cats.includes(this.currentCat)) this.currentCat = cats[0]
 						this.loadData()
 					} else {
 						uni.showToast({ title: (res.result && res.result.message) || '保存失败', icon: 'none' })

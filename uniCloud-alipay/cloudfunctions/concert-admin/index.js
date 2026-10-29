@@ -385,7 +385,7 @@ async function update(event) {
 	}
 }
 
-// 删除
+// 删除（同步级联删除座位表分区与已选座位记录）
 async function deleteConcert(event) {
 	try {
 		const { id } = event;
@@ -409,25 +409,28 @@ async function deleteConcert(event) {
 			};
 		}
 		
-		// 已有选座记录时禁止删除，避免座位记录变成孤立数据
-		const seatCount = await db.collection(SELECT_COLLECTION)
-			.where({ concertId: id })
-			.count();
+		// 先清理本场座位表（含舞台）与用户已选座位，再删演出，避免遗留孤立数据
+		const delSelections = await getAllByPage(SELECT_COLLECTION, { concertId: id }, { _id: true });
+		const delAreas = await getAllByPage(AREA_COLLECTION, { concertId: id }, { _id: true });
 		
-		if (seatCount.total > 0) {
-			return {
-				code: -1,
-				message: `该演唱会已有 ${seatCount.total} 条选座记录，请先在座位表里释放座位后再删除`
-			};
+		for (const seat of delSelections) {
+			await db.collection(SELECT_COLLECTION).doc(seat._id).remove();
+		}
+		for (const area of delAreas) {
+			await db.collection(AREA_COLLECTION).doc(area._id).remove();
 		}
 		
 		const res = await db.collection('Concert')
 			.doc(id)
 			.remove();
 		
+		const tips = [];
+		if (delAreas.length > 0) tips.push(`${delAreas.length} 个分区`);
+		if (delSelections.length > 0) tips.push(`${delSelections.length} 条选座记录`);
+		
 		return {
 			code: 0,
-			message: '删除成功',
+			message: tips.length > 0 ? `删除成功，同时清理了${tips.join('、')}` : '删除成功',
 			data: res
 		};
 	} catch (err) {
@@ -608,8 +611,37 @@ async function saveSeatConfig(event) {
 			});
 		}
 		
+		// areas 为空 = 一键清空：删除本场全部分区（含舞台）与所有已选记录，并关闭选座
 		if (normalized.length === 0) {
-			return { code: -1, message: '至少配置一个分区' };
+			const wipeOldAreas = await getAllByPage(AREA_COLLECTION, { concertId }, { _id: true });
+			const wipeSelections = await getAllByPage(SELECT_COLLECTION, { concertId }, { _id: true });
+			let wipeCleared = 0;
+			const wipeNow = Date.now();
+			
+			for (const seat of wipeSelections) {
+				await db.collection(SELECT_COLLECTION).doc(seat._id).remove();
+				wipeCleared++;
+			}
+			for (const area of wipeOldAreas) {
+				await db.collection(AREA_COLLECTION).doc(area._id).remove();
+			}
+			
+			if (wipeOldAreas.length === 0 && wipeCleared === 0) {
+				return { code: -1, message: '当前没有可删除的分区' };
+			}
+			
+			// 空座位表不允许保持开放，避免用户端看到空选座图
+			await db.collection('Concert').doc(concertId).update({
+				seat_enabled: false,
+				seat_version: (Number(concert.seat_version) || 1) + 1,
+				updateTime: wipeNow
+			});
+			
+			return {
+				code: 0,
+				message: wipeCleared > 0 ? `已清空全部 ${wipeOldAreas.length} 个分区，并释放 ${wipeCleared} 条选座记录` : `已清空全部 ${wipeOldAreas.length} 个分区`,
+				data: { clearedSelections: wipeCleared, areas: [] }
+			};
 		}
 		
 		// 座位总数不含舞台/装饰区
@@ -740,8 +772,8 @@ async function saveSeatConfig(event) {
 			seat_version: nextVersion,
 			updateTime: now
 		};
-		// 首次保存座位表（该场次此前无任何分区）默认开放选座；之后开关只由配置页切换按钮控制，保存不再覆盖
-		if (oldAreas.length === 0) {
+		// 首次保存座位表（该场次此前无任何分区且本次新增了分区）默认开放选座；之后开关只由配置页切换按钮控制，保存不再覆盖
+		if (oldAreas.length === 0 && addedAreas.length > 0) {
 			concertUpdate.seat_enabled = true;
 		}
 		// 旧版客户端不传 seatColors 时保持原配色不动；传了则按清洗结果整体覆盖（完整四键）
