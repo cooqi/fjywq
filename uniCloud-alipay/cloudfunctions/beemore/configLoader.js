@@ -23,10 +23,11 @@ async function loadConfig(db) {
 	}
 	// rules 浅合并：存量配置缺少新增字段时补默认，避免运行时读到 undefined
 	merged.rules = Object.assign({}, DEFAULT_CONFIG.rules, merged.rules || {})
-	// actions：逐个动作补字段，并保证新增的「干饭」入口存在（否则前端按钮会消失）
+	// actions：逐个动作补字段，并保证新增的「干饭/运动」入口存在（否则前端按钮会消失）
 	const acts = merged.actions || {}
 	Object.keys(acts).forEach(k => { acts[k] = Object.assign({}, DEFAULT_CONFIG.actions[k] || {}, acts[k]) })
 	if (!acts.eat) acts.eat = DEFAULT_CONFIG.actions.eat
+	if (!acts.sport) acts.sport = DEFAULT_CONFIG.actions.sport
 	merged.actions = acts
 	// foods：菜单整块缺失（旧库未配）时用内置菜单
 	if (!merged.foods || !Array.isArray(merged.foods.list) || !merged.foods.list.length) {

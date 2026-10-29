@@ -73,32 +73,61 @@ export const BEE_EMOJIS = ['🐥', '🐤', '🐣', '🧑‍💻', '👩‍💻',
 // ============ 闺蜜互动动作（默认值；运行时被配置覆盖）============
 // interaction/health/happiness: 属性变化, cost: 消耗杯蜜币, cooldown: 冷却ms, dailyLimit: 每日上限
 // eat（干饭）只作为入口：点它跳转干饭页，实际吃饭走云函数 action 'eat'
+// sport（运动）走 interact，服务端额外做燃脂减重结算（kind: 'sport'），运动能增强体魄（+健康）
 export const ACTIONS = {
 	accompany: { name: '陪伴', emoji: '🫂', interaction: 4, health: 0, happiness: 1, cost: 0, cooldown: 5 * 60 * 1000, dailyLimit: 20 },
 	chat: { name: '聊天', emoji: '💬', interaction: 3, health: 1, happiness: 2, cost: 0, cooldown: 5 * 1000, dailyLimit: 30 },
 	gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 30 * 60 * 1000, dailyLimit: 5 },
+	sport: { name: '运动', emoji: '🏃‍♀️', kind: 'sport', interaction: 2, health: 3, happiness: -1, cost: 2, cooldown: 30 * 60 * 1000, dailyLimit: 3 },
 	eat: { name: '干饭', emoji: '🍚', kind: 'meal', interaction: 0, health: 0, happiness: 0, cost: 0, cooldown: 15 * 60 * 1000, dailyLimit: 8 }
 }
-export const ACTION_KEYS = ['accompany', 'chat', 'gift', 'eat']
+export const ACTION_KEYS = ['accompany', 'chat', 'gift', 'eat', 'sport']
 
 // ============ 干饭菜单（默认值；运行时被 beemore_config 的 foods 覆盖）============
 // kcal=热量, hunger=可抵消的饥饿值, light=清淡（生病时只允许这些）, cost=消耗杯蜜币
+// anyWhen=豁免名单：上班(working)/旅行(traveling)也能吃；标 sick 则生病时也能吃（并绕过清淡限制）
 export const FOODS = [
 	{ key: 'rice', name: '家常套餐', emoji: '🍚', kcal: 400, hunger: 45, happiness: 4, health: 1, cost: 3, light: true, tag: '正餐' },
 	{ key: 'noodle', name: '热汤面', emoji: '🍜', kcal: 350, hunger: 38, happiness: 4, health: 1, cost: 2, light: true, tag: '正餐' },
-	{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, tag: '生病可吃' },
+	{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, anyWhen: ['sick'], tag: '生病可吃' },
 	{ key: 'salad', name: '轻食沙拉', emoji: '🥗', kcal: 150, hunger: 18, happiness: 1, health: 2, cost: 3, light: true, tag: '不易胖' },
 	{ key: 'burger', name: '芝士汉堡', emoji: '🍔', kcal: 560, hunger: 48, happiness: 7, health: 0, cost: 5, light: false, tag: '高热量' },
 	{ key: 'hotpot', name: '火锅套餐', emoji: '🍲', kcal: 720, hunger: 55, happiness: 9, health: 0, cost: 8, light: false, tag: '高热量' },
-	{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, tag: '容易胖' },
-	{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, tag: '容易胖' },
-	{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, tag: '加餐' }
+	{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, anyWhen: ['working', 'traveling'], tag: '容易胖' },
+	{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, anyWhen: ['sick'], tag: '容易胖' },
+	{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, anyWhen: ['working', 'traveling'], tag: '加餐' }
 ]
 export function getFoods() { return live.foods && live.foods.list && live.foods.list.length ? live.foods.list : FOODS }
 
-/** 哪些状态可以吃：午休/空闲/请假（上班、睡觉、旅行都不行，与云函数 EAT_ALLOWED 对齐） */
+/** 哪些状态可以正常吃：午休/空闲/请假（上班、睡觉、旅行默认不行，与云函数 EAT_ALLOWED 对齐） */
 export const EAT_ALLOWED = ['resting', 'idle', 'leave']
 export function canEat(status) { return EAT_ALLOWED.indexOf(status) >= 0 }
+
+/** 菜品的 anyWhen 豁免名单（容错：管理员配置可能没这个字段） */
+export function foodAnyWhen(food) { return food && Array.isArray(food.anyWhen) ? food.anyWhen : [] }
+
+/**
+ * 判断某道菜当前能不能吃（与云函数 eat 判定对齐）：
+ * - 睡觉一律不给吃（不设豁免）
+ * - 允许状态：生病时仍受清淡限制，除非菜品 anyWhen 标了 'sick'
+ * - 受限状态（上班/旅行/病假旷工等）：仅 anyWhen 命中当前状态或命中 sick（生病）的菜可偷吃
+ */
+export function canEatFood(food, status, mood) {
+	if (status === 'sleeping') return false
+	const aw = foodAnyWhen(food)
+	const sickExempt = mood === 'sick' && aw.indexOf('sick') >= 0
+	if (EAT_ALLOWED.indexOf(status) >= 0) {
+		return !(mood === 'sick' && !(food && food.light) && !sickExempt)
+	}
+	return sickExempt || aw.indexOf(status) >= 0
+}
+
+/** anyWhen 名单转展示文案，如「上班/旅行可吃」 */
+export function anyWhenLabel(food) {
+	const map = { working: '上班', traveling: '旅行', sick: '生病' }
+	const ls = foodAnyWhen(food).map(x => map[x]).filter(Boolean)
+	return ls.length ? ls.join('/') + '可吃' : ''
+}
 
 // ============ 饥饿值（0-100，数值越大越饿）展示映射 ============
 export function hungerInfo(hunger) {
@@ -193,8 +222,8 @@ export function loadBeemoreConfig() {
 
 function applyConfig(map) {
 	if (map.actions && typeof map.actions === 'object') {
-		// 逐动作字段回填：管理员只改数值时不会丢字段；内置新增动作（干饭）在旧配置里缺 key 时也保留
-		const builtin = { eat: ACTIONS.eat }
+		// 逐动作字段回填：管理员只改数值时不会丢字段；内置新增动作（干饭/运动）在旧配置里缺 key 时也保留
+		const builtin = { eat: ACTIONS.eat, sport: ACTIONS.sport }
 		Object.keys(ACTIONS).forEach(k => { if (!map.actions[k] && !builtin[k]) delete ACTIONS[k] })
 		Object.keys(map.actions).forEach(k => { ACTIONS[k] = Object.assign({}, ACTIONS[k] || builtin[k] || {}, map.actions[k]) })
 		Object.keys(builtin).forEach(k => { if (!ACTIONS[k]) ACTIONS[k] = builtin[k] })

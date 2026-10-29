@@ -19,7 +19,7 @@
 					</view>
 				</view>
 				<view class="b-stats">
-					<text class="b-item">⚖️ {{ weight }}kg</text>
+					<text class="b-item" :class="{ 'b-warn': underweight || obese }">⚖️ {{ weight }}kg</text>
 					<text class="b-item">标准 {{ weightBase }}kg</text>
 					<text class="b-item">🍚 今日 {{ meals }} 顿</text>
 					<text class="b-item">🪙 {{ coin }}</text>
@@ -27,9 +27,13 @@
 				<view v-if="toFat > 0" class="b-note">还差 {{ toFat }} kcal 就攒满 1kg，堆积越多越容易胖</view>
 			</view>
 
-			<!-- 能不能吃：只有休息/空闲/请假可以 -->
+			<!-- 能不能吃：默认只有休息/空闲/请假可以，部分菜品有上班/旅行/生病豁免 -->
 			<view class="gate" :class="{ deny: !allowed }" :style="allowed ? { background: statusTone } : {}">
 				<text>{{ statusEmoji }} {{ gateText }}</text>
+				<text v-if="underweight" class="any-tip">⚠️ 过瘦预警（≤{{ underKg }}kg）：她已视为生病，需休息和好好吃饭，工作旅行运动都暂停 🥺</text>
+				<text v-if="obese" class="any-tip">⚠️ 肥胖预警（≥{{ obeseKg }}kg）：单道≥{{ banKcal }}kcal 的高热量菜已禁吃，带她去运动减重吧 🏃‍♀️</text>
+				<text v-if="!allowed && exemptCount > 0" class="any-tip">有 {{ exemptCount }} 道菜不受这会儿限制，可以偷吃点～</text>
+				<text v-if="sick" class="any-tip">生病了她胃口弱，默认只吃清淡的，标了「生病可吃」的除外</text>
 				<text v-if="cooldownText" class="cd">下次能动筷：{{ cooldownText }}</text>
 			</view>
 
@@ -44,6 +48,7 @@
 							<view class="f-n-row">
 								<text class="f-n">{{ f.name }}</text>
 								<text v-if="f.tag" class="f-tag" :class="{ light: f.light }">{{ f.tag }}</text>
+								<text v-if="anyWhenLabel(f)" class="f-tag any">{{ anyWhenLabel(f) }}</text>
 							</view>
 							<text class="f-d">{{ f.kcal }} kcal · 解饿 {{ f.hunger }} · 开心 +{{ f.happiness }}{{ f.health ? ' · 健康 +' + f.health : '' }}</text>
 						</view>
@@ -70,13 +75,14 @@
 
 <script>
 import { callBeemore, getMyUserInfo, cachePet, eatFood } from './store/pet.js'
-import { getFoods, hungerInfo, canEat, STATUS_MAP, fmtCountdown, getRules, loadBeemoreConfig } from './beemore.js'
+import { getFoods, hungerInfo, canEat, canEatFood, anyWhenLabel, STATUS_MAP, fmtCountdown, getRules, loadBeemoreConfig } from './beemore.js'
 
 /** 与云函数 EAT_DENY_MSG 对齐的本地话术（服务端仍是最终裁判） */
 const DENY_MSG = {
 	working: '杯蜜正在上班，吃饭要等到休息时间哦～ 💼',
 	sleeping: '睡觉时间不能吃东西，会积食的，等她醒来再说～ 😴',
-	traveling: '旅行路上先忍着，回到家再一起吃好的 🎒'
+	traveling: '旅行路上先忍着，回到家再一起吃好的 🎒',
+	absent: '杯蜜病着旷工中，先照顾她，吃饭挑豁免的菜吧 🤒'
 }
 
 export default {
@@ -113,6 +119,17 @@ export default {
 		},
 		dailyLimit() { return (getRules() && getRules().MEAL_DAILY_LIMIT) || 8 },
 		sick() { return this.pet.mood === 'sick' },
+		/** 体重预警阈值（与云函数 rules 对齐，配置缺失时用同样默认值） */
+		underKg() { return (getRules() && getRules().UNDERWEIGHT_KG) || 40 },
+		obeseKg() { return (getRules() && getRules().OBESE_KG) || 150 },
+		banKcal() { return (getRules() && getRules().OBESE_BAN_KCAL) || 500 },
+		underweight() { return this.weight > 0 && this.weight <= this.underKg },
+		obese() { return this.weight >= this.obeseKg },
+		/** 当前受限状态下仍有豁免的菜数（告诉用户不是完全不能吃） */
+		exemptCount() {
+			if (this.allowed) return 0
+			return this.foods.filter(f => canEatFood(f, this.status, this.pet.mood)).length
+		},
 		cooldownText() { return fmtCountdown(this.cooldownLeft) }
 	},
 	onLoad() {
@@ -136,15 +153,21 @@ export default {
 			}
 			this.loading = false
 		},
-		/** 生病只能吃清淡的；余额不够/超顿数/冷却中也不能点 */
+		/** 生病只能吃清淡的（豁免菜除外）；余额不够/超顿数/冷却中也不能点；逐菜判定含 anyWhen 豁免 */
 		edible(f) { return !this.reason(f) },
 		reason(f) {
-			if (!this.allowed || this.meals >= this.dailyLimit) return this.gateText
+			if (this.meals >= this.dailyLimit) return `今天已经吃了 ${this.meals} 顿，胃要撑坏了，明天再吃吧`
+			if (!canEatFood(f, this.status, this.pet.mood)) {
+				if (!this.allowed) return DENY_MSG[this.status] || '这会儿不方便进食，等她空闲下来再吃吧～'
+				return `生病只能吃清淡的，${f.name}吃了会更难受`
+			}
+			// 肥胖预警：高热量单道禁吃（与云函数判定对齐）
+			if (this.obese && (f.kcal || 0) >= this.banKcal) return `${f.name}热量太高，肥胖预警期间禁止吃，先带她运动 🏃‍♀️`
 			if (this.cooldownLeft > 0) return '刚吃过，让胃缓一缓吧'
-			if (this.sick && !f.light) return `生病只能吃清淡的，${f.name}吃了会更难受`
 			if ((f.cost || 0) > this.coin) return `这顿要 ${f.cost} 杯蜜币，余额不够，先工作赚点吧`
 			return ''
 		},
+		anyWhenLabel(f) { return anyWhenLabel(f) },
 		choose(f) {
 			const why = this.reason(f)
 			if (why) { uni.showToast({ title: why, icon: 'none' }); return }
@@ -210,6 +233,7 @@ export default {
 .h-tip { font-size: 12px; color: #8a6fb0; }
 .b-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; padding-top: 10px; border-top: 1rpx dashed #ece7f6; }
 .b-item { font-size: 13px; color: #555; }
+.b-item.b-warn { color: #d0566b; font-weight: bold; }
 .b-note { font-size: 11px; color: #b08a5a; margin-top: 8px; }
 
 /* 能不能吃 */
@@ -218,6 +242,7 @@ export default {
 .gate.deny { background: #fff2f2; }
 .gate.deny text { color: #d0566b; }
 .gate .cd { font-size: 12px; color: #8a6fb0; }
+.gate .any-tip { font-size: 12px; color: #c77b2f; }
 
 /* 菜单 */
 .food-list { display: flex; flex-direction: column; }
@@ -230,6 +255,7 @@ export default {
 .f-n { font-size: 14px; color: #444; font-weight: bold; }
 .f-tag { font-size: 10px; color: #b06ab3; background: #f6ecff; border-radius: 8px; padding: 1px 6px; }
 .f-tag.light { color: #2f9e6e; background: #e8f9f0; }
+.f-tag.any { color: #c77b2f; background: #fff3e0; }
 .f-d { font-size: 11px; color: #999; }
 .f-c { font-size: 12px; color: #6a5acd; flex: none; }
 

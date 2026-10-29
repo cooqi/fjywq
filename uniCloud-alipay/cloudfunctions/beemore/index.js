@@ -143,6 +143,8 @@ function computeStatus(pet, now, cfg) {
 	const sl = activeSleep(pet, cfg)
 	if (sl && matchesWindow(dow, mins, sl.weekdays, sl.start, sl.end)) return 'sleeping'
 	if (pet.leave && pet.leave.type && pet.leave.endAt && now < pet.leave.endAt) return 'leave'
+	// 过瘦（病前预警）：人没力气上班，在家休养（好好吃饭养回体重后自动恢复上班）
+	if (isUnderweight(pet, cfg.rules || {})) return 'idle'
 	const aw = activeWorkShifts(pet, cfg)
 	// 不设职业 = 不工作：working/resting（班间午休人设）均不生效，也不受睡眠外的作息约束
 	if (pet.job && aw.shifts.some(w => matchesWindow(dow, mins, w.weekdays, w.start, w.end))) {
@@ -359,6 +361,7 @@ function simulateDecay(pet, now, R) {
 	const since = Math.max(0, now - (pet.lastCalcAt || now))
 	const hours = Math.min(Math.floor(since / 3600000), R.MAX_OFFLINE_HOURS)
 	let lowHours = 0
+	let hungryHours = pet.hungryHours || 0 // 长期饿着的小时数（过饱每小时+1，按时吃饭每小时-2 回消）
 	for (let h = 0; h < hours; h++) {
 		interaction = clamp(interaction - R.INTERACT_DECAY_PER_HOUR, 0, 100)
 		happiness = clamp(happiness - R.HAPPY_DECAY_PER_HOUR, 0, 100)
@@ -366,6 +369,9 @@ function simulateDecay(pet, now, R) {
 		if (hunger >= (R.HUNGER_STARVE || 80)) {
 			health = clamp(health - (R.HUNGER_HEALTH_DECAY || 1), 0, 100)
 			happiness = clamp(happiness - (R.HUNGER_HAPPY_DECAY || 1), 0, 100)
+			hungryHours++
+		} else {
+			hungryHours = Math.max(0, hungryHours - 2)
 		}
 		if (R.HEALTH_DECAY_OFFLINE) {
 			if (interaction >= 60) health = Math.min(clamp(health + R.RECOVER_PER_HOUR, 0, 100), R.HEALTH_RECOVER_CAP)
@@ -375,11 +381,12 @@ function simulateDecay(pet, now, R) {
 		if (interaction < R.SICK_INTERACT) lowHours++
 	}
 	if (pet.recoveringUntil && now < pet.recoveringUntil) health = clamp(health, 50, 100)
-	return { interaction, health, happiness, hunger, sickByLowInteract: lowHours >= R.SICK_HOURS }
+	return { interaction, health, happiness, hunger, hungryHours, sickByLowInteract: lowHours >= R.SICK_HOURS }
 }
 function computeMood(pet, interaction, health, happiness, now, sickByLowInteract, R) {
 	const TH = (R.MOOD_TH) || { happy: { interaction: 80, health: 80, happiness: 80 }, unhappy: 40 }
 	if (health <= 0) return 'sick' // 健康归零＝危重：必须就医服药，不能靠陪伴/自愈恢复
+	if (isUnderweight(pet, R)) return 'sick' // 过瘦预警（病前）：太瘦即视为生病，需休息好好吃饭，吃回标准以上才自愈
 	if (pet.recoveringUntil && now < pet.recoveringUntil) return 'recovering'
 	// 生病不再硬性锁定：只要脱离危险区（健康/互动回升，例如靠陪伴恢复），下方判定会让她好转进入恢复中
 	let lowInteractSick = sickByLowInteract
@@ -407,7 +414,7 @@ function ensureBody(pet, R) {
 /** 多余热量攒够 FAT_KCAL_PER_KG 就 +1kg，返回本次实际涨的公斤数 */
 function gainWeight(pet, surplus, R) {
 	const per = R.FAT_KCAL_PER_KG || 240
-	const cap = pet.weightBase + (R.WEIGHT_MAX_GAIN || 20)
+	const cap = pet.weightBase + (R.WEIGHT_MAX_GAIN || 100)
 	let over = (pet.overKcal || 0) + Math.max(0, Math.round(surplus))
 	let gain = 0
 	while (over >= per && pet.weight + gain < cap) { over -= per; gain++ }
@@ -423,6 +430,24 @@ function loseWeightBySick(pet, R) {
 	const before = pet.weight
 	pet.weight = Math.max(floor, pet.weight - (R.SICK_WEIGHT_LOSS || 1))
 	return before - pet.weight
+}
+/** 过瘦（病前预警）：体重≤阈值，强制生病、禁止工作/旅行/运动，靠好好吃饭养回 */
+function isUnderweight(pet, R) { return R.UNDERWEIGHT_KG > 0 && pet.weight > 0 && pet.weight <= R.UNDERWEIGHT_KG }
+/** 肥胖预警：体重≥阈值，禁高热量菜并提示运动 */
+function isObese(pet, R) { return R.OBESE_KG > 0 && pet.weight > 0 && pet.weight >= R.OBESE_KG }
+/** 运动燃脂：先扣储存的多余热量，扣完按每 FAT_KCAL_PER_KG 掉 1kg；不低于 max(WEIGHT_MIN, 基础体重)；返回掉的公斤数 */
+function burnFat(pet, kcal, R) {
+	const per = R.FAT_KCAL_PER_KG || 240
+	let left = Math.max(0, Math.round(kcal))
+	const over = pet.overKcal || 0
+	if (over >= left) { pet.overKcal = over - left; return 0 }
+	left -= over
+	pet.overKcal = 0
+	const floor = Math.max(R.WEIGHT_MIN || 30, pet.weightBase || 0)
+	let loss = 0
+	while (left >= per && pet.weight - loss - 1 >= floor) { left -= per; loss++ }
+	if (loss > 0) pet.weight = clamp(pet.weight - loss, R.WEIGHT_MIN || 30, 200)
+	return loss
 }
 
 // ---- 形象（头发为可选部件）----
@@ -462,6 +487,8 @@ async function loadAndDecay(userId, now, cfg) {
 	const prevCalcAt = pet.lastCalcAt || now
 	const isNewDay = ensureDaily(pet, now)
 	ensureBody(pet, R) // 存量数据没有体重基线/热量累计时先补齐
+	const wasUnder = isUnderweight(pet, R) // 本轮开始前是否已过瘦/肥胖，用于“跨阈值预警只记一次日记”
+	const wasObese = isObese(pet, R)
 	const lookUpgraded = ensureHair(pet) // 存量形象补写“头发可选、默认无发”
 	const sim = simulateDecay(pet, now, R)
 	let lowIntimacySince = pet.lowIntimacySince || 0
@@ -514,6 +541,26 @@ async function loadAndDecay(userId, now, cfg) {
 		pet.weight -= 1
 		if (pet.weight === pet.weightBase) await addDiary(pet._id, 'thin', `体重慢慢回到 ${pet.weight}kg，最近吃得刚刚好 ✨`, '回到标准体重')
 	}
+	// 长期饿瘦结算：饥饿小时数攒满 STARVE_HOURS_KG（≈30天）掉 STARVE_WEIGHT_LOSS kg，最低 WEIGHT_MIN（30kg）
+	pet.hungryHours = sim.hungryHours
+	let starveLost = 0
+	const sHours = R.STARVE_HOURS_KG || 720
+	while ((pet.hungryHours || 0) >= sHours) {
+		pet.hungryHours -= sHours
+		if (pet.weight > (R.WEIGHT_MIN || 30)) {
+			const before = pet.weight
+			pet.weight = Math.max(R.WEIGHT_MIN || 30, Math.round((before - (R.STARVE_WEIGHT_LOSS || 0.5)) * 10) / 10)
+			starveLost = Math.round((starveLost + before - pet.weight) * 10) / 10
+		}
+	}
+	if (starveLost > 0) await addDiary(pet._id, 'thin', `杯蜜总是饱一顿饿一顿，饿瘦了 ${starveLost}kg（现 ${pet.weight}kg），要好好吃饭才行 🥺`, '饿瘦了')
+	// 过瘦/肥胖跨阈值预警（只在本轮刚跨过时记一次）
+	if (!wasUnder && isUnderweight(pet, R)) {
+		await addDiary(pet._id, 'thin', `杯蜜瘦到 ${pet.weight}kg 了，过瘦预警（病前信号）🤒 接下来要休息和好好吃饭，工作旅行都先停停`, '过瘦预警')
+	}
+	if (!wasObese && isObese(pet, R)) {
+		await addDiary(pet._id, 'fat', `杯蜜体重飙到 ${pet.weight}kg，肥胖预警！高热量菜已经禁止供应，该带她运动了 🏃‍♀️`, '肥胖预警')
+	}
 	// 生病期间不能上班：当天没请病假就记旷工（#5）
 	// 用“本轮生病开始时间 ≤ 今日最后下班时刻”判定，避免她上完班才病倒也被算旷工；允许当天结算前补请病假撤销
 	const todayStr = dayStr(now)
@@ -534,6 +581,7 @@ async function loadAndDecay(userId, now, cfg) {
 	changed.weight = pet.weight
 	changed.weightBase = pet.weightBase
 	changed.overKcal = pet.overKcal
+	changed.hungryHours = pet.hungryHours
 	if (absenceNew) changed.absentLog = pet.absentLog
 	if (wageChanged || monthSettled) changed.wallet = pet.wallet
 	if (monthSettled) changed.coin = pet.coin
@@ -700,6 +748,11 @@ async function interact(event, cfg) {
 	// 干饭有独立入口（能选菜、算热量、会胖瘦），interact 不处理吃饭
 	if (actionKey === 'eat' || acfg.kind === 'meal') return err(2001, '吃饭请用「干饭」功能，那里能选吃什么～')
 	const status = pet.status || 'idle'
+	// 运动限制：过瘦（病前预警）要先养身体、生病要静养，都不能练
+	if (acfg.kind === 'sport') {
+		if (isUnderweight(pet, R)) return err(4001, '杯蜜太瘦啦，先好好吃饭休息养身体，等有了力气再运动 🥺')
+		if (pet.mood === 'sick') return err(4001, '杯蜜身体不舒服，现在需要静养而不是运动～')
+	}
 
 	const lastAt = (pet.lastActionAt || {})[actionKey] || 0
 	if (now - lastAt < acfg.cooldown) return Object.assign(err(3001), { data: { retryAfter: acfg.cooldown - (now - lastAt) } })
@@ -781,6 +834,21 @@ async function interact(event, cfg) {
 		if (thinLost > 0) { healUpdate.weight = pet.weight; healUpdate.overKcal = pet.overKcal }
 	}
 
+	// 运动减重：正常完成（非打扰/超次）才燃脂，同时更饿；减重不低于 max(WEIGHT_MIN, 基础体重)
+	const sportUpdate = {}
+	let fatLoss = 0
+	if (acfg.kind === 'sport') {
+		ensureBody(pet, R)
+		if (!overLimit && !disturb && !wokeup) {
+			fatLoss = burnFat(pet, R.SPORT_BURN_KCAL || 150, R)
+			sportUpdate.hunger = clamp(hungerOf(pet) + (R.SPORT_HUNGER_ADD || 10), 0, 100)
+		}
+		sportUpdate.weight = pet.weight
+		sportUpdate.weightBase = pet.weightBase
+		sportUpdate.overKcal = pet.overKcal
+		if (fatLoss > 0) line = `呼～出完汗掉了 ${fatLoss}kg，现在 ${pet.weight}kg，感觉轻了一截！🏃‍♀️`
+	}
+
 	// 并发防刷
 	const fresh = await db.collection(PETS).doc(pet._id).get()
 	const f = fresh.data && fresh.data[0]
@@ -790,27 +858,29 @@ async function interact(event, cfg) {
 	await db.collection(PETS).doc(pet._id).update(Object.assign({
 		interaction: newInteraction, health: newHealth, happiness: newHappiness, coin: newCoin, mood: newMood,
 		growth, level, daily: pet.daily, lastActionAt: pet.lastActionAt, lastCalcAt: now, lastInteractAt: now, restInteract: pet.restInteract
-	}, healUpdate))
-	await db.collection(LOGS).add({ pet_id: pet._id, action: actionKey, d_interaction: gainI, d_health: gainH + dHealth, d_happiness: gainP, over_limit: overLimit, create_date: now })
+	}, healUpdate, sportUpdate))
+	await db.collection(LOGS).add({ pet_id: pet._id, action: actionKey, d_interaction: gainI, d_health: gainH + dHealth, d_happiness: gainP, d_weight: -fatLoss, over_limit: overLimit, create_date: now })
+	if (fatLoss > 0) await addDiary(pet._id, 'thin', `🏃‍♀️ 运动完一身汗，杯蜜瘦了 ${fatLoss}kg（现 ${pet.weight}kg），继续坚持！`, '运动减重')
 	if (healedByCompany) await addDiary(pet._id, 'recover', '在你的陪伴下，杯蜜慢慢好起来了 (๑•̀ㅂ•́)و✧', '恢复中')
 	else if (reMed) await addDiary(pet._id, 'sick', '杯蜜健康透支到 0，必须重新就医服药 💊', '需就医')
 	else if (enterSick) await addDiary(pet._id, 'sick', '杯蜜最近太累了，作息紊乱需要调养一下 (x_x)', '需要调养')
 	if (thinLost > 0) await addDiary(pet._id, 'thin', `一难受就吃不下饭，杯蜜瘦了 ${thinLost}kg（现 ${pet.weight}kg），看着好心疼 🥺`, '生病变瘦')
 
 	return ok({
-		pet: Object.assign({}, pet, { interaction: newInteraction, health: newHealth, happiness: newHappiness, coin: newCoin, mood: newMood, growth, level, care: healUpdate.care || pet.care, recoveringUntil: healUpdate.recoveringUntil || pet.recoveringUntil || 0 }),
+		pet: Object.assign({}, pet, { interaction: newInteraction, health: newHealth, happiness: newHappiness, coin: newCoin, mood: newMood, growth, level, care: healUpdate.care || pet.care, recoveringUntil: healUpdate.recoveringUntil || pet.recoveringUntil || 0, weight: sportUpdate.weight || pet.weight, overKcal: sportUpdate.overKcal == null ? pet.overKcal : sportUpdate.overKcal, hunger: sportUpdate.hunger == null ? pet.hunger : sportUpdate.hunger }),
 		line: healedByCompany ? '有你在，我感觉好多了～ (๑•̀ㅂ•́)و✧' : line,
-		gainI, gainH: gainH + dHealth, gainP, dCoin, overLimit, disturb, wokeup, status, statusInfo: buildStatusInfo(pet, cfg), recovered: healedByCompany, critical: healthZero
+		gainI, gainH: gainH + dHealth, gainP, dCoin, overLimit, disturb, wokeup, status, statusInfo: buildStatusInfo(pet, cfg), recovered: healedByCompany, critical: healthZero, fatLoss
 	})
 }
 
-// ================= 干饭（只能休息时吃；吃太多会长胖，胖瘦写进日记）=================
-// 可进食的状态：午休/空闲/请假（上班、睡觉、旅行中一律不让吃）
+// ================= 干饭（只能休息时吃；菜品 anyWhen 可豁免上班/旅行/生病限制；吃太多会长胖，胖瘦写进日记）=================
+// 可进食的状态：午休/空闲/请假（上班、睡觉、旅行中默认不让吃，睡觉不设豁免）
 const EAT_ALLOWED = ['resting', 'idle', 'leave']
 const EAT_DENY_MSG = {
 	working: '杯蜜正在上班，吃饭要等到休息时间哦～ 💼',
 	sleeping: '睡觉时间不能吃东西，会积食的，等她醒来再说～ 😴',
-	traveling: '旅行路上先忍着，回到家再一起吃好的 🎒'
+	traveling: '旅行路上先忍着，回到家再一起吃好的 🎒',
+	absent: '杯蜜病着旷工中，先照顾她，吃饭挑豁免的菜吧 🤒'
 }
 async function eat(event, cfg) {
 	const { userId, foodKey } = event
@@ -823,11 +893,21 @@ async function eat(event, cfg) {
 	const { pet } = await loadAndDecay(userId, now, cfg)
 	if (!pet) return err(5002)
 	const status = pet.status || 'idle'
-	if (EAT_ALLOWED.indexOf(status) < 0) return err(4002, EAT_DENY_MSG[status] || '这会儿不方便进食，等她空闲下来再吃吧～')
-	// 生病只能吃清淡的（白粥/汤面/沙拉这类）
-	if (pet.mood === 'sick' && !food.light) {
+	// 豁免判定（与客户端 canEatFood 对齐）：anyWhen 命中当前状态，或生病时命中 'sick'（兼破清淡限制）
+	const aw = Array.isArray(food.anyWhen) ? food.anyWhen : []
+	const sickExempt = pet.mood === 'sick' && aw.indexOf('sick') >= 0
+	if (status === 'sleeping') return err(4002, EAT_DENY_MSG.sleeping)
+	if (EAT_ALLOWED.indexOf(status) < 0 && !sickExempt && aw.indexOf(status) < 0) {
+		return err(4002, EAT_DENY_MSG[status] || '这会儿不方便进食，等她空闲下来再吃吧～')
+	}
+	// 生病只能吃清淡的（白粥/汤面/沙拉这类），除非菜品专门豁免了 sick
+	if (pet.mood === 'sick' && !food.light && !sickExempt) {
 		const lightNames = foods.filter(f => f.light).slice(0, 3).map(f => f.name).join('、')
 		return err(2001, `杯蜜生病啦，只能吃点清淡的（${lightNames}），油腻甜食的吃了会更难受～`)
+	}
+	// 肥胖预警（≥OBESE_KG）：高热量单道（≥OBESE_BAN_KCAL）禁吃，提示去运动
+	if (isObese(pet, R) && (food.kcal || 0) >= (R.OBESE_BAN_KCAL || 500)) {
+		return err(2001, `杯蜜已经 ${pet.weight}kg 了，肥胖预警！${food.name}热量太高暂时不能吃，先带她运动 🏃‍♀️`)
 	}
 	const meals = (pet.daily && pet.daily.meals) || 0
 	const limit = R.MEAL_DAILY_LIMIT || 8
@@ -886,6 +966,10 @@ async function eat(event, cfg) {
 	// 长胖必须进日记；吃得正常不刷屏，只记体重变化
 	if (fatGain > 0) {
 		await addDiary(pet._id, 'fat', `杯蜜这顿吃了${food.name} ${food.emoji}，热量没处放，体重涨到 ${pet.weight}kg（+${fatGain}kg）……都怪吃太多 (╥﹏╥)`, '长胖了')
+		// 这顿刚跨到肥胖线：额外记一条预警，提示运动
+		if (isObese(pet, R) && pet.weight - fatGain < (R.OBESE_KG || 150)) {
+			await addDiary(pet._id, 'fat', `杯蜜体重飙到 ${pet.weight}kg，肥胖预警！高热量菜已经禁止供应，该带她运动了 🏃‍♀️`, '肥胖预警')
+		}
 	}
 	if (thinLost > 0) await addDiary(pet._id, 'thin', `一难受就吃不下饭，杯蜜瘦了 ${thinLost}kg（现 ${pet.weight}kg）🥺`, '生病变瘦')
 	else if (enterSick || healthZero) await addDiary(pet._id, 'sick', '杯蜜身体不太舒服，先停一停手上的事去诊所看看吧 🤒', '需要调养')
@@ -1394,6 +1478,8 @@ async function travel(event, cfg) {
 	const { pet } = await loadAndDecay(userId, now, cfg)
 	if (!pet) return err(5002)
 	if (pet.status === 'sleeping') return err(4002, '杯蜜睡着了，旅行等她醒来再说吧')
+	// 过瘦（病前预警）：身体要紧，旅行缓缓
+	if (isUnderweight(pet, cfg.rules || {})) return err(4002, '杯蜜太瘦了没力气出门，先在家好好吃饭休息，旅行缓缓 🤒')
 	// 生病（需调养）期间不能旅行：身体要紧，先带她去诊所
 	if (pet.mood === 'sick') return err(4001, '杯蜜生病啦，先去诊所调养，旅行等她好起来再说吧')
 	const t = pet.travel || { place: '', endAt: 0 }

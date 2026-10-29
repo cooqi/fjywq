@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { ACTIONS, ACTION_KEYS, fmtCountdown, canEat, hungerInfo } from '../beemore.js'
+import { ACTIONS, ACTION_KEYS, fmtCountdown, canEat, canEatFood, getFoods, hungerInfo } from '../beemore.js'
 export default {
 	name: 'ActionButton',
 	props: {
@@ -40,9 +40,10 @@ export default {
 				let subText
 				if (cooling) subText = fmtCountdown(remain)
 				else if (cfg.kind === 'meal') {
-					// 干饭不靠 daily.actions 计数，也不吃“打扰”那一套：只报饥饿程度与能不能吃
+					// 干饭不靠 daily.actions 计数，也不吃“打扰”那一套：只报饥饿程度与能不能吃（含菜品 anyWhen 豁免）
 					const h = hungerInfo(hunger)
-					subText = canEat(pet.status) ? `${h.label} · 饥饿${hunger}` : '休息时才能吃'
+					if (canEat(pet.status)) subText = `${h.label} · 饥饿${hunger}`
+					else subText = getFoods().some(f => canEatFood(f, pet.status, pet.mood)) ? `${h.label} · 可偷吃豁免款` : '休息时才能吃'
 				} else if (limited) subText = `已 ${used}/${cfg.dailyLimit}`
 				else if (disturb) subText = '打扰 ⚠️'
 				else subText = costTip + `剩余 ${Math.max(0, cfg.dailyLimit - used)}`

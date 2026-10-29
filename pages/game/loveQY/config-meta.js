@@ -217,7 +217,7 @@ export const CONFIG_META = {
 		sections: [
 			{
 				type: 'items', title: '菜单', path: 'list', nameField: 'name',
-				hint: 'kcal=热量，hunger=能压多少饥饿值，light=清淡（生病时只准吃这些），cost=杯蜜币。',
+				hint: 'kcal=热量，hunger=能压多少饥饿值，light=清淡（生病时只准吃这些），cost=杯蜜币。anyWhen=豁免名单（数组，JSON 模式可填 working/traveling/sick）：标了上班旅行也能吃，标 sick 生病时也能吃且不受清淡限制。',
 				newItem: { key: 'newfood', name: '新菜', emoji: '🍽️', kcal: 300, hunger: 30, happiness: 3, health: 0, cost: 3, light: false, tag: '自定义' },
 				itemFields: [
 					{ path: 'key', label: '代号', type: 'text' },

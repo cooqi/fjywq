@@ -58,9 +58,21 @@ const DEFAULT_CONFIG = {
 		MEAL_DAILY_SOFT: 3, // 一天第 4 顿起，热量全额堆积（必长胖）
 		MEAL_DAILY_LIMIT: 8,
 		EAT_TOO_FULL: 15, // 饥饿值低于此值还吃 = 吃太撑，扣健康
-		WEIGHT_MAX_GAIN: 20,
+		WEIGHT_MAX_GAIN: 100,
 		WEIGHT_MAX_LOSE: 8,
-		SICK_WEIGHT_LOSS: 1
+		SICK_WEIGHT_LOSS: 1,
+		// 长期饿瘦：饥饿值≥HUNGER_STARVE 每小时计 1 小时，攒满 STARVE_HOURS_KG（720h≈30天）掉 STARVE_WEIGHT_LOSS kg，不低于 WEIGHT_MIN
+		WEIGHT_MIN: 30,
+		STARVE_HOURS_KG: 720,
+		STARVE_WEIGHT_LOSS: 0.5,
+		// 过瘦预警（病前）：体重≤此值强制视为生病，禁止工作/旅行/运动，需要休息和好好吃饭
+		UNDERWEIGHT_KG: 40,
+		// 肥胖预警：体重≥此值禁止单道热量≥OBESE_BAN_KCAL 的高热量菜，并提示运动
+		OBESE_KG: 150,
+		OBESE_BAN_KCAL: 500,
+		// 运动：每次燃烧储存热量 SPORT_BURN_KCAL（攒满 FAT_KCAL_PER_KG 掉 1kg，不低于 max(WEIGHT_MIN, 基础体重)），同时更饿 SPORT_HUNGER_ADD
+		SPORT_BURN_KCAL: 150,
+		SPORT_HUNGER_ADD: 10
 	},
 	// 请假/旷工
 	leave: {
@@ -68,25 +80,27 @@ const DEFAULT_CONFIG = {
 		sick: { label: '病假', payCut: 0, canInteract: true, noAudit: true, travel: 'restricted', mood: -1 },
 		absent: { label: '旷工', payCut: 1, mood: -4 }
 	},
-	// 闺蜜互动动作（去宠物化）；eat 只作为入口展示，实际吃饭走独立 action 'eat'（interact 会拒绝）
+	// 闺蜜互动动作（去宠物化）；eat 只作为入口展示，实际吃饭走独立 action 'eat'（interact 会拒绝）；sport 走 interact 并带燃脂减重结算（kind: 'sport'），运动能增强体魄（+健康）
 	actions: {
 		accompany: { name: '陪伴', emoji: '🫂', interaction: 4, health: 0, happiness: 1, cost: 0, cooldown: 300000, dailyLimit: 20 },
 		chat: { name: '聊天', emoji: '💬', interaction: 3, health: 1, happiness: 2, cost: 0, cooldown: 5000, dailyLimit: 30 },
 		gift: { name: '送小礼物', emoji: '🎁', interaction: 5, health: 0, happiness: 4, cost: 5, cooldown: 1800000, dailyLimit: 5 },
+		sport: { name: '运动', emoji: '🏃‍♀️', kind: 'sport', interaction: 2, health: 3, happiness: -1, cost: 2, cooldown: 1800000, dailyLimit: 3 },
 		eat: { name: '干饭', emoji: '🍚', kind: 'meal', interaction: 0, health: 0, happiness: 0, cost: 0, cooldown: 900000, dailyLimit: 8 }
 	},
 	// 干饭菜单：kcal=热量，hunger=可抵消的饥饿值，light=清淡（生病时只允许这些），cost=消耗杯蜜币
+	// anyWhen=豁免名单：上班(working)/旅行(traveling)也能吃；标 sick 则生病时也能吃（并绕过清淡限制）
 	foods: {
 		list: [
 			{ key: 'rice', name: '家常套餐', emoji: '🍚', kcal: 400, hunger: 45, happiness: 4, health: 1, cost: 3, light: true, tag: '正餐' },
 			{ key: 'noodle', name: '热汤面', emoji: '🍜', kcal: 350, hunger: 38, happiness: 4, health: 1, cost: 2, light: true, tag: '正餐' },
-			{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, tag: '生病可吃' },
+			{ key: 'congee', name: '小米粥', emoji: '🥣', kcal: 180, hunger: 20, happiness: 2, health: 2, cost: 1, light: true, anyWhen: ['sick'], tag: '生病可吃' },
 			{ key: 'salad', name: '轻食沙拉', emoji: '🥗', kcal: 150, hunger: 18, happiness: 1, health: 2, cost: 3, light: true, tag: '不易胖' },
 			{ key: 'burger', name: '芝士汉堡', emoji: '🍔', kcal: 560, hunger: 48, happiness: 7, health: 0, cost: 5, light: false, tag: '高热量' },
 			{ key: 'hotpot', name: '火锅套餐', emoji: '🍲', kcal: 720, hunger: 55, happiness: 9, health: 0, cost: 8, light: false, tag: '高热量' },
-			{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, tag: '容易胖' },
-			{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, tag: '容易胖' },
-			{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, tag: '加餐' }
+			{ key: 'boba', name: '珍珠奶茶', emoji: '🧋', kcal: 380, hunger: 15, happiness: 8, health: 0, cost: 5, light: false, anyWhen: ['working', 'traveling'], tag: '容易胖' },
+			{ key: 'cake', name: '小蛋糕', emoji: '🍰', kcal: 300, hunger: 12, happiness: 7, health: 0, cost: 4, light: false, anyWhen: ['sick'], tag: '容易胖' },
+			{ key: 'fruit', name: '时蔬水果', emoji: '🍎', kcal: 90, hunger: 10, happiness: 2, health: 1, cost: 2, light: true, anyWhen: ['working', 'traveling'], tag: '加餐' }
 		]
 	},
 	// 颜文字库：状态 + 关键词
@@ -187,6 +201,7 @@ const DEFAULT_CONFIG = {
 const ACTION_LINES = {
 	accompany: ['陪着你真好～', '有你在，上班都有动力了 (｡•̀ᴗ-)✧', '谢谢你陪我，心情好多了'],
 	gift: ['哇，收到礼物超开心！', '这个我喜欢，你怎么知道～', '礼物收下了，爱你哟 ( ˘ ³˘)♥'],
+	sport: ['呼～出完汗整个人都轻了 🏃‍♀️', '运动完这顿能吃得更香（不是）', '坚持下去，马甲线指日可待！(๑•̀ㅂ•́)و✧', '累死啦……但身体倍儿棒！'],
 	eat: ['干饭人干饭魂，太香了！(๑•̀ㅂ•́)و✧', '吃饱了才有力气上班呀～ 🍚', '这顿好满足，下次还吃 (￣▽￣)ﾉ', '唔……是不是又吃多了一点点？']
 }
 
