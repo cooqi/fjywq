@@ -22,16 +22,18 @@
 
 			<!-- 列表 -->
 			<view class="list">
-				<view class="item" v-for="it in items" :key="it._id">
+				<view class="item" :class="{ 'item-hidden-view': it.hidden }" v-for="it in items" :key="it._id">
 					<view class="item-icon">{{ catIcon() }}</view>
 					<view class="item-body">
 						<view class="item-title-row">
 							<text class="item-title">{{ itemTitle(it) }}</text>
 							<text class="item-pair" v-if="it.isPair">双人</text>
+							<text class="item-hidden-tag" v-if="it.hidden">🔒 已隐藏</text>
 						</view>
 						<text class="item-sub">{{ itemSub(it) }}</text>
 					</view>
 					<view class="item-actions">
+						<view class="ibtn hide" @click="toggleHidden(it)">{{ it.hidden ? '取消隐藏' : '隐藏' }}</view>
 						<view class="ibtn edit" @click="openForm('edit', it)">编辑</view>
 						<view class="ibtn del" @click="del(it)">删除</view>
 					</view>
@@ -164,7 +166,7 @@ export default {
 		items() {
 			const pick = (subject, cat, isPair) => this.rawList
 				.filter(r => r.subject === subject && r.category === cat)
-				.map(r => ({ _id: r._id, sort: r.sort || 0, isPair, data: this.normData(r) }))
+				.map(r => ({ _id: r._id, sort: r.sort || 0, hidden: !!r.hidden, isPair, data: this.normData(r) }))
 			let list = pick(this.currentSubject, this.currentCat, false)
 			// 单人页同步展示已归档到青宇的双人记录（编辑可切回单人）
 			if (this.canPair) list = list.concat(pick('intersection', PAIR_MAP[this.currentCat], true))
@@ -229,7 +231,8 @@ export default {
 			uni.showLoading({ title: '加载中' })
 			uniCloud.callFunction({
 				name: 'dangan',
-				data: { action: 'getList' },
+				// 传 userId 让云函数识别管理员身份，返回全量（含 hidden=true）；普通用户端不传则服务端自动过滤隐藏项
+				data: { action: 'getList', userId: this.userId },
 				success: (res) => {
 					uni.hideLoading()
 					if (res.result && res.result.code === 0) {
@@ -495,6 +498,30 @@ export default {
 					})
 				}
 			})
+		},
+		// 切换隐藏标志：admin 侧仍可见，普通用户侧 dangan.vue 不展示
+		toggleHidden(it) {
+			const next = !it.hidden
+			uni.showLoading({ title: next ? '隐藏中' : '取消隐藏' })
+			uniCloud.callFunction({
+				name: 'dangan',
+				data: { action: 'setHidden', userId: this.userId, id: it._id, hidden: next },
+				success: (res) => {
+					uni.hideLoading()
+					if (res.result && res.result.code === 0) {
+						uni.showToast({ title: next ? '已隐藏，普通用户不再看到' : '已取消隐藏', icon: 'success' })
+						// 本地乐观更新（splice 保证响应式），避免整表重拉
+						const idx = this.rawList.findIndex(r => r._id === it._id)
+						if (idx > -1) {
+							const updated = Object.assign({}, this.rawList[idx], { hidden: next, updateTime: Date.now() })
+							this.rawList.splice(idx, 1, updated)
+						}
+					} else {
+						uni.showToast({ title: (res.result && res.result.message) || '操作失败', icon: 'none' })
+					}
+				},
+				fail: () => { uni.hideLoading(); uni.showToast({ title: '网络异常', icon: 'none' }) }
+			})
 		}
 	}
 }
@@ -520,6 +547,10 @@ export default {
 
 .list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .item { background: #fff; border-radius: 20rpx; padding: 20rpx 24rpx; display: flex; align-items: center; gap: 18rpx; box-shadow: 0 4rpx 14rpx rgba(0,0,0,.05); }
+.item-hidden-view { background: #f8fafc; opacity: .72; }
+.item-hidden-view .item-icon { background: linear-gradient(135deg,#cbd5e1,#94a3b8); }
+.item-hidden-view .item-title { color: #64748b; text-decoration: line-through; text-decoration-color: rgba(100,116,139,.5); }
+.item-hidden-tag { font-size: 18rpx; font-weight: 800; color: #fff; padding: 2rpx 12rpx; border-radius: 10rpx; background: #64748b; flex-shrink: 0; }
 .item-icon { width: 66rpx; height: 66rpx; border-radius: 16rpx; background: linear-gradient(135deg,#5eead4,#31eee0); color: #fff; font-size: 28rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .item-body { flex: 1; min-width: 0; }
 .item-title { display: block; font-size: 27rpx; font-weight: 800; color: #1e1b4b; }
@@ -530,6 +561,7 @@ export default {
 .ibtn { padding: 12rpx 20rpx; border-radius: 12rpx; font-size: 22rpx; font-weight: 700; }
 .ibtn.edit { background: #ede9fe; color: #6366f1; }
 .ibtn.del { background: #fee2e2; color: #ef4444; }
+.ibtn.hide { background: #fef3c7; color: #b45309; }
 .empty { text-align: center; color: #94a3b8; font-size: 26rpx; padding: 80rpx 0; }
 
 .fab { position: fixed; right: 40rpx; bottom: 60rpx; width: 110rpx; height: 110rpx; border-radius: 34rpx; background: linear-gradient(135deg,#31eee0,#9a9ad9); color: #fff; font-size: 60rpx; display: flex; align-items: center; justify-content: center; box-shadow: 0 10rpx 30rpx rgba(49,238,224,.5); }

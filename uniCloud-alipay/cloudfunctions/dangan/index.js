@@ -29,6 +29,8 @@ exports.main = async (event, context) => {
 			return await update(event);
 		case 'delete':
 			return await remove(event);
+		case 'setHidden':
+			return await setHidden(event);
 		case 'getDict':
 			return await getDict(event);
 		case 'saveDict':
@@ -38,9 +40,12 @@ exports.main = async (event, context) => {
 	}
 };
 
-// 获取全部档案数据（公开读，前端按 subject→category 分组渲染）
+// 获取档案数据：
+//   非管理员（未传 userId 或身份不是 s_admin/admin）→ 自动过滤 hidden=true 的记录，不下发到普通用户
+//   管理员 → 返回全量，包含 hidden 字段，供 admin 页可预览与管理隐藏项
 async function getList(event) {
 	try {
+		const admin = await isAdminUser(event && event.userId);
 		const out = [];
 		let page = 0;
 		const pageSize = 500;
@@ -52,11 +57,15 @@ async function getList(event) {
 				.limit(pageSize)
 				.get();
 			const list = res.data || [];
-			out.push(...list);
+			if (admin) {
+				out.push(...list);
+			} else {
+				for (const r of list) { if (!r.hidden) out.push(r); }
+			}
 			if (list.length < pageSize) break;
 			page++;
 		}
-		return { code: 0, message: '获取成功', data: { list: out, total: out.length } };
+		return { code: 0, message: '获取成功', data: { list: out, total: out.length, adminView: !!admin } };
 	} catch (err) {
 		return { code: -1, message: '获取失败：' + err.message };
 	}
@@ -65,7 +74,7 @@ async function getList(event) {
 // 新增（仅管理员）
 async function add(event) {
 	try {
-		const { userId, subject, category, data = {}, sort = 0 } = event;
+		const { userId, subject, category, data = {}, sort = 0, hidden } = event;
 		if (!(await isAdminUser(userId))) {
 			return { code: 403, message: '无管理员权限' };
 		}
@@ -77,6 +86,7 @@ async function add(event) {
 			subject,
 			category,
 			sort: Number(sort) || 0,
+			hidden: !!hidden,
 			data,
 			createTime: now,
 			updateTime: now
@@ -101,6 +111,8 @@ async function update(event) {
 		if (subject !== undefined) payload.subject = subject;
 		if (category !== undefined) payload.category = category;
 		if (sort !== undefined) payload.sort = Number(sort) || 0;
+		// 隐藏标志：仅当显式传入时才覆盖，避免普通字段保存把已隐藏项反默打开
+		if (event.hidden !== undefined) payload.hidden = !!event.hidden;
 		payload.data = data;
 		await db.collection(COLLECTION).doc(id).update(payload);
 		return { code: 0, message: '更新成功' };
@@ -123,6 +135,26 @@ async function remove(event) {
 		return { code: 0, message: '删除成功' };
 	} catch (err) {
 		return { code: -1, message: '删除失败：' + err.message };
+	}
+}
+
+// 切换隐藏标志（仅管理员）：隐藏后普通用户在 dangan.vue 中看不到，admin.vue 中仍可见与管理
+async function setHidden(event) {
+	try {
+		const { userId, id, hidden } = event;
+		if (!(await isAdminUser(userId))) {
+			return { code: 403, message: '无管理员权限' };
+		}
+		if (!id) {
+			return { code: -1, message: '缺少ID' };
+		}
+		await db.collection(COLLECTION).doc(id).update({
+			hidden: !!hidden,
+			updateTime: Date.now()
+		});
+		return { code: 0, message: hidden ? '已隐藏' : '已取消隐藏' };
+	} catch (err) {
+		return { code: -1, message: '操作失败：' + err.message };
 	}
 }
 

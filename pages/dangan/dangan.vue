@@ -335,6 +335,8 @@ export default {
 			const g = {}
 			;(this.rawList || []).forEach(rec => {
 				if (!rec || !rec.subject || !rec.category) return
+				// 隐藏项二次防御：admin 切换为隐藏后，云函数已过滤；seed 未来如包含 hidden=true 也在此处理
+				if (rec.hidden) return
 				const s = rec.subject, c = rec.category
 				if (!g[s]) g[s] = {}
 				if (!g[s][c]) g[s][c] = []
