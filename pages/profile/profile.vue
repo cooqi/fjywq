@@ -95,7 +95,7 @@
 </template>
 
 <script>
-	import { hasConcertPermission } from '@/common/js/permission.js'
+	import { hasConcertPermission, backToLoginRedirect } from '@/common/js/permission.js'
 	
 	export default {
 		data() {
@@ -161,10 +161,7 @@
 					fail: () => {
 						
 						uni.hideLoading()
-						uni.showModal({
-							content: '暂未登录，登录后开启更多精彩内容',
-							showCancel: false
-						})
+						
 					}
 				})
 			},
@@ -197,6 +194,8 @@
 										uni.setStorageSync('userInfo', JSON.stringify(res.result.result.result))
 										_this.userInfo = res.result.result.result
 										_this.getUserStats()
+										// 登录成功：若之前是从其他页面跳来登录的，回跳到来源页
+										setTimeout(() => { backToLoginRedirect() }, 600)
 									}
 									
 								},
@@ -431,12 +430,7 @@
 							title: '刷新成功',
 							icon: 'success'
 						})
-					} else {
-						uni.showToast({
-							title: '暂未登录，登录后开启更多精彩内容',
-							icon: 'none'
-						})
-					}
+					} 
 				}).catch((err) => {
 					uni.hideLoading()
 					console.error('刷新用户信息失败:', err)

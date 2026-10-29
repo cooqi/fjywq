@@ -31,6 +31,8 @@ exports.main = async (event, context) => {
 			return await remove(event);
 		case 'setHidden':
 			return await setHidden(event);
+		case 'setSorts':
+			return await setSorts(event);
 		case 'getDict':
 			return await getDict(event);
 		case 'saveDict':
@@ -155,6 +157,33 @@ async function setHidden(event) {
 		return { code: 0, message: hidden ? '已隐藏' : '已取消隐藏' };
 	} catch (err) {
 		return { code: -1, message: '操作失败：' + err.message };
+	}
+}
+
+// 批量更新排序值（仅管理员）：将「同一年份/同一时间」内的手动拖拽顺序持久化到 sort 字段
+// items: [ { id, sort } ]；逐条单独更新（uniCloud-alipay 无事务，单条 sort 更新幂等、影响面小）
+async function setSorts(event) {
+	try {
+		const { userId, items } = event;
+		if (!(await isAdminUser(userId))) {
+			return { code: 403, message: '无管理员权限' };
+		}
+		if (!Array.isArray(items) || !items.length) {
+			return { code: -1, message: '缺少排序数据' };
+		}
+		if (items.length > 200) {
+			return { code: -1, message: '单次排序条数过多（上限200）' };
+		}
+		const now = Date.now();
+		let updated = 0;
+		for (const it of items) {
+			if (!it || !it.id) continue;
+			await db.collection(COLLECTION).doc(it.id).update({ sort: Number(it.sort) || 0, updateTime: now });
+			updated++;
+		}
+		return { code: 0, message: '排序已保存', data: { updated } };
+	} catch (err) {
+		return { code: -1, message: '排序保存失败：' + err.message };
 	}
 }
 

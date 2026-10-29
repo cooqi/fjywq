@@ -114,6 +114,7 @@
 </template>
 
 <script>
+import { goLogin } from '@/common/js/permission.js'
 export default {
 	data() {
 		return {
@@ -175,7 +176,8 @@ export default {
 		if (!this.userInfo._id) {
 			uni.showToast({ title: '请先登录', icon: 'none' })
 			setTimeout(() => {
-				uni.switchTab({ url: '/pages/profile/profile' })
+				// 带上当前页地址（含回溯参数），登录后自动回跳
+				goLogin()
 			}, 500)
 		}
 	},

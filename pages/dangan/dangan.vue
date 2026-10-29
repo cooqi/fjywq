@@ -1,6 +1,6 @@
 <template>
 	<view class="app-root" :class="shellClass">
-		<!-- 顶部主体切换 + 管理入口 -->
+		<!-- 顶部主体切换 + 管理入口（固定顶部） -->
 		<view class="top-tabs-wrap">
 			<view class="top-tabs">
 				<view
@@ -11,8 +11,10 @@
 					@click="switchSubject(s)"
 				>{{ subjects[s].short }}</view>
 			</view>
+			<view class="admin-entry" v-if="isAdmin" @click="goAdmin">管理</view>
 		</view>
-        <view class="admin-entry" v-if="isAdmin" @click="goAdmin">管理</view>
+		<!-- 固定头部占位，避免下方内容被遮挡 -->
+		<view class="top-tabs-holder"></view>
 
 		<view class="main-content">
 			<!-- ============ 青宇 ============ -->
@@ -401,14 +403,15 @@ export default {
 			if (this.currentCat === 'works') {
 				items = items.filter(it => (it.data.section || 'tv') === this.currentSection)
 			}
-			// 时间倒序（最新在前）：
+			// 时间倒序（最新在前），权重从高到低：
 			//   1) 先按记录自身日期/年份降序（无年份排末尾）
-			//   2) 同日期再按 createTime 降序（新入库优先，避免 sort 字段 100 秒回绕带来的乱序）
-			//   3) 无 createTime（如本地 seed）则按 sort 降序；仍相同按 _id 字典序保证稳定
+			//   2) 同一年份·同一时间内，按 sort 降序（管理员手动拖拽设定，默认空=0）
+			//   3) sort 也相同时按 createTime 降序（新入库优先）
+			//   4) 仍相同按 _id 字典序保证稳定
 			return [...items].sort((a, b) =>
 				(this.sortKey(b.data) - this.sortKey(a.data)) ||
-				((b.createTime || 0) - (a.createTime || 0)) ||
 				((b.sort || 0) - (a.sort || 0)) ||
+				((b.createTime || 0) - (a.createTime || 0)) ||
 				String(a._id || '').localeCompare(String(b._id || ''))
 			)
 		}
@@ -775,15 +778,16 @@ export default {
 .is-value text { font-size:20rpx; font-weight:600; margin-left:2rpx; }
 .is-label { font-size:19rpx; color:rgba(255,255,255,.95); margin-top:8rpx; font-weight:500; }
 
-/* 顶部主体切换 + 管理入口 */
-.top-tabs-wrap { position: sticky; top: 0; z-index: 50; display:flex; align-items:center; gap:16rpx; background:linear-gradient(135deg,#0d9488 0%,#31eee0 100%); padding:16rpx 32rpx 32rpx; }
+/* 顶部主体切换 + 管理入口（固定在顶部） */
+.top-tabs-wrap { position: fixed; top: 0; left: 0; right: 0; width: 100%; box-sizing: border-box; z-index: 50; display:flex; align-items:center; gap:16rpx; background:linear-gradient(135deg,#0d9488 0%,#31eee0 100%); padding:16rpx 32rpx 32rpx; }
+.top-tabs-holder { height: 140rpx; }
 .feng-shell .top-tabs-wrap { background:linear-gradient(135deg,#7c7cb8 0%,#9a9ad9 100%); }
 .intersection-shell .top-tabs-wrap { background:linear-gradient(135deg,#31eee0 0%,#9a9ad9 100%); }
 .top-tabs { flex:1; display:flex; background:rgba(255,255,255,.2); padding:8rpx; border-radius:32rpx; border:2rpx solid rgba(255,255,255,.3); }
 .top-tab { flex:1; text-align:center; padding:20rpx 0; font-size:26rpx; font-weight:700; color:rgba(255,255,255,.85); border-radius:24rpx; white-space:nowrap; }
 .top-tab.active { background:#fff; box-shadow:0 8rpx 28rpx rgba(13,148,136,.2); color:#0d9488; }
 .top-tab.active.purple-tab { color:#6366f1; }
-.admin-entry {position: fixed; top: 100rpx; right: 32rpx; padding:10rpx; font-size:26rpx; font-weight:800; color:#0d9488; background:#fff; border-radius:24rpx; box-shadow:0 8rpx 28rpx rgba(0,0,0,.12);z-index: 999;}
+.admin-entry { flex-shrink:0; padding:14rpx 18rpx; font-size:24rpx; font-weight:800; color:#0d9488; background:#fff; border-radius:24rpx; box-shadow:0 8rpx 28rpx rgba(0,0,0,.12); }
 
 .main-content { background:linear-gradient(135deg,#ede9fe 0%,#e0f2fe 50%,#cffafe 100%); min-height:100vh; }
 

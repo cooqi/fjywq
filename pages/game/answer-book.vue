@@ -114,6 +114,7 @@
 
 <script>
 	import { checkSensitiveWords } from '@/common/js/sensitive-words.js'
+	import { goLogin } from '@/common/js/permission.js'
 
 	const MAX_DRAW = 50 // 单次进入页面最多抽取次数，防刷答案
 	const COOLDOWN_SEC = 5 // 同一问题重抽冷却时间（秒）
@@ -293,7 +294,7 @@
 				if (!this.userInfo._id) {
 					uni.showToast({ title: '请先登录', icon: 'none' })
 					setTimeout(() => {
-						uni.switchTab({ url: '/pages/profile/profile' })
+						goLogin()
 					}, 800)
 					return false
 				}

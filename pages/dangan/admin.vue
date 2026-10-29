@@ -20,26 +20,48 @@
 				</view>
 			</scroll-view>
 
-			<!-- 列表 -->
-			<view class="list">
-				<view class="item" :class="{ 'item-hidden-view': it.hidden }" v-for="it in items" :key="it._id">
-					<view class="item-icon">{{ catIcon() }}</view>
-					<view class="item-body">
-						<view class="item-title-row">
-							<text class="item-title">{{ itemTitle(it) }}</text>
-							<text class="item-pair" v-if="it.isPair">双人</text>
-							<text class="item-hidden-tag" v-if="it.hidden">🔒 已隐藏</text>
-						</view>
-						<text class="item-sub">{{ itemSub(it) }}</text>
-					</view>
-					<view class="item-actions">
-						<view class="ibtn hide" @click="toggleHidden(it)">{{ it.hidden ? '取消隐藏' : '隐藏' }}</view>
-						<view class="ibtn edit" @click="openForm('edit', it)">编辑</view>
-						<view class="ibtn del" @click="del(it)">删除</view>
-					</view>
+			<!-- 排序工具条：仅在可拖拽分类下提供，开启后同一年份/同一时间的记录可拖拽调序 -->
+			<view class="sort-toolbar">
+				<view class="sort-toggle" :class="{ on: sortMode }" @click="toggleSortMode">
+					<text v-if="!sortMode">↕ 拖拽排序</text>
+					<text v-else>✓ 排序中·长按卡片拖动</text>
 				</view>
-				<view class="empty" v-if="!items.length">暂无数据，点击右下角 + 添加</view>
+				<text class="sort-tip" v-if="sortMode">仅在「相同年份/时间」的记录之间生效</text>
 			</view>
+
+			<!-- 列表 -->
+			<scroll-view class="list-scroll" :scroll-y="!isDragging">
+				<view class="list">
+					<view
+						class="item"
+						:class="{ 'item-hidden-view': it.hidden, 'item-drag-src': isDragging && dragIndex === idx, 'item-off': sortMode && !isDragging }"
+						:style="getItemStyle(idx)"
+						v-for="(it, idx) in items"
+						:key="it._id"
+						@longpress="onSortStart($event, idx)"
+						@touchmove="onSortMove"
+						@touchend="onSortEnd"
+					>
+						<view class="drag-handle" v-if="sortMode">⠿</view>
+						<view class="item-icon" v-else>{{ catIcon() }}</view>
+						<view class="item-body">
+							<view class="item-title-row">
+								<text class="item-title">{{ itemTitle(it) }}</text>
+								<text class="item-pair" v-if="it.isPair">双人</text>
+								<text class="item-hidden-tag" v-if="it.hidden">🔒 已隐藏</text>
+							</view>
+							<text class="item-sub">{{ itemSub(it) }}</text>
+							<text class="item-order" v-if="sortMode">{{ groupLabel(it) }} · 排序值 {{ it.sort || 0 }}</text>
+						</view>
+						<view class="item-actions" v-if="!sortMode">
+							<view class="ibtn hide" @click.stop="toggleHidden(it)">{{ it.hidden ? '取消隐藏' : '隐藏' }}</view>
+							<view class="ibtn edit" @click.stop="openForm('edit', it)">编辑</view>
+							<view class="ibtn del" @click.stop="del(it)">删除</view>
+						</view>
+					</view>
+					<view class="empty" v-if="!items.length">{{ sortMode ? '该分类暂无可排序数据' : '暂无数据，点击右下角 + 添加' }}</view>
+				</view>
+			</scroll-view>
 
 			<!-- 新增悬浮按钮 -->
 			<view class="fab" @click="openForm('add')">+</view>
@@ -136,7 +158,17 @@ export default {
 			pairMode: false,
 			dict: {},
 			showDictKey: '',
-			newDictValue: ''
+			newDictValue: '',
+			// 拖拽排序相关（仅 sortMode 下生效，只允许同一年份/同一时间组内调序）
+			sortMode: false,
+			isDragging: false,
+			dragIndex: -1,
+			dragTargetIndex: -1,
+			dragGroupStart: -1,
+			dragGroupEnd: -1,
+			dragStartY: 0,
+			dragOffsetY: 0,
+			dragItemPositions: []
 		}
 	},
 	computed: {
@@ -166,12 +198,17 @@ export default {
 		items() {
 			const pick = (subject, cat, isPair) => this.rawList
 				.filter(r => r.subject === subject && r.category === cat)
-				.map(r => ({ _id: r._id, sort: r.sort || 0, hidden: !!r.hidden, isPair, data: this.normData(r) }))
+				.map(r => ({ _id: r._id, sort: r.sort || 0, hidden: !!r.hidden, createTime: r.createTime || 0, isPair, data: this.normData(r) }))
 			let list = pick(this.currentSubject, this.currentCat, false)
 			// 单人页同步展示已归档到青宇的双人记录（编辑可切回单人）
 			if (this.canPair) list = list.concat(pick('intersection', PAIR_MAP[this.currentCat], true))
-			// 按数据自身日期/年份倒序（最新在前，与展示页一致），无日期排末尾，同值再按录入 sort 倒序
-			return list.sort((a, b) => (this.sortKey(b.data) - this.sortKey(a.data)) || (b.sort - a.sort))
+			// 权重：时间/年份降序 > sort 降序（同组手动拖拽）> createTime 降序 > _id 稳定
+			return list.sort((a, b) =>
+				(this.sortKey(b.data) - this.sortKey(a.data)) ||
+				((b.sort || 0) - (a.sort || 0)) ||
+				((b.createTime || 0) - (a.createTime || 0)) ||
+				String(a._id || '').localeCompare(String(b._id || ''))
+			)
 		}
 	},
 	onLoad() {
@@ -254,6 +291,142 @@ export default {
 			this.currentCat = cats.includes(this.currentCat) ? this.currentCat : cats[0]
 		},
 		switchCat(c) { this.currentCat = c },
+		// 切换拖拽排序模式（离开时清理拖拽态）
+		toggleSortMode() {
+			this.sortMode = !this.sortMode
+			if (!this.sortMode) {
+				this.isDragging = false
+				this.dragIndex = -1
+				this.dragTargetIndex = -1
+				this.dragOffsetY = 0
+				this.dragItemPositions = []
+			}
+		},
+		// 当前记录所属的同年份/同时间组标签（排序时展示，便于确认分组）
+		groupLabel(it) {
+			const k = this.sortKey(it.data)
+			if (k < 0) return '无时间'
+			const y = Math.floor(k / 10000), m = Math.floor((k % 10000) / 100), d = k % 100
+			return m ? `${y}-${m}${d ? '-' + d : ''}` : `${y}年`
+		},
+		// 拖拽时行内位移：拖拽项跟手，同组中间项让位；非拖拽态返回空
+		getItemStyle(index) {
+			if (!this.isDragging || this.dragIndex < 0) return ''
+			const pos = this.dragItemPositions
+			if (!pos || !pos.length) return ''
+			if (index === this.dragIndex) {
+				return `transform: translate(0, ${this.dragOffsetY}px) scale(1.01); z-index: 100; opacity: .95; box-shadow: 0 12rpx 32rpx rgba(0,0,0,.22); transition: none;`
+			}
+			if (index < this.dragGroupStart || index > this.dragGroupEnd) return ''
+			let dy = 0
+			if (this.dragTargetIndex > this.dragIndex && index > this.dragIndex && index <= this.dragTargetIndex) {
+				dy = pos[index - 1].top - pos[index].top
+			} else if (this.dragTargetIndex < this.dragIndex && index >= this.dragTargetIndex && index < this.dragIndex) {
+				dy = pos[index + 1].top - pos[index].top
+			}
+			if (dy === 0) return ''
+			return `transform: translate(0, ${dy}px); z-index: 2; transition: transform .2s cubic-bezier(0.2,0.8,0.3,1);`
+		},
+		onSortStart(e, index) {
+			if (!this.sortMode) return
+			const arr = this.items
+			if (!arr.length) return
+			const key = this.sortKey(arr[index].data)
+			let gs = index, ge = index
+			while (gs - 1 >= 0 && this.sortKey(arr[gs - 1].data) === key) gs--
+			while (ge + 1 < arr.length && this.sortKey(arr[ge + 1].data) === key) ge++
+			if (gs === ge) {
+				uni.showToast({ title: '该时间组仅 1 条，无需调序', icon: 'none' })
+				return
+			}
+			this.dragGroupStart = gs
+			this.dragGroupEnd = ge
+			this.isDragging = true
+			this.dragIndex = index
+			this.dragTargetIndex = index
+			const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || {}
+			this.dragStartY = touch.clientY || 0
+			this.dragOffsetY = 0
+			const query = uni.createSelectorQuery().in(this)
+			query.selectAll('.item').boundingClientRect()
+			query.exec((res) => {
+				if (res && res[0]) this.dragItemPositions = res[0]
+			})
+			uni.vibrateShort()
+		},
+		onSortMove(e) {
+			if (!this.isDragging || this.dragIndex < 0) return
+			const touch = (e.touches && e.touches[0]) || {}
+			this.dragOffsetY = (touch.clientY || 0) - this.dragStartY
+			const pos = this.dragItemPositions
+			if (!pos || !pos.length) return
+			let target = this.dragTargetIndex
+			for (let i = this.dragGroupStart; i <= this.dragGroupEnd; i++) {
+				const p = pos[i]
+				if (!p) continue
+				if (touch.clientY >= p.top && touch.clientY <= p.bottom) { target = i; break }
+			}
+			if (target !== this.dragTargetIndex) {
+				this.dragTargetIndex = target
+				uni.vibrateShort()
+			}
+		},
+		onSortEnd() {
+			if (!this.isDragging) return
+			const from = this.dragIndex, to = this.dragTargetIndex
+			const changed = to !== -1 && to !== from
+			this.isDragging = false
+			this.dragIndex = -1
+			this.dragTargetIndex = -1
+			this.dragOffsetY = 0
+			this.dragItemPositions = []
+			if (changed) this.applyReorder(from, to)
+		},
+		// 将拖拽结果归一为同组递减 sort 值并持久化
+		applyReorder(from, to) {
+			const arr = this.items.slice()
+			const dragged = arr[from]
+			arr.splice(from, 1)
+			arr.splice(to, 0, dragged)
+			const key = this.sortKey(dragged.data)
+			let gStart = -1, gEnd = -1
+			arr.forEach((x, idx) => {
+				if (this.sortKey(x.data) === key) {
+					if (gStart === -1) gStart = idx
+					gEnd = idx
+				}
+			})
+			if (gStart === -1) return
+			// 同组内按新位置从高到低赋予递降 sort（靠前者值大，与展示页 sort 降序一致）
+			const updates = []
+			let w = gEnd - gStart + 1
+			for (let idx = gStart; idx <= gEnd; idx++) {
+				updates.push({ id: arr[idx]._id, sort: w })
+				w--
+			}
+			this.persistSorts(updates)
+		},
+		persistSorts(updates) {
+			uni.showLoading({ title: '保存排序' })
+			uniCloud.callFunction({
+				name: 'dangan',
+				data: { action: 'setSorts', userId: this.userId, items: updates },
+				success: (res) => {
+					uni.hideLoading()
+					if (res.result && res.result.code === 0) {
+						uni.showToast({ title: '排序已保存', icon: 'success' })
+						// 本地同步 sort（整体 map 重新赋值触发响应式），避免整表重拉
+						const map = {}
+						updates.forEach(u => { map[u.id] = u.sort })
+						this.rawList = this.rawList.map(r => (map[r._id] !== undefined ? Object.assign({}, r, { sort: map[r._id] }) : r))
+					} else {
+						uni.showToast({ title: (res.result && res.result.message) || '保存失败', icon: 'none' })
+						this.loadData()
+					}
+				},
+				fail: () => { uni.hideLoading(); uni.showToast({ title: '网络异常', icon: 'none' }); this.loadData() }
+			})
+		},
 		schemaLabel(c) { return (SCHEMA[this.currentSubject][c] || {}).label || c },
 		catIcon() { return (SCHEMA[this.currentSubject][this.currentCat] || {}).icon || '▣' },
 		catCount(c) {
@@ -441,13 +614,15 @@ export default {
 			// 双人归档：写入青宇主体下的对应分类；单人保持当前主体
 			const pair = this.canPair && this.pairMode
 			const action = isEdit ? 'update' : 'add'
+			// sort 默认同一为空（0）；编辑保留原有 sort（手动拖拽设定的值），新增一律 0
+			const curSort = isEdit ? Number((this.items.find(x => x._id === this.formId) || {}).sort) || 0 : 0
 			const payload = {
 				action,
 				userId: this.userId,
 				subject: pair ? 'intersection' : this.currentSubject,
 				category: pair ? PAIR_MAP[this.currentCat] : this.currentCat,
 				data,
-				sort: isEdit ? (this.items.find(x => x._id === this.formId) || {}).sort : Date.now() % 100000
+				sort: curSort
 			}
 			if (isEdit) payload.id = this.formId
 
@@ -528,25 +703,36 @@ export default {
 </script>
 
 <style>
-.page { min-height: 100vh; background: linear-gradient(135deg,#ede9fe 0%,#e0f2fe 50%,#cffafe 100%); padding-bottom: 160rpx; }
+.page { height: 100vh; box-sizing: border-box; background: linear-gradient(135deg,#ede9fe 0%,#e0f2fe 50%,#cffafe 100%); display: flex; flex-direction: column; }
 
 .deny { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 240rpx; gap: 24rpx; }
 .deny-icon { font-size: 80rpx; }
 .deny-text { font-size: 28rpx; color: #6b7280; }
 .deny-btn { padding: 18rpx 48rpx; background: #0d9488; color: #fff; border-radius: 40rpx; font-size: 26rpx; }
 
-.top-tabs { display: flex; gap: 12rpx; padding: 20rpx 24rpx; background: linear-gradient(135deg,#0d9488 0%,#31eee0 100%); }
+.top-tabs { display: flex; gap: 12rpx; padding: 20rpx 24rpx; background: linear-gradient(135deg,#0d9488 0%,#31eee0 100%); flex-shrink: 0; }
 .ttab { flex: 1; text-align: center; padding: 18rpx 0; font-size: 26rpx; font-weight: 700; color: rgba(255,255,255,.85); background: rgba(255,255,255,.18); border-radius: 20rpx; }
 .ttab.active { background: #fff; color: #0d9488; }
 
-.chips { white-space: nowrap; padding: 20rpx 24rpx; }
+.chips { white-space: nowrap; padding: 20rpx 24rpx; flex-shrink: 0; }
+
+/* 拖拽排序工具条 */
+.sort-toolbar { display: flex; align-items: center; gap: 16rpx; padding: 0 24rpx 16rpx; flex-shrink: 0; }
+.sort-toggle { padding: 12rpx 26rpx; border-radius: 30rpx; font-size: 24rpx; font-weight: 700; background: #fff; border: 2rpx solid #e9d5ff; color: #6b7280; }
+.sort-toggle.on { background: linear-gradient(135deg,#31eee0,#0d9488); border-color: transparent; color: #fff; }
+.sort-tip { font-size: 21rpx; color: #b45309; }
+.list-scroll { flex: 1; min-height: 0; }
 .chip { display: inline-flex; align-items: center; gap: 8rpx; padding: 14rpx 28rpx; margin-right: 14rpx; border-radius: 32rpx; background: #fff; border: 2rpx solid #e9d5ff; font-size: 25rpx; font-weight: 700; color: #6b7280; }
 .chip.active { background: linear-gradient(135deg,#31eee0,#0d9488); border-color: transparent; color: #fff; }
 .chip-count { font-size: 18rpx; padding: 1rpx 12rpx; border-radius: 16rpx; background: rgba(0,0,0,.08); }
 .chip.active .chip-count { background: rgba(255,255,255,.3); }
 
-.list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
-.item { background: #fff; border-radius: 20rpx; padding: 20rpx 24rpx; display: flex; align-items: center; gap: 18rpx; box-shadow: 0 4rpx 14rpx rgba(0,0,0,.05); }
+.list { padding: 0 24rpx 160rpx; display: flex; flex-direction: column; gap: 16rpx; }
+.item { position: relative; background: #fff; border-radius: 20rpx; padding: 20rpx 24rpx; display: flex; align-items: center; gap: 18rpx; box-shadow: 0 4rpx 14rpx rgba(0,0,0,.05); }
+.drag-handle { width: 40rpx; display: flex; align-items: center; justify-content: center; font-size: 34rpx; color: #94a3b8; flex-shrink: 0; }
+.item-off { border-left: 6rpx solid #31eee0; }
+.item-drag-src { background: #e0f2fe; }
+.item-order { display: block; font-size: 20rpx; color: #0d9488; margin-top: 6rpx; font-weight: 700; }
 .item-hidden-view { background: #f8fafc; opacity: .72; }
 .item-hidden-view .item-icon { background: linear-gradient(135deg,#cbd5e1,#94a3b8); }
 .item-hidden-view .item-title { color: #64748b; text-decoration: line-through; text-decoration-color: rgba(100,116,139,.5); }

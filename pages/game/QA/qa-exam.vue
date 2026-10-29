@@ -205,6 +205,7 @@
 </template>
 
 <script>
+import { goLogin } from '@/common/js/permission.js'
 export default {
 	data() {
 		return {
@@ -246,11 +247,11 @@ export default {
 		if (userInfo) {
 			this.userInfo = JSON.parse(userInfo)
 		}
-		// 未登录跳转到“我的”页面
+		// 未登录跳转到“我的”页面（带上当前页地址，登录后自动回跳）
 		if (!this.userInfo._id) {
 			uni.showToast({ title: '请先登录', icon: 'none' })
 			setTimeout(() => {
-				uni.switchTab({ url: '/pages/profile/profile' })
+				goLogin()
 			}, 500)
 			return
 		}

@@ -209,6 +209,7 @@
 </template>
 
 <script>
+import { goLogin as navToLogin } from '@/common/js/permission.js'
 export default {
 	data() {
 		return {
@@ -275,7 +276,8 @@ export default {
 	},
 	methods: {
 		goLogin() {
-			uni.switchTab({ url: '/pages/profile/profile' })
+			// 带上当前页地址（含 shareCode 等参数），登录后自动回跳
+			navToLogin()
 		},
 		goConfig() {
 			if (!this.isLogin) { uni.showToast({ title: '请先登录', icon: 'none' }); return }
