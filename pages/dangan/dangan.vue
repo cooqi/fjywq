@@ -65,7 +65,7 @@
 				</view>
 
 				<view class="list-container active">
-					<block v-for="it in displayItems" :key="it._id">
+					<block v-for="(it, iidx) in displayItems" :key="it._id">
 						<!-- 作品 -->
 						<view class="data-card work-card" v-if="cardKind === 'work'">
 							<view class="work-poster" :class="[sectionPoster(it.data.section), it.data.poster ? 'has-poster' : '']">
@@ -134,21 +134,21 @@
 							</view>
 							<view class="music-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 						</view>
-						<!-- 活动 -->
-						<view class="data-card event-card" v-else-if="cardKind === 'event'">
-							<view class="event-date-box">
-								<view class="event-day">{{ evDay(it.data.date) }}</view>
-								<view class="event-month">{{ evMonth(it.data.date) }}</view>
-							</view>
-							<view class="event-info">
-								<view class="event-name">{{ it.data.name || '活动' }}</view>
-								<view class="event-meta">
-									<view class="meta-tag" v-if="it.data.type">{{ it.data.type }}</view>
-									<view class="meta-tag stage-tag" :class="it.data.stage === '同台' ? 'stage-same' : 'stage-diff'" v-if="it.data.stage">{{ it.data.stage }}</view>
-									<view class="meta-tag" v-if="it.data.location">📍 {{ it.data.location }}</view>
-									<view class="meta-tag" v-if="it.data.year">{{ it.data.year }}</view>
+						<!-- 活动（时间轴） -->
+						<view class="event-tl" v-else-if="cardKind === 'event'">
+							<view class="tl-dot"></view>
+							<view class="tl-line" v-if="iidx < displayItems.length - 1"></view>
+							<view class="tl-body">
+								<view class="tl-date">{{ evDateLabel(it.data) }}</view>
+								<view class="tl-card">
+									<view class="event-name">{{ it.data.name || '活动' }}</view>
+									<view class="event-meta">
+										<view class="meta-tag" v-if="it.data.type">{{ it.data.type }}</view>
+										<view class="meta-tag stage-tag" :class="it.data.stage === '同台' ? 'stage-same' : 'stage-diff'" v-if="it.data.stage">{{ it.data.stage }}</view>
+										<view class="meta-tag" v-if="it.data.location">📍 {{ it.data.location }}</view>
+									</view>
+									<view class="event-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 								</view>
-								<view class="event-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 							</view>
 						</view>
 					</block>
@@ -206,7 +206,7 @@
 				</view>
 
 				<view class="list-container active">
-					<block v-for="it in displayItems" :key="it._id">
+					<block v-for="(it, iidx) in displayItems" :key="it._id">
 						<!-- 作品 -->
 						<view class="data-card work-card" :class="isPurple ? 'purple-card' : ''" v-if="cardKind === 'work'">
 							<view class="work-poster" :class="[workPosterCls(it.data.section), it.data.poster ? 'has-poster' : '']">
@@ -279,22 +279,22 @@
 							</view>
 							<view class="brand-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 						</view>
-						<!-- 活动 -->
-						<view class="data-card event-card" :class="isPurple ? 'purple-card' : ''" v-else-if="cardKind === 'event'">
-							<view class="event-date-box" :class="isPurple ? 'purple-bg' : ''">
-								<view class="event-day" :class="isPurple ? 'purple-day' : ''">{{ evDay(it.data.date) }}</view>
-								<view class="event-month" :class="isPurple ? 'purple-month' : ''">{{ evMonth(it.data.date) }}</view>
-							</view>
-							<view class="event-info">
-								<view class="event-name">{{ it.data.name || '活动' }}</view>
-								<view class="event-meta">
-									<view class="meta-tag pair-badge" v-if="it.isPair">双人</view>
-									<view class="meta-tag" :class="isPurple ? 'purple-tag' : ''" v-if="it.data.type">{{ it.data.type }}</view>
-									<view class="meta-tag stage-tag" :class="it.data.stage === '同台' ? 'stage-same' : 'stage-diff'" v-if="it.data.stage">{{ it.data.stage }}</view>
-									<view class="meta-tag" :class="isPurple ? 'purple-tag' : ''" v-if="it.data.location">📍 {{ it.data.location }}</view>
-									<view class="meta-tag" :class="isPurple ? 'purple-tag' : ''" v-if="it.data.year">{{ it.data.year }}</view>
+						<!-- 活动（时间轴） -->
+						<view class="event-tl" :class="isPurple ? 'tl-purple' : ''" v-else-if="cardKind === 'event'">
+							<view class="tl-dot"></view>
+							<view class="tl-line" v-if="iidx < displayItems.length - 1"></view>
+							<view class="tl-body">
+								<view class="tl-date">{{ evDateLabel(it.data) }}</view>
+								<view class="tl-card">
+									<view class="event-name">{{ it.data.name || '活动' }}</view>
+									<view class="event-meta">
+										<view class="meta-tag pair-badge" v-if="it.isPair">双人</view>
+										<view class="meta-tag" :class="isPurple ? 'purple-tag' : ''" v-if="it.data.type">{{ it.data.type }}</view>
+										<view class="meta-tag stage-tag" :class="it.data.stage === '同台' ? 'stage-same' : 'stage-diff'" v-if="it.data.stage">{{ it.data.stage }}</view>
+										<view class="meta-tag" :class="isPurple ? 'purple-tag' : ''" v-if="it.data.location">📍 {{ it.data.location }}</view>
+									</view>
+									<view class="event-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 								</view>
-								<view class="event-note" v-if="it.data.note">📌 {{ it.data.note }}</view>
 							</view>
 						</view>
 					</block>
@@ -330,7 +330,7 @@ export default {
 			if (this.currentSubject === 'intersection') return 'intersection-shell'
 			return ''
 		},
-		// subject -> category -> [ { _id, sort, data, isPair? } ]
+		// subject -> category -> [ { _id, sort, createTime, data, isPair? } ]
 		grouped() {
 			const g = {}
 			;(this.rawList || []).forEach(rec => {
@@ -338,7 +338,7 @@ export default {
 				const s = rec.subject, c = rec.category
 				if (!g[s]) g[s] = {}
 				if (!g[s][c]) g[s][c] = []
-				g[s][c].push({ _id: rec._id, sort: rec.sort || 0, data: this.normData(rec) })
+				g[s][c].push({ _id: rec._id, sort: rec.sort || 0, createTime: rec.createTime || 0, data: this.normData(rec) })
 			})
 			// 双人归档回流：青宇的双人分类合并进王青/冯建宇对应单人分类（带「双人」标记）
 			const inv = { works: 'works', doubleBrands: 'brands', doubleSongs: 'music', doubleEvents: 'events', honors: 'honors' }
@@ -348,7 +348,7 @@ export default {
 				;['wang', 'feng'].forEach(s => {
 					if (!g[s]) g[s] = {}
 					if (!g[s][inv[ic]]) g[s][inv[ic]] = []
-					src.forEach(it => g[s][inv[ic]].push({ _id: it._id, sort: it.sort, data: it.data, isPair: true }))
+					src.forEach(it => g[s][inv[ic]].push({ _id: it._id, sort: it.sort, createTime: it.createTime, data: it.data, isPair: true }))
 				})
 			})
 			return g
@@ -399,8 +399,16 @@ export default {
 			if (this.currentCat === 'works') {
 				items = items.filter(it => (it.data.section || 'tv') === this.currentSection)
 			}
-			// 按数据自身日期/年份倒序（最新在前），无日期信息排末尾，同值再按录入 sort 倒序
-			return [...items].sort((a, b) => (this.sortKey(b.data) - this.sortKey(a.data)) || (b.sort - a.sort))
+			// 时间倒序（最新在前）：
+			//   1) 先按记录自身日期/年份降序（无年份排末尾）
+			//   2) 同日期再按 createTime 降序（新入库优先，避免 sort 字段 100 秒回绕带来的乱序）
+			//   3) 无 createTime（如本地 seed）则按 sort 降序；仍相同按 _id 字典序保证稳定
+			return [...items].sort((a, b) =>
+				(this.sortKey(b.data) - this.sortKey(a.data)) ||
+				((b.createTime || 0) - (a.createTime || 0)) ||
+				((b.sort || 0) - (a.sort || 0)) ||
+				String(a._id || '').localeCompare(String(b._id || ''))
+			)
 		}
 	},
 	onLoad() {
@@ -422,16 +430,35 @@ export default {
 	},
 	methods: {
 		// 从记录自身字段解析可排序日期值：year*10000 + 月*100 + 日；无年份排末尾
+		// 支持常见形式："2015-9-22" / "2015/9/22" / "2015.9.22" / "2015年9月22日" /
+		// "2015-9" / "2015年9月" / "2015" / "10月25日"（有 year 字段则拼回） /
+		// "2015-9-22 12:00" 等，末尾时间部分忽略。
 		dateKey(d) {
-			const s = String((d && (d.date || '')) + ' ' + (d && (d.year || '')) || '')
+			const dateStr = String((d && d.date) || '')
+			const yearStr = String((d && d.year) || '')
+			const s = (dateStr + ' ' + yearStr).trim()
 			let y = 0, m = 0, day = 0
+			// 1) 完整日期：年-月-日（分隔符支持 - / . 年/月）
 			let mm = s.match(/(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})/)
 			if (mm) { y = +mm[1]; m = +mm[2]; day = +mm[3] }
 			else {
-				mm = s.match(/\d{4}/)
-				if (mm) y = +mm[0]
-				const md = s.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/)
-				if (md) { m = +md[1]; day = +md[2] }
+				// 2) 年+月（无日）：如 "2015/9" / "2015年9月"
+				mm = s.match(/(\d{4})\s*[-/.年]\s*(\d{1,2})\s*月?/)
+				if (mm) { y = +mm[1]; m = +mm[2] }
+				else {
+					// 3) 仅年份
+					const ym = s.match(/\d{4}/)
+					if (ym) y = +ym[0]
+				}
+				// 4) 若尚未拿到月/日，从 "M月D日" 或 "M/D"（非 4 位年开头）补上
+				if (!m && !day) {
+					const md1 = s.match(/(^|[^\d])(\d{1,2})\s*月\s*(\d{1,2})\s*日/)
+					if (md1) { m = +md1[2]; day = +md1[3] }
+					else {
+						const md2 = s.match(/(^|[^\d])(\d{1,2})\s*[-/.]\s*(\d{1,2})(?![\d])/)
+						if (md2) { m = +md2[2]; day = +md2[3] }
+					}
+				}
 			}
 			if (!y) return 99999999
 			return y * 10000 + m * 100 + day
@@ -554,6 +581,13 @@ export default {
 			m = s.match(/\d{4}[-/](\d{1,2})[-/](\d{1,2})/)
 			if (m) return m[1] + '月'
 			return s.slice(3)
+		},
+		// 时间轴顶部的日期标签：优先用 date，日期内未含年份时拼接 year，两者都空时回退占位符
+		evDateLabel(d) {
+			const date = String((d && d.date) || '').trim()
+			const year = String((d && d.year) || '').trim()
+			if (date && year && date.indexOf(year) === -1) return `${year} · ${date}`
+			return date || year || '—'
 		}
 	}
 }
@@ -688,15 +722,17 @@ export default {
 .brand-detail { display:flex; flex-wrap:wrap; }
 .brand-note { font-size:22rpx; color:#6b7280; line-height:1.4; margin-top:8rpx; }
 
-/* 活动 */
-.event-card { display:flex; gap:24rpx; align-items:center; }
-.event-date-box { width:104rpx; height:112rpx; border-radius:24rpx; background:linear-gradient(135deg,#ccfbf1,#e0f2fe); display:flex; flex-direction:column; justify-content:center; align-items:center; flex-shrink:0; border:2rpx solid rgba(49,238,224,.3); }
-.event-date-box.purple-bg { background:linear-gradient(135deg,#ede9fe,#f3e8ff); border-color:rgba(154,154,217,.3); }
-.event-day { font-size:40rpx; font-weight:900; color:#0d9488; line-height:1; }
-.event-day.purple-day { color:#6366f1; }
-.event-month { font-size:20rpx; color:#0d9488; font-weight:700; margin-top:6rpx; }
-.event-month.purple-month { color:#6366f1; }
-.event-info { flex:1; min-width:0; }
+/* 活动时间轴 */
+.event-tl { position:relative; padding-left:60rpx; }
+.tl-dot { position:absolute; left:18rpx; top:34rpx; width:22rpx; height:22rpx; border-radius:50%; background:#fff; border:4rpx solid #0d9488; box-shadow:0 0 0 4rpx rgba(49,238,224,.18); z-index:2; box-sizing:border-box; }
+.tl-line { position:absolute; left:28rpx; top:60rpx; bottom:-54rpx; width:4rpx; background:linear-gradient(180deg,rgba(49,238,224,.55),rgba(49,238,224,.25)); z-index:1; }
+.tl-body { display:flex; flex-direction:column; min-width:0; }
+.tl-date { font-size:24rpx; font-weight:800; color:#0d9488; letter-spacing:1rpx; margin-bottom:10rpx; }
+.tl-card { background:#fff; border-radius:24rpx; padding:22rpx 26rpx; box-shadow:0 6rpx 24rpx rgba(49,238,224,.12); border-left:8rpx solid #31eee0; }
+.event-tl.tl-purple .tl-dot { border-color:#6366f1; box-shadow:0 0 0 4rpx rgba(154,154,217,.2); }
+.event-tl.tl-purple .tl-line { background:linear-gradient(180deg,rgba(154,154,217,.55),rgba(154,154,217,.25)); }
+.event-tl.tl-purple .tl-date { color:#6366f1; }
+.event-tl.tl-purple .tl-card { box-shadow:0 6rpx 24rpx rgba(154,154,217,.15); border-left-color:#9a9ad9; }
 .event-name { font-size:28rpx; font-weight:800; color:#1e1b4b; line-height:1.3; }
 .event-meta { display:flex; flex-wrap:wrap; }
 .event-note { font-size:22rpx; color:#6b7280; line-height:1.4; margin-top:8rpx; }

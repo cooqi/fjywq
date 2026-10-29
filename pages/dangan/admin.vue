@@ -90,8 +90,11 @@
 							<view class="check-opt" v-for="o in f.options" :key="o" :class="{ active: hasOpt(f, o) }" @click="toggleOpt(f, o)">{{ o }}</view>
 						</view>
 
-						<!-- 图片上传（复用全局 image-upload 组件，保存时 processImages 上传云存储） -->
-						<image-upload v-else-if="f.type === 'image'" :ref="'up_' + f.key" :title="f.label" optional-text="最多1张，保存时上传" :max-count="1" upload-path="dangan" :modelValue="formData[f.key]" />
+						<!-- 图片上传（复用全局 image-upload 组件，与 rili / notice / holiday-admin 一致：
+						     选图时组件内部已先走 uni.chooseImage({sizeType:['compressed']}) + canvas 二次压缩
+						     （maxWidth=500 / maxHeight=800 / quality=0.6 / jpg），
+						     保存时 processImages 只负责将已压缩临时文件上传云存储 -->
+						<image-upload v-else-if="f.type === 'image'" :ref="'up_' + f.key" :title="f.label" optional-text="最多1张，自动压缩上传" :max-count="1" upload-path="dangan" :modelValue="formData[f.key]" />
 
 						<textarea v-else-if="f.type === 'textarea'" class="fin area" v-model="formData[f.key]" :placeholder="f.placeholder || ''" />
 
