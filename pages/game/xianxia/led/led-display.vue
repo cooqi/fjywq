@@ -1,5 +1,5 @@
 <template>
-	<view class="full" id="full-area" :style="rootStyle" @click="onTapScreen">
+	<view class="full" id="full-area" :class="{ landscape: isLandscape }" :style="rootStyle" @click="onTapScreen">
 		<!-- 背景层：背景闪只作用于此 -->
 		<view class="bg-layer" :class="bgAnimClass" :style="bgStyle"></view>
 		<!-- 内容层（可横屏旋转） -->
@@ -21,14 +21,15 @@
 			<view v-if="isShimmer" class="shimmer-overlay"></view>
 		</view>
 
-		<!-- 退出按钮 -->
-		<view class="exit-btn" v-if="controlsVisible" @click.stop="goBack">✕ 退出</view>
+		<!-- 控制按钮：横竖屏切换 + 退出 -->
+		<view class="ctrl-btn orient-btn" v-if="controlsVisible" @click.stop="toggleOrientation">{{ isLandscape ? '🔄 竖屏' : '🔄 横屏' }}</view>
+		<view class="ctrl-btn exit-btn" v-if="controlsVisible" @click.stop="goBack">✕ 退出</view>
 		<view class="hint" v-if="controlsVisible">轻点屏幕任意处隐藏按钮 · 屏幕已常亮</view>
 	</view>
 </template>
 
 <script>
-import { getCurrent } from '@/common/js/led-store.js'
+import { getCurrent, setCurrent } from '@/common/js/led-store.js'
 import { resolveFontSize, MIN_FONT } from '@/common/js/led-font.js'
 
 export default {
@@ -128,7 +129,16 @@ export default {
 			if (this.hideTimer) clearTimeout(this.hideTimer)
 			this.hideTimer = setTimeout(() => { this.controlsVisible = false }, 3000)
 		},
-		goBack() { uni.navigateBack() }
+		goBack() { uni.navigateBack() },
+		// 横竖屏切换：旋转内容层并互换可用宽高重算字号，结果写回当前配置
+		toggleOrientation() {
+			const next = this.isLandscape ? 'portrait' : 'landscape'
+			// 旧配置可能没有 orientation 字段，用 $set 保证响应式
+			if (this.$set) this.$set(this.cfg, 'orientation', next)
+			else this.cfg.orientation = next
+			setCurrent(this.cfg)
+			this.$nextTick(() => this.recalc())
+		}
 	}
 }
 </script>
@@ -151,11 +161,17 @@ export default {
 .scroll-wrap { width: 100%; overflow: hidden; display: flex; align-items: center; }
 .scroll-track { display: inline-flex; white-space: nowrap; will-change: transform; }
 
-.exit-btn {
-	position: absolute; top: calc(80rpx + env(safe-area-inset-top)); right: 28rpx;
+/* 全屏控制按钮：统一放右下角横向排列，退出在最右、切换在其左侧不重叠；横屏时安全区映射到旋转后的边 */
+.ctrl-btn {
+	position: absolute; bottom: calc(90rpx + env(safe-area-inset-bottom));
 	background: rgba(0, 0, 0, .45); color: #fff; font-size: 26rpx;
 	padding: 12rpx 26rpx; border-radius: 40rpx; z-index: 10;
 }
+.exit-btn { right: calc(28rpx + env(safe-area-inset-right)); }
+.orient-btn { right: calc(220rpx + env(safe-area-inset-right)); }
+.landscape .ctrl-btn { bottom: calc(28rpx + env(safe-area-inset-left)); }
+.landscape .exit-btn { right: calc(90rpx + env(safe-area-inset-bottom)); }
+.landscape .orient-btn { right: calc(282rpx + env(safe-area-inset-bottom)); }
 .hint { position: absolute; bottom: calc(30rpx + env(safe-area-inset-bottom)); left: 0; right: 0; text-align: center; color: rgba(255, 255, 255, .5); font-size: 22rpx; z-index: 10; }
 
 /* keyframes 需在本页重复定义（页面样式不跨页共享）；起始用 100vw/100vh（避坑 #7） */
