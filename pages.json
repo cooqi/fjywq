@@ -146,14 +146,6 @@
 		}
 	},
 	{
-		"path": "pages/game/loveQY/loveQY",
-		"style": {
-			"navigationBarTitleText": "电子杯蜜",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#e6cffc"
-		}
-	},
-	{
 		"path": "pages/game/photo/home",
 		"style": {
 			"navigationBarTitleText": "青宇打卡",
@@ -184,102 +176,6 @@
 			"navigationBarTitleText": "相框模板管理",
 			"enablePullDownRefresh": false,
 			"navigationBarBackgroundColor": "#cff8f5"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/clinic",
-		"style": {
-			"navigationBarTitleText": "杯蜜诊所",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#d6f0ff"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/tasks",
-		"style": {
-			"navigationBarTitleText": "杯蜜任务",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#e6cffc"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/diary",
-		"style": {
-			"navigationBarTitleText": "杯蜜日记",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#fff6e6"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/settings",
-		"style": {
-			"navigationBarTitleText": "杯蜜设置",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#e6cffc"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/travel",
-		"style": {
-			"navigationBarTitleText": "杯蜜旅行",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#cff8f5"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/wardrobe",
-		"style": {
-			"navigationBarTitleText": "杯蜜衣橱",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#e6cffc"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/friends",
-		"style": {
-			"navigationBarTitleText": "杯蜜好友",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#cff8f5"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/notice",
-		"style": {
-			"navigationBarTitleText": "消息通知",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#cff8f5"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/chat",
-		"style": {
-			"navigationBarTitleText": "和杯蜜聊天",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#e6cffc"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/beemore-admin",
-		"style": {
-			"navigationBarTitleText": "杯蜜后台管理",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#d6f0ff"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/customize",
-		"style": {
-			"navigationBarTitleText": "自定义形象",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#ffeef5"
-		}
-	},
-	{
-		"path": "pages/game/loveQY/eat",
-		"style": {
-			"navigationBarTitleText": "干饭时间",
-			"enablePullDownRefresh": false,
-			"navigationBarBackgroundColor": "#fff2e0"
 		}
 	},
 	{
@@ -558,6 +454,117 @@
 	}
     
 ],
+  "subPackages": [
+    {
+      "root": "pages/game/loveQY",
+      "pages": [
+        {
+          "path": "loveQY",
+          "style": {
+            "navigationBarTitleText": "电子杯蜜",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#e6cffc"
+          }
+        },
+        {
+          "path": "clinic",
+          "style": {
+            "navigationBarTitleText": "杯蜜诊所",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#d6f0ff"
+          }
+        },
+        {
+          "path": "tasks",
+          "style": {
+            "navigationBarTitleText": "杯蜜任务",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#e6cffc"
+          }
+        },
+        {
+          "path": "diary",
+          "style": {
+            "navigationBarTitleText": "杯蜜日记",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#fff6e6"
+          }
+        },
+        {
+          "path": "settings",
+          "style": {
+            "navigationBarTitleText": "杯蜜设置",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#e6cffc"
+          }
+        },
+        {
+          "path": "travel",
+          "style": {
+            "navigationBarTitleText": "杯蜜旅行",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#cff8f5"
+          }
+        },
+        {
+          "path": "wardrobe",
+          "style": {
+            "navigationBarTitleText": "杯蜜衣橱",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#e6cffc"
+          }
+        },
+        {
+          "path": "friends",
+          "style": {
+            "navigationBarTitleText": "杯蜜好友",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#cff8f5"
+          }
+        },
+        {
+          "path": "notice",
+          "style": {
+            "navigationBarTitleText": "消息通知",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#cff8f5"
+          }
+        },
+        {
+          "path": "chat",
+          "style": {
+            "navigationBarTitleText": "和杯蜜聊天",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#e6cffc"
+          }
+        },
+        {
+          "path": "beemore-admin",
+          "style": {
+            "navigationBarTitleText": "杯蜜后台管理",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#d6f0ff"
+          }
+        },
+        {
+          "path": "customize",
+          "style": {
+            "navigationBarTitleText": "自定义形象",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#ffeef5"
+          }
+        },
+        {
+          "path": "eat",
+          "style": {
+            "navigationBarTitleText": "干饭时间",
+            "enablePullDownRefresh": false,
+            "navigationBarBackgroundColor": "#fff2e0"
+          }
+        }
+      ]
+    }
+  ],
   "tabBar": {
     "color": "#7A7E83",
     "selectedColor": "#1296db",
