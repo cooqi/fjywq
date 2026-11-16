@@ -1048,13 +1048,13 @@
 				// 只有可选座位是无确认弹窗直接写入选座车的，先检查缩放够不够
 				if (seat.state === 'avail' && !this.ensureReadableForTap(seat)) return
 				if (seat.state === 'mine') {
-					// 自己的座位：菜单顶部直接展示当前备注，可修改或释放后重选
+					// 自己的座位：菜单顶部直接展示当前备注，可修改备注、记录消费或释放后重选
 					const rec = this.mySeatSet[seat.key] || {}
 					this.openSeatMenu({
 						action: 'mine',
 						seat: seat,
 						title: seat.label + ' 备注：' + (this.clipText(rec.remark) || '无'),
-						items: ['修改备注', '释放座位']
+						items: ['修改备注', '记录消费', '释放座位']
 					})
 					return
 				}
@@ -1135,7 +1135,8 @@
 				if (!seat) return
 				if (action === 'mine') {
 					if (i === 0) this.editSeatRemark(seat)
-					else if (i === 1) this.confirmReleaseMine(seat)
+					else if (i === 1) this.recordSeatExpense(seat)
+					else if (i === 2) this.confirmReleaseMine(seat)
 				} else if (action === 'admin') {
 					if (i === 0) this.editSeatRemark(seat)
 					else if (i === 1) this.confirmReleaseAny(seat, rec)
@@ -1457,14 +1458,107 @@
 					cancelText: '暂不',
 					success: (m) => {
 						if (m.confirm) {
-							const url = `/pages/payRecord/edit?payType=${encodeURIComponent(this.concert.type || '演唱会')}`
-								+ `&concertID=${encodeURIComponent(this.concertId)}`
-								+ `&payPrice=${encodeURIComponent(total)}`
-								+ `&SeatNumber=${encodeURIComponent(seatLabels)}`
-							uni.navigateTo({ url })
+							// 与座位菜单“记录消费”同一套查重：主号已记过则引导追加/查看，不重复建单
+							this.checkAndRecordExpense(String(seatLabels).split(',').filter(Boolean), total)
 						}
 					}
 				})
+			},
+
+			// ===== 记录消费：与 payRecord/edit 联动，主号账本查重防重复记账 =====
+			// 座位菜单“记录消费”：单座票价取自分区配置
+			recordSeatExpense(seat) {
+				const area = this.areas.find(a => a._id === seat.areaId)
+				const price = area ? (Number(area.price) || 0) : 0
+				this.checkAndRecordExpense([seat.label], price)
+			},
+			// 先查主号（s_admin）与自己名下是否已有该场次账单：
+			// 无 → 预填跳记账页；有且已含该座 → 提示已记录；有但未含该座 → 自己的单引导追加，主号的单提示联系主号
+			checkAndRecordExpense(labels, price) {
+				const seatLabel = labels.join(',')
+				uni.showLoading({ title: '检查账单中', mask: true })
+				uniCloud.callFunction({
+					name: 'pay-record',
+					data: {
+						type: 'checkSeatBill',
+						userId: this.userId,
+						concertID: this.concertId,
+						seatLabels: labels
+					},
+					success: (res) => {
+						uni.hideLoading()
+						const r = res.result || {}
+						// 查重接口异常不阻断记账，直接进预填页（保存时云函数 add 还有兜底查重）
+						if (r.code !== 0) {
+							this.goEditRecord(seatLabel, price)
+							return
+						}
+						const d = r.data || {}
+						if (!d.exists || !d.record) {
+							this.goEditRecord(seatLabel, price)
+							return
+						}
+						const rec = d.record
+						const name = rec.payName || '该场次'
+						const seats = this.clipText(rec.SeatNumber, 40) || '未填座位'
+						if (rec.mine) {
+							if (d.seatHit) {
+								uni.showModal({
+									title: '已记过账',
+									content: `该座位已记录在您的账单「${name}」中，无需重复添加。`,
+									confirmText: '查看/编辑',
+									cancelText: '知道了',
+									success: (m) => {
+										if (m.confirm) uni.navigateTo({ url: '/pages/payRecord/edit?id=' + rec.id })
+									}
+								})
+							} else {
+								uni.showModal({
+									title: '已有该场次账单',
+									content: `您已添加过该场次的账单（已记座位：${seats}），同一场次不能重复添加。是否把本次座位追加到该账单？`,
+									confirmText: '去追加',
+									cancelText: '取消',
+									success: (m) => {
+										if (m.confirm) {
+											uni.navigateTo({ url: '/pages/payRecord/edit?id=' + rec.id + '&appendSeat=' + encodeURIComponent(seatLabel) })
+										}
+									}
+								})
+							}
+						} else {
+							// 账单在主号名下：只读提示，不能代改他人账单
+							const who = rec.fromMain ? '主号' : '其他账号'
+							if (d.seatHit) {
+								uni.showModal({
+									title: '已记过账',
+									content: `该座位的消费已记录在${who}的账单「${name}」（合计 ¥${rec.payAmount}）中，无需重复添加。`,
+									confirmText: '知道了',
+									showCancel: false
+								})
+							} else {
+								uni.showModal({
+									title: '主号已记账',
+									content: `${who}已为该场次建立账单（已记座位：${seats}）。为避免同一笔消费重复记账，请联系${who}在账单中追加本次座位。`,
+									confirmText: '知道了',
+									showCancel: false
+								})
+							}
+						}
+					},
+					fail: () => {
+						uni.hideLoading()
+						this.goEditRecord(seatLabel, price)
+					}
+				})
+			},
+			// 无重复：携预填参数进记账页（类型/场次/票价/座位号/有票入场）
+			goEditRecord(seatLabel, price) {
+				const url = '/pages/payRecord/edit?payType=' + encodeURIComponent(this.concert.type || '演唱会')
+					+ '&concertID=' + encodeURIComponent(this.concertId)
+					+ '&payPrice=' + encodeURIComponent(price)
+					+ '&SeatNumber=' + encodeURIComponent(seatLabel)
+					+ '&isEntry=1'
+				uni.navigateTo({ url })
 			}
 		}
 	}

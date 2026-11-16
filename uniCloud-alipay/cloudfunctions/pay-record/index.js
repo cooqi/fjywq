@@ -460,6 +460,86 @@ exports.main = async (event, context) => {
 		}
 	}
 	
+	// 选座页“记录消费”联动查重：以主号（s_admin，回退 admin）账本为准，
+	// 同时查当前用户与主号名下该场次的账单，并判断座位是否已在账单的 SeatNumber 里，
+	// 避免同一笔消费被两个账号重复记账
+	if (type === 'checkSeatBill') {
+		try {
+			if (!userId) {
+				return {
+					code: 1,
+					message: '请先登录'
+				}
+			}
+			
+			if (!event.concertID) {
+				return {
+					code: 0,
+					data: { exists: false, seatHit: false, mainUserId: '', isMain: false, record: null }
+				}
+			}
+			
+			// 主号认定：优先超级管理员，其次管理员；查不到时仅查当前用户自己的账单
+			let mainUserId = ''
+			try {
+				let mainRes = await db.collection('user-info').where({ role: 's_admin' }).limit(1).get()
+				if (!mainRes.data || mainRes.data.length === 0) {
+					mainRes = await db.collection('user-info').where({ role: 'admin' }).limit(1).get()
+				}
+				mainUserId = (mainRes.data && mainRes.data[0] && mainRes.data[0]._id) || ''
+			} catch (e) {
+				console.error('查找主号失败:', e)
+			}
+			
+			const ids = (mainUserId && mainUserId !== userId) ? [userId, mainUserId] : [userId]
+			const res = await collection
+				.where({ concertID: event.concertID, userId: dbCmd.in(ids) })
+				.orderBy('creatTime', 'desc')
+				.limit(20)
+				.get()
+			const list = res.data || []
+			
+			// 座位号归一化（去空白）后做包含匹配，兼容逗号分隔的多座位账单
+			const norm = (s) => String(s || '').replace(/\s+/g, '')
+			const labels = Array.isArray(event.seatLabels)
+				? event.seatLabels.map(norm).filter(Boolean)
+				: (event.seatLabel ? [norm(event.seatLabel)] : [])
+			const hitOf = (rec) => {
+				const sn = norm(rec.SeatNumber)
+				return labels.length > 0 && labels.some(l => sn.indexOf(l) >= 0)
+			}
+			// 优先返回已含该座位的账单，其次返回该场次最新一条
+			const record = list.find(hitOf) || list[0] || null
+			
+			return {
+				code: 0,
+				data: {
+					exists: !!record,
+					seatHit: record ? hitOf(record) : false,
+					mainUserId: mainUserId,
+					isMain: !!mainUserId && userId === mainUserId,
+					record: record ? {
+						id: record._id,
+						payName: record.payName || '',
+						payType: record.payType || '',
+						payTime: record.payTime || '',
+						payAmount: record.payAmount || '0',
+						SeatNumber: record.SeatNumber || '',
+						userId: record.userId || '',
+						mine: record.userId === userId,
+						fromMain: !!mainUserId && record.userId === mainUserId
+					} : null
+				}
+			}
+		} catch (err) {
+			console.error('选座账单查重失败:', err)
+			return {
+				code: 1,
+				message: '检查失败：' + err.message
+			}
+		}
+	}
+	
 	// 历史数据迁移：把字符串类型的 creatTime/upTime 转成 timestamp（毫秒数字）
 	// 上线后只需执行一次，调用参数：{ type: 'migrateTime', userId, secret: 'payRecord-time-v1' }
 	if (type === 'migrateTime') {

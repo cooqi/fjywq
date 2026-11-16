@@ -23,7 +23,6 @@
 					{{selectedLabel}}
 				</view>
 			</picker>
-			<view class="booked-tip" v-if="bookedList.length > 0">您已添加过 {{bookedList.length}} 个该类型场次，列表中标了「已添加」的场次不能重复选择</view>
 			
 			<!-- 显示选中场次的详细信息 -->
 			<view class="concert-info" v-if="selectedConcert">
@@ -229,6 +228,8 @@
 			return {
 				isEdit: false,
 				recordId: '',
+				// 选座页“去追加”携来的座位号：编辑模式加载后自动并入 SeatNumber（去重）
+				appendSeat: '',
 				typeList: ['音乐节', '演唱会', '见面会', '商务', '周边', '专辑', '其他'],
 				concertList: [], // 演唱会/音乐节列表
 				concertIndex: -1, // 选中的演唱会索引
@@ -273,6 +274,7 @@
 			if (options.id) {
 				this.isEdit = true
 				this.recordId = options.id
+				this.appendSeat = options.appendSeat ? decodeURIComponent(options.appendSeat) : ''
 				this.getRecordDetail(options.id)
 			} else {
 				// 新增模式：支持从选座页携带预填参数进入（payType/concertID/payPrice/SeatNumber）
@@ -286,7 +288,12 @@
 				if (options.payPrice) {
 					const pp = decodeURIComponent(options.payPrice)
 					this.formData.payPrice = pp
+					this.formData.regular = pp
 					this.formData.payAmount = (parseFloat(pp) || 0).toFixed(2)
+				}
+				// 选座页携来的入场状态：有座即有票，直接预选“有票”，座位号输入框随之可见
+				if (options.isEntry === '1' || options.isEntry === '0') {
+					this.formData.isEntry = options.isEntry
 				}
 				// 加载演唱会/音乐节列表与已添加记录；列表就绪后按 concertID 自动选中场次
 				this.loadConcertList().then(() => {
@@ -620,6 +627,27 @@
 							concertID: data.concertID || '',
 							isEntry: data.isEntry || '',
 							SeatNumber: data.SeatNumber || ''
+						}
+						
+						// 选座页“去追加”：把新座位并入已有账单的座位号（归一化去重，兼容中英文逗号分隔）
+						if (this.appendSeat) {
+							const norm = (s) => String(s || '').replace(/\s+/g, '')
+							const parts = String(this.formData.SeatNumber || '').split(/[,，]/).map(t => t.trim()).filter(Boolean)
+							const incoming = this.appendSeat.split(/[,，]/).map(t => t.trim()).filter(Boolean)
+							const added = []
+							incoming.forEach(seat => {
+								if (!parts.some(p => norm(p) === norm(seat))) {
+									parts.push(seat)
+									added.push(seat)
+								}
+							})
+							this.formData.SeatNumber = parts.join(',')
+							uni.showToast({
+								title: added.length > 0 ? '已追加座位，请确认后保存' : '该座位已在账单中',
+								icon: 'none',
+								duration: 2200
+							})
+							this.appendSeat = ''
 						}
 														
 						// 如果是音乐节或演唱会类型，需要加载列表并匹配选中的项
