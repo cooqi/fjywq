@@ -15,6 +15,7 @@
 			<view class="concert-info">
 				<view class="ci-line">
 					<text class="ci-title">{{concert.title || '未命名场次'}}</text>
+					<text class="ci-preview" @click="goSeatPreview">名单预览</text>
 					<text class="ci-badge" v-if="isAdmin">管理员</text>
 				</view>
 				<view class="ci-row" v-if="ciSub">{{ciSub}}</view>
@@ -60,6 +61,52 @@
 				</view>
 			</view>
 
+			<!-- 模糊搜索：按微信昵称 / 座位备注找人找座，命中结果可一键定位到画布 -->
+			<view class="seat-search">
+				<view class="ss-box" :class="{focused: searchFocused}">
+					<view class="ss-icon"></view>
+					<input
+						class="ss-input"
+						v-model="searchKey"
+						placeholder="搜索昵称 / 座位备注"
+						placeholder-class="ss-ph"
+						confirm-type="search"
+						@focus="onSearchFocus"
+						@blur="searchFocused = false"
+					/>
+					<text class="ss-count" v-if="searchKey.trim()">{{searchResults.length}}</text>
+					<text class="ss-clear" v-if="searchKey" @click="clearSearch">×</text>
+				</view>
+				<!-- 结果面板悬浮在画布上方，不挤占座位图高度 -->
+				<view class="ss-panel" v-if="searchOpen && searchKey.trim()">
+					<view class="ssp-head">
+						<text>匹配到 {{searchResults.length}} 个座位</text>
+						<text class="ssp-close" @click="searchOpen = false">收起</text>
+					</view>
+					<scroll-view class="ssp-list" scroll-y :show-scrollbar="false" v-if="searchResults.length > 0">
+						<view class="ssp-item" v-for="it in searchResults" :key="it.key" @click="locateResult(it)">
+							<view class="ssp-dot" :style="{background: seatColorMap[it.state]}"></view>
+							<view class="ssp-main">
+								<view class="ssp-line1">
+									<text class="ssp-label">{{it.label}}</text>
+									<text class="ssp-state" :class="it.state">{{it.state === 'mine' ? '我的' : '锁定'}}</text>
+								</view>
+								<view class="ssp-line2">
+									<text class="ssp-nick"><text v-for="(p, pi) in hitParts(it.nickname)" :key="'n' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-remark" v-if="it.remark"><text v-for="(p, pi) in hitParts(it.remark)" :key="'r' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-remark none" v-else>未留备注</text>
+								</view>
+							</view>
+							<text class="ssp-go">定位</text>
+						</view>
+					</scroll-view>
+					<view class="ssp-empty" v-else>
+						<text>没有找到匹配的座位</text>
+						<text class="ssp-empty-sub">试试其他昵称或备注关键词</text>
+					</view>
+				</view>
+			</view>
+
 			<!-- 整场馆总览画布：座位固定按100%布局渲染，捏合缩放/拖拽平移只改外层 transform -->
 			<view
 				class="map-scroll"
@@ -70,6 +117,7 @@
 				@touchmove="seatCanvas.move"
 				@touchend="seatCanvas.end"
 				@touchcancel="seatCanvas.end"
+				@click="searchOpen = false"
 			>
 				<view class="map-canvas" :style="canvasStyle">
 					<view
@@ -111,7 +159,7 @@
 								v-for="seat in area.seats"
 								:key="seat.key"
 								class="seat"
-								:class="seat.state"
+								:class="[seat.state, seat.key === highlightKey ? 'hl' : '']"
 								:style="{left: seat.left + 'rpx', top: seat.top + 'rpx', width: seat.size + 'rpx', height: seat.size + 'rpx', fontSize: seat.font + 'rpx', lineHeight: seat.size + 'rpx', background: seatColorMap[seat.state], color: seatFg(seat.state)}"
 								@click.stop="onSeatTap(seat)"
 							></view>
@@ -132,10 +180,21 @@
 
 			<!-- 底部选座车：每个座位单独填备注 -->
 			<view class="cart">
+				<!-- 未设置昵称（微信用户）：备注必填提示，方便现场相认 -->
+				<view class="cart-nick-tip" v-if="needRemark && selectedSeats.length > 0">
+					<text class="cnt-icon">!</text>
+					<text>您还未设置昵称，请在备注填写常用昵称，方便大家相认；不方便可填「匿名」</text>
+				</view>
 				<view class="cart-list" v-if="selectedSeats.length > 0">
 					<view class="cart-seat-row" v-for="s in selectedSeats" :key="s.key">
 						<text class="cs-label">{{s.label}}</text>
-						<input class="cs-remark" v-model="s.remark" maxlength="100" placeholder="备注（选填，公开展示在座位上）" />
+						<input
+							class="cs-remark"
+							:class="{'required-empty': needRemark && !String(s.remark || '').trim()}"
+							v-model="s.remark"
+							maxlength="100"
+							:placeholder="needRemark ? '必填：常用昵称（不方便可填匿名）' : '备注（选填，公开展示在座位上）'"
+						/>
 						<text class="cs-del" @click="removeSeat(s)">×</text>
 					</view>
 				</view>
@@ -232,6 +291,15 @@
 				cartH: 0,
 				// 自定义座位操作菜单：微信 showActionSheet 不支持 alertText 头部，改用自带遮罩的固定弹层
 				seatMenuInfo: { open: false, title: '', items: [], seat: null, rec: null, action: '' },
+				// 未设昵称用户首次选座时提示过一次备注必填，不再重复打扰
+				nickTipShown: false,
+				// 模糊搜索：关键词 / 结果面板开关 / 输入框聚焦态
+				searchKey: '',
+				searchOpen: false,
+				searchFocused: false,
+				// 搜索定位后画布上脉冲高亮的座位 key 与自动消退定时器
+				highlightKey: '',
+				hlTimer: null,
 			}
 		},
 		onShareAppMessage() {
@@ -425,6 +493,34 @@
 			totalAmount() {
 				return this.selectedSeats.reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)
 			},
+			// 昵称为“微信用户”或未设置：没有可辨识身份，备注强制必填（常用昵称或匿名）
+			needRemark() {
+				const nick = String(this.userNick || '').trim()
+				return !nick || nick === '微信用户'
+			},
+			// 模糊搜索：不区分大小写子串匹配占座人昵称与座位备注，我的座位排前；
+			// 数据全部来自已加载的 takenSet/mySeatSet，无需请求云端
+			searchResults() {
+				const kw = String(this.searchKey || '').trim().toLowerCase()
+				if (!kw) return []
+				const out = []
+				const collect = (key, rec, state) => {
+					const m = /^(.*)-(\d+)-(\d+)$/.exec(key)
+					if (!m) return
+					const areaIndex = this.areas.findIndex(a => a._id === m[1])
+					if (areaIndex < 0) return
+					const area = this.areas[areaIndex]
+					const row = Number(m[2])
+					const col = Number(m[3])
+					const nickname = state === 'mine' ? (this.userNick || '微信用户') : (rec.nickname || '')
+					const remark = rec.remark || ''
+					if (nickname.toLowerCase().indexOf(kw) < 0 && remark.toLowerCase().indexOf(kw) < 0) return
+					out.push({ key, state, nickname, remark, row, col, areaIndex, label: this.buildLabel(area, row, col) })
+				}
+				Object.keys(this.mySeatSet).forEach(k => collect(k, this.mySeatSet[k], 'mine'))
+				Object.keys(this.takenSet).forEach(k => collect(k, this.takenSet[k], 'taken'))
+				return out
+			},
 			selectedCount() {
 				return this.selectedSeats.length
 			},
@@ -437,6 +533,10 @@
 		watch: {
 			selectedCount() {
 				this.$nextTick(() => this.measureLayout())
+			},
+			// 有关键词就展开结果面板，清空即收起
+			searchKey(v) {
+				this.searchOpen = !!String(v || '').trim()
 			}
 		},
 		onReady() {
@@ -479,6 +579,52 @@
 			// 座位前景色：根据生效背景亮度自动选白/深色，保证自定义配色下编号仍可读
 			seatFg(state) {
 				return seatTextColor(this.seatColorMap[state], DEFAULT_SEAT_TEXT[state] || '#37474f')
+			},
+
+			// ===== 模糊搜索 =====
+			// 跳转 Excel 排版的占座名单预览页
+			goSeatPreview() {
+				uni.navigateTo({ url: '/pages/concert/seat-preview?id=' + this.concertId })
+			},
+			onSearchFocus() {
+				this.searchFocused = true
+				if (String(this.searchKey || '').trim()) this.searchOpen = true
+			},
+			clearSearch() {
+				this.searchKey = ''
+				this.searchOpen = false
+			},
+			// 把文本按命中关键词切成片段，供结果列表高亮展示命中部分
+			hitParts(text) {
+				const t = String(text || '')
+				const kw = String(this.searchKey || '').trim().toLowerCase()
+				if (!t) return [{ t: '', hit: false }]
+				if (!kw) return [{ t, hit: false }]
+				const parts = []
+				const lower = t.toLowerCase()
+				let i = 0
+				let idx = lower.indexOf(kw)
+				while (idx >= 0) {
+					if (idx > i) parts.push({ t: t.slice(i, idx), hit: false })
+					parts.push({ t: t.slice(idx, idx + kw.length), hit: true })
+					i = idx + kw.length
+					idx = lower.indexOf(kw, i)
+				}
+				if (i < t.length) parts.push({ t: t.slice(i), hit: false })
+				return parts
+			},
+			// 点击搜索结果：收起面板，放大到能看清座位并把目标座位置中，脉冲高亮几秒
+			locateResult(it) {
+				this.searchOpen = false
+				const area = this.areas[it.areaIndex]
+				if (!area) return
+				if (this.scale < MIN_TAP_SCALE) this.focusArea(it.areaIndex, MIN_TAP_SCALE)
+				const x = CANVAS_PAD + (Number(area.gridX) || 0) * CELL_BASE + this.gutLeft + (it.col - 1) * CELL_BASE + CELL_BASE / 2
+				const y = CANVAS_PAD + (Number(area.gridY) || 0) * CELL_BASE + this.gutTop + (it.row - 1) * CELL_BASE + CELL_BASE / 2
+				this.centerPoint(x, y)
+				this.highlightKey = it.key
+				if (this.hlTimer) clearTimeout(this.hlTimer)
+				this.hlTimer = setTimeout(() => { this.highlightKey = '' }, 2600)
 			},
 			// ===== 编号展示：优先用分区自定义编号数组 =====
 			rowLabelOf(area, row) {
@@ -957,6 +1103,13 @@
 				})
 				// 座位上不再印编号，回显完整座位号供确认
 				uni.showToast({ title: '已选 ' + seat.label, icon: 'none' })
+				// 未设昵称用户首次选座：提前告知备注必填，避免提交时才被打回
+				if (this.needRemark && !this.nickTipShown) {
+					this.nickTipShown = true
+					setTimeout(() => {
+						uni.showToast({ title: '您未设置昵称，请在备注填写常用昵称或匿名', icon: 'none', duration: 2600 })
+					}, 1600)
+				}
 			},
 
 			// ===== 自定义座位操作菜单（自带遮罩的固定底部弹层）=====
@@ -1168,6 +1321,35 @@
 
 			confirmSubmit() {
 				if (this.selectedSeats.length === 0 || this.submitting) return
+				// 未设昵称（微信用户）：每个座位都必须有备注，缺失时引导填写或一键匿名
+				if (this.needRemark) {
+					const missing = this.selectedSeats.filter(s => !String(s.remark || '').trim())
+					if (missing.length > 0) {
+						uni.showModal({
+							title: '请填写备注',
+							content: '您还未设置昵称，请在备注填写自己常用的昵称，方便大家相认。如果不方便，可填写「匿名」。',
+							confirmText: '去填写',
+							cancelText: '填匿名',
+							success: (m) => {
+								if (m.confirm) {
+									uni.showToast({ title: '请在下方备注框填写昵称', icon: 'none' })
+								} else {
+									// 一键把空备注填为“匿名”，直接继续提交
+									this.selectedSeats.forEach(s => {
+										if (!String(s.remark || '').trim()) s.remark = '匿名'
+									})
+									this.doSubmit()
+								}
+							}
+						})
+						return
+					}
+				}
+				this.doSubmit()
+			},
+
+			doSubmit() {
+				if (this.selectedSeats.length === 0 || this.submitting) return
 				this.submitting = true
 				uni.showLoading({ title: '提交中' })
 				const seats = this.selectedSeats.map(s => ({ areaId: s.areaId, row: s.row, col: s.col, remark: (s.remark || '').trim() }))
@@ -1321,6 +1503,20 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.ci-preview {
+		flex-shrink: 0;
+		margin-left: 12rpx;
+		font-size: 20rpx;
+		line-height: 36rpx;
+		padding: 0 16rpx;
+		border-radius: 18rpx;
+		background: rgba(255, 255, 255, 0.92);
+		color: #1976D2;
+		font-weight: 600;
+
+		&:active { opacity: 0.7; }
 	}
 
 	.ci-badge {
@@ -1477,6 +1673,237 @@
 	}
 }
 
+/* 模糊搜索栏：结果面板悬浮在画布上方，不挤占座位图高度 */
+.seat-search {
+	position: relative;
+	z-index: 60;
+	background: #fff;
+	padding: 8rpx 16rpx 10rpx;
+	border-bottom: 1rpx solid #eee;
+
+	.ss-box {
+		display: flex;
+		align-items: center;
+		height: 60rpx;
+		background: #f2f3f7;
+		border-radius: 32rpx;
+		padding: 0 20rpx;
+		border: 2rpx solid transparent;
+		transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+
+		&.focused {
+			background: #fff;
+			border-color: #2196F3;
+			box-shadow: 0 0 0 4rpx rgba(33, 150, 243, 0.12);
+		}
+	}
+
+	/* CSS 手绘放大镜，不依赖图标字体/图片资源 */
+	.ss-icon {
+		flex-shrink: 0;
+		width: 22rpx;
+		height: 22rpx;
+		border: 3rpx solid #90a4ae;
+		border-radius: 50%;
+		position: relative;
+		margin-right: 16rpx;
+
+		&::after {
+			content: '';
+			position: absolute;
+			right: -6rpx;
+			bottom: -8rpx;
+			width: 3rpx;
+			height: 10rpx;
+			background: #90a4ae;
+			border-radius: 2rpx;
+			transform: rotate(-45deg);
+		}
+	}
+
+	.ss-input {
+		flex: 1;
+		height: 60rpx;
+		font-size: 24rpx;
+		color: #37474f;
+	}
+
+	.ss-ph {
+		color: #b0bec5;
+		font-size: 24rpx;
+	}
+
+	.ss-count {
+		flex-shrink: 0;
+		font-size: 20rpx;
+		color: #1976D2;
+		background: #e3f2fd;
+		border-radius: 18rpx;
+		padding: 2rpx 14rpx;
+		margin-left: 10rpx;
+	}
+
+	.ss-clear {
+		flex-shrink: 0;
+		font-size: 34rpx;
+		color: #90a4ae;
+		padding: 0 6rpx 0 12rpx;
+		line-height: 1;
+	}
+
+	.ss-panel {
+		position: absolute;
+		top: 100%;
+		left: 16rpx;
+		right: 16rpx;
+		background: #fff;
+		border: 1rpx solid #e3f2fd;
+		border-radius: 16rpx;
+		box-shadow: 0 12rpx 40rpx rgba(25, 118, 210, 0.18);
+		overflow: hidden;
+		animation: sspDrop 0.18s ease;
+	}
+
+	.ssp-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16rpx 24rpx;
+		font-size: 22rpx;
+		color: #1976D2;
+		background: linear-gradient(135deg, #e3f2fd 0%, #ede7f6 100%);
+		border-bottom: 1rpx solid #e3f2fd;
+
+		.ssp-close {
+			color: #90a4ae;
+			padding: 0 8rpx;
+		}
+	}
+
+	.ssp-list {
+		max-height: 480rpx;
+
+		/* H5 端滚动条也沿用页面紫蓝配色；小程序端 show-scrollbar=false 隐藏原生滚动条 */
+		&::-webkit-scrollbar {
+			width: 8rpx;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: #b39ddb;
+			border-radius: 4rpx;
+		}
+	}
+
+	.ssp-item {
+		display: flex;
+		align-items: center;
+		padding: 16rpx 24rpx;
+		border-bottom: 1rpx solid #f5f5f7;
+
+		&:last-child { border-bottom: none; }
+		&:active { background: #f5f8ff; }
+	}
+
+	.ssp-dot {
+		flex-shrink: 0;
+		width: 18rpx;
+		height: 18rpx;
+		border-radius: 50%;
+		margin-right: 16rpx;
+		box-shadow: 0 0 0 3rpx rgba(55, 71, 79, 0.08);
+	}
+
+	.ssp-main {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.ssp-line1 {
+		display: flex;
+		align-items: center;
+
+		.ssp-label {
+			font-size: 26rpx;
+			font-weight: 600;
+			color: #37474f;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.ssp-state {
+			flex-shrink: 0;
+			font-size: 18rpx;
+			border-radius: 8rpx;
+			padding: 0 10rpx;
+			margin-left: 12rpx;
+			line-height: 30rpx;
+
+			&.mine { background: #fff8e1; color: #b28704; }
+			&.taken { background: #e0f7fa; color: #006064; }
+		}
+	}
+
+	.ssp-line2 {
+		margin-top: 4rpx;
+		font-size: 22rpx;
+		color: #78909c;
+		line-height: 1.5;
+		word-break: break-all;
+
+		.ssp-nick {
+			color: #5e35b1;
+			background: #ede7f6;
+			border-radius: 6rpx;
+			padding: 0 8rpx;
+			margin-right: 10rpx;
+		}
+
+		.ssp-remark.none {
+			color: #b0bec5;
+		}
+
+		/* 命中关键词片段：琥珀底高亮，一眼看到匹配位置 */
+		.hit {
+			background: #ffe082;
+			color: #5d4037;
+			font-weight: 600;
+			border-radius: 4rpx;
+		}
+	}
+
+	.ssp-go {
+		flex-shrink: 0;
+		font-size: 22rpx;
+		color: #1976D2;
+		background: #e3f2fd;
+		border-radius: 20rpx;
+		padding: 6rpx 18rpx;
+		margin-left: 12rpx;
+	}
+
+	.ssp-empty {
+		padding: 44rpx 24rpx;
+		text-align: center;
+		font-size: 24rpx;
+		color: #90a4ae;
+
+		.ssp-empty-sub {
+			display: block;
+			margin-top: 8rpx;
+			font-size: 20rpx;
+			color: #b0bec5;
+		}
+	}
+}
+
+@keyframes sspDrop {
+	from { opacity: 0; transform: translateY(-12rpx); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
 .map-scroll {
 	/* 固定高度由 measureLayout 量得，不用 flex 拉伸，否则底部会被选座车遮住 */
 	flex: none;
@@ -1580,6 +2007,12 @@
 		&.selected { background: #b39ddb; color: #311b92; }
 		&.taken { background: #80deea; color: #006064; }
 		&.mine { background: #ffd54f; color: #6d4c41; }
+
+		/* 搜索定位命中：红色光圈脉冲闪烁，几秒后自动消退 */
+		&.hl {
+			z-index: 6;
+			animation: seatHlPulse 0.7s ease-in-out infinite alternate;
+		}
 	}
 
 	.seat-note {
@@ -1604,6 +2037,35 @@
 	background: #fff;
 	padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
 	box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+
+	/* 未设昵称用户的备注必填提示条 */
+	.cart-nick-tip {
+		display: flex;
+		align-items: flex-start;
+		background: #fff8e1;
+		border: 1rpx solid #ffe082;
+		border-radius: 12rpx;
+		padding: 10rpx 16rpx;
+		margin-bottom: 10rpx;
+		font-size: 22rpx;
+		color: #8d6e08;
+		line-height: 1.5;
+
+		.cnt-icon {
+			flex-shrink: 0;
+			width: 30rpx;
+			height: 30rpx;
+			line-height: 30rpx;
+			text-align: center;
+			border-radius: 50%;
+			background: #ffb300;
+			color: #fff;
+			font-size: 22rpx;
+			font-weight: bold;
+			margin-right: 12rpx;
+			margin-top: 2rpx;
+		}
+	}
 
 	/* 已选座位逐座填备注：改为一行一座，不再用胶囊换行 */
 	.cart-list {
@@ -1637,6 +2099,13 @@
 			border-radius: 8rpx;
 			padding: 0 14rpx;
 			font-size: 22rpx;
+			border: 2rpx solid transparent;
+
+			/* 必填却还空着：红框提醒，填上即恢复 */
+			&.required-empty {
+				border-color: #ef5350;
+				background: #fff5f5;
+			}
 		}
 
 		.cs-del {
@@ -1685,6 +2154,11 @@
 			&[disabled] { opacity: 0.5; }
 		}
 	}
+}
+
+@keyframes seatHlPulse {
+	from { box-shadow: 0 0 0 3rpx rgba(255, 82, 82, 0.95); }
+	to { box-shadow: 0 0 0 9rpx rgba(255, 82, 82, 0.25); }
 }
 
 /* 自定义座位操作菜单（微信小程序 showActionSheet 不支持 alertText 头部） */

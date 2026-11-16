@@ -421,6 +421,14 @@
 		}
 	},
 	{
+		"path": "pages/concert/seat-preview",
+		"style": {
+			"navigationBarTitleText": "座位名单预览",
+			"enablePullDownRefresh": false,
+			"navigationBarBackgroundColor": "#cff8f5"
+		}
+	},
+	{
 		"path": "pages/footprint/detail",
 		"style": {
 			"navigationBarTitleText": "青宇打卡",

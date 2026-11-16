@@ -3,6 +3,7 @@
  * 选座云函数（需登录后选座）
  * action:
  *   - getSeatMap  : 读取座位图（分区含已选统计 + 已占座位含备注 + 我的座位，管理员额外返回 isAdmin 与占座人昵称）
+ *   - getRoster   : 名单预览（Excel 排版用，返回全部占座人的昵称+备注，昵称与备注均为选座时公开的信息）
  *   - submit      : 提交选座（应用层先查后写 + 失败回滚，每座位独立备注，整批备注字段仅作旧版兼容）
  *   - releaseMine : 释放自己的已选座位（选座保存后可修改）
  *   - releaseAny  : 管理员释放任意人的座位（服务端二次校验管理员身份）
@@ -75,6 +76,36 @@ function buildSeatLabel(area, row, col) {
 	return `${(area && area.name) || ''}${rText}${cText}`;
 }
 
+// 读取分区配置（含自定义编号数组），按 sort 排序；getSeatMap / getRoster 共用
+async function fetchAreas(concertId) {
+	const areasRes = await db.collection(AREA_COLLECTION).where({ concertId }).get();
+	const areas = (areasRes.data || []).map(item => {
+		const isStage = !!item.isStage;
+		const rows = Number(item.rows) || 0;
+		const cols = Number(item.cols) || 0;
+		
+		return {
+			_id: item._id,
+			name: item.name,
+			rows: isStage ? 0 : rows,
+			cols: isStage ? 0 : cols,
+			rowLabelType: Number(item.rowLabelType) || 1,
+			price: Number(item.price) || 0,
+			color: item.color || '#4A90D9',
+			sort: Number(item.sort) || 0,
+			gridX: Number(item.gridX) || 0,
+			gridY: Number(item.gridY) || 0,
+			isStage,
+			stageW: Number(item.stageW) || (isStage ? cols : 0),
+			stageH: Number(item.stageH) || (isStage ? rows : 0),
+			rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
+			colLabels: Array.isArray(item.colLabels) ? item.colLabels : []
+		};
+	});
+	areas.sort((a, b) => a.sort - b.sort);
+	return areas;
+}
+
 // 由分区包围盒计算画布尺寸（单位：格），与 concert-admin 保持一致
 function computeCanvas(areas) {
 	let canvasW = 0;
@@ -113,6 +144,8 @@ exports.main = async (event, context) => {
 	switch (action) {
 		case 'getSeatMap':
 			return await getSeatMap(event);
+		case 'getRoster':
+			return await getRoster(event);
 		case 'submit':
 			return await submit(event);
 		case 'releaseMine':
@@ -145,31 +178,7 @@ async function getSeatMap(event) {
 			return { code: 0, message: '本场次不开放选座', data: { seatEnabled: false, areas: [], taken: [], mySeats: [] } };
 		}
 		
-		const areasRes = await db.collection(AREA_COLLECTION).where({ concertId }).get();
-		const areas = (areasRes.data || []).map(item => {
-			const isStage = !!item.isStage;
-			const rows = Number(item.rows) || 0;
-			const cols = Number(item.cols) || 0;
-			
-			return {
-				_id: item._id,
-				name: item.name,
-				rows: isStage ? 0 : rows,
-				cols: isStage ? 0 : cols,
-				rowLabelType: Number(item.rowLabelType) || 1,
-				price: Number(item.price) || 0,
-				color: item.color || '#4A90D9',
-				sort: Number(item.sort) || 0,
-				gridX: Number(item.gridX) || 0,
-				gridY: Number(item.gridY) || 0,
-				isStage,
-				stageW: Number(item.stageW) || (isStage ? cols : 0),
-				stageH: Number(item.stageH) || (isStage ? rows : 0),
-				rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
-				colLabels: Array.isArray(item.colLabels) ? item.colLabels : []
-			};
-		});
-		areas.sort((a, b) => a.sort - b.sort);
+		const areas = await fetchAreas(concertId);
 		
 		// 座位表被清空（管理员一键删除全部分区）时给出明确空态，避免展示空选座图
 		if (areas.length === 0) {
@@ -235,6 +244,79 @@ async function getSeatMap(event) {
 	} catch (err) {
 		console.error('获取座位图失败:', err);
 		return { code: -1, message: '获取座位图失败：' + err.message };
+	}
+}
+
+// 名单预览：返回全部占座人的昵称+备注，供 Excel 排版预览页使用。
+// 昵称与备注都是选座时自愿公开的信息（未设昵称者被引导在备注填写常用昵称或匿名），
+// 与 getSeatMap 的隐私策略不同：本接口专为“方便大家预览相认”的产品需求服务。
+async function getRoster(event) {
+	try {
+		const { concertId, userId = '' } = event;
+		
+		if (!concertId) {
+			return { code: -1, message: '缺少演唱会ID' };
+		}
+		
+		const concertRes = await db.collection('Concert').doc(concertId).get();
+		const concert = concertRes.data && concertRes.data[0];
+		if (!concert) {
+			return { code: -1, message: '演唱会不存在' };
+		}
+		
+		if (!concert.seat_enabled) {
+			return { code: 0, message: '本场次不开放选座', data: { seatEnabled: false, areas: [], seats: [] } };
+		}
+		
+		const areas = await fetchAreas(concertId);
+		if (areas.length === 0) {
+			return { code: 0, message: '本场次座位表未配置', data: { seatEnabled: false, areas: [], seats: [] } };
+		}
+		
+		const areaMap = {};
+		areas.forEach(item => { areaMap[item._id] = item; });
+		const capacity = areas.reduce((sum, item) => sum + item.rows * item.cols, 0);
+		
+		const selections = await getAllByPage({ concertId }, { areaId: true, row: true, col: true, userId: true, remark: true, nickname: true, seatLabel: true, createTime: true });
+		
+		const selectedByArea = {};
+		const seats = selections.map(item => {
+			selectedByArea[item.areaId] = (selectedByArea[item.areaId] || 0) + 1;
+			const area = areaMap[item.areaId];
+			return {
+				areaId: item.areaId,
+				row: item.row,
+				col: item.col,
+				seatLabel: item.seatLabel || (area ? buildSeatLabel(area, item.row, item.col) : `${item.row}排${item.col}号`),
+				nickname: item.nickname || '',
+				remark: item.remark || '',
+				mine: !!userId && item.userId === userId,
+				createTime: item.createTime || 0
+			};
+		});
+		
+		return {
+			code: 0,
+			message: '获取成功',
+			data: {
+				seatEnabled: true,
+				concert: {
+					_id: concert._id,
+					title: concert.ychTheme || concert.Session || concert.time || '未命名场次',
+					venue: concert.yhcTheme || '',
+					session: concert.Session || '',
+					time: concert.time || ''
+				},
+				seatColors: concert.seat_colors || {},
+				totalSelected: selections.length,
+				totalCapacity: capacity,
+				areas: areas.map(item => Object.assign({}, item, { selected: selectedByArea[item._id] || 0 })),
+				seats
+			}
+		};
+	} catch (err) {
+		console.error('获取座位名单失败:', err);
+		return { code: -1, message: '获取座位名单失败：' + err.message };
 	}
 }
 
