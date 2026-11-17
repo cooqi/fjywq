@@ -78,11 +78,11 @@
 						placeholder="筛选昵称 / 备注"
 						placeholder-class="tb-ph"
 						confirm-type="search"
-						@focus="searchFocused = true"
+						@focus="onSearchFocus"
 						@blur="searchFocused = false"
 					/>
-					<text class="tb-hit" v-if="keyword.trim()">{{matchCount}}中</text>
-					<text class="tb-clear" v-if="keyword" @click="keyword = ''">×</text>
+					<text class="tb-hit" v-if="keyword.trim()">{{searchResults.length}}中</text>
+					<text class="tb-clear" v-if="keyword" @click="clearSearch">×</text>
 				</view>
 				<view class="tb-font">
 					<text class="tf-btn" :class="{off: fontScale <= 0.8}" @click="stepFont(-1)">A−</text>
@@ -105,7 +105,43 @@
 
 			<!-- 工作表：行列冻结的 Excel 网格 -->
 			<view class="sheet-wrap">
-				<scroll-view class="sheet-scroll" scroll-x scroll-y :show-scrollbar="false">
+				<!-- 搜索结果面板：悬浮在表格上方，点「定位」切到对应分区并滚动居中 -->
+				<view class="ss-panel" v-if="searchOpen && keyword.trim()">
+					<view class="ssp-head">
+						<text>匹配到 {{searchResults.length}} 个座位</text>
+						<text class="ssp-close" @click="searchOpen = false">收起</text>
+					</view>
+					<scroll-view class="ssp-list" scroll-y :show-scrollbar="false" v-if="searchResults.length > 0">
+						<view class="ssp-item" v-for="it in searchResults" :key="it.key" @click="locateResult(it)">
+							<view class="ssp-dot" :style="{background: it.mine ? seatColorMap.mine : seatColorMap.taken}"></view>
+							<view class="ssp-main">
+								<view class="ssp-line1">
+									<text class="ssp-label">{{it.label}}</text>
+									<text class="ssp-state" :class="it.mine ? 'mine' : 'taken'">{{it.mine ? '我的' : '已占'}}</text>
+								</view>
+								<view class="ssp-line2">
+									<text class="ssp-nick"><text v-for="(p, pi) in hitParts(it.nickname)" :key="'n' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-remark" v-if="it.remark"><text v-for="(p, pi) in hitParts(it.remark)" :key="'r' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-remark none" v-else>未留备注</text>
+								</view>
+							</view>
+							<text class="ssp-go">定位</text>
+						</view>
+					</scroll-view>
+					<view class="ssp-empty" v-else>
+						<text>没有找到匹配的座位</text>
+						<text class="ssp-empty-sub">试试其他昵称或备注关键词</text>
+					</view>
+				</view>
+				<scroll-view
+					class="sheet-scroll"
+					scroll-x scroll-y
+					:show-scrollbar="false"
+					:scroll-left="scrollLeft"
+					:scroll-top="scrollTop"
+					scroll-with-animation
+					@click="searchOpen = false"
+				>
 					<view class="sheet" :key="curAreaId" :style="{fontSize: cellFont + 'rpx'}">
 						<view class="s-row s-head">
 							<view class="s-cell s-corner">排＼号</view>
@@ -122,6 +158,7 @@
 								class="s-cell s-seat"
 								v-for="c in rw.cells"
 								:key="c.col"
+								:id="'seat-cell-' + c.row + '-' + c.col"
 								:class="seatClass(c)"
 								:style="seatStyle(c)"
 								@click="tapCell(c)"
@@ -198,6 +235,15 @@
 				selected: null,
 				keyword: '',
 				searchFocused: false,
+				// 搜索结果面板开关（与选座页一致：有关键词即展开，点定位/表格即收起）
+				searchOpen: false,
+				// 表格滚动定位：scroll-view 受控偏移 + 定位脉冲高亮
+				scrollLeft: 0,
+				scrollTop: 0,
+				locateKey: '',
+				locTimer: null,
+				locSeq: 0,
+				lastLocate: null,
 				fontScale: 1,
 				showEmptyNo: true
 			}
@@ -215,6 +261,12 @@
 				return
 			}
 			this.loadRoster()
+		},
+		// 横竖屏旋转（pageOrientation: auto）后视口尺寸变化，把上次定位的格子重新居中
+		onResize() {
+			if (!this.lastLocate) return
+			const t = this.lastLocate
+			this.$nextTick(() => { setTimeout(() => this.scrollToCell(t.row, t.col), 150) })
 		},
 		onShareAppMessage() {
 			return {
@@ -299,12 +351,30 @@
 					})
 				}))
 			},
-			matchCount() {
+			// 全场搜索：跨分区按昵称/备注匹配，结果按分区→排→号排序，供面板一键定位
+			searchResults() {
 				const kw = String(this.keyword || '').trim().toLowerCase()
-				if (!kw || !this.curArea) return 0
-				let n = 0
-				this.sheetRows.forEach(rw => rw.cells.forEach(c => { if (c.hit) n++ }))
-				return n
+				if (!kw) return []
+				const out = []
+				this.seatAreas.forEach(area => {
+					this.seats.forEach(s => {
+						if (s.areaId !== area._id) return
+						const nickname = String(s.nickname || '').trim()
+						const remark = String(s.remark || '')
+						if (nickname.toLowerCase().indexOf(kw) < 0 && remark.toLowerCase().indexOf(kw) < 0) return
+						out.push({
+							key: `${s.areaId}-${s.row}-${s.col}`,
+							areaId: s.areaId,
+							row: s.row,
+							col: s.col,
+							nickname: nickname || '微信用户',
+							remark,
+							mine: !!s.mine,
+							label: this.buildLabel(area, s.row, s.col)
+						})
+					})
+				})
+				return out
 			},
 			selRef() {
 				const s = this.selected
@@ -331,6 +401,10 @@
 			// 切换分区后若选中格不在本区，清空编辑栏
 			curAreaId() {
 				if (this.selected && this.selected.areaId !== this.curAreaId) this.selected = null
+			},
+			// 有关键词就展开结果面板，清空即收起
+			keyword(v) {
+				this.searchOpen = !!String(v || '').trim()
 			}
 		},
 		methods: {
@@ -433,6 +507,7 @@
 				if (c.occ) cls.push(c.occ.mine ? 'mine' : 'taken')
 				if (c.hit) cls.push('hit')
 				if (c.dim) cls.push('dim')
+				if (this.locateKey === `${c.row}-${c.col}`) cls.push('locate')
 				const s = this.selected
 				if (s && this.curArea && s.areaId === this.curArea._id && s.row === c.row && s.col === c.col) cls.push('sel')
 				return cls
@@ -481,6 +556,67 @@
 			stepFont(d) {
 				const next = Math.round((this.fontScale + d * 0.1) * 10) / 10
 				this.fontScale = Math.min(1.4, Math.max(0.8, next))
+			},
+
+			// ===== 搜索定位（参考选座页：结果面板 → 切分区 → 滚动居中 → 脉冲高亮） =====
+			onSearchFocus() {
+				this.searchFocused = true
+				if (String(this.keyword || '').trim()) this.searchOpen = true
+			},
+			clearSearch() {
+				this.keyword = ''
+				this.searchOpen = false
+			},
+			// 把文本按命中关键词切成片段，供结果列表高亮展示命中部分
+			hitParts(text) {
+				const t = String(text || '')
+				const kw = String(this.keyword || '').trim().toLowerCase()
+				if (!t) return [{ t: '', hit: false }]
+				if (!kw) return [{ t, hit: false }]
+				const parts = []
+				const lower = t.toLowerCase()
+				let i = 0
+				let idx = lower.indexOf(kw)
+				while (idx >= 0) {
+					if (idx > i) parts.push({ t: t.slice(i, idx), hit: false })
+					parts.push({ t: t.slice(idx, idx + kw.length), hit: true })
+					i = idx + kw.length
+					idx = lower.indexOf(kw, i)
+				}
+				if (i < t.length) parts.push({ t: t.slice(i), hit: false })
+				return parts
+			},
+			// 点击搜索结果：收起面板，切到目标分区工作表，选中该格并滚动居中，脉冲高亮几秒
+			locateResult(it) {
+				this.searchOpen = false
+				this.curAreaId = it.areaId
+				this.selected = { areaId: it.areaId, row: it.row, col: it.col }
+				this.lastLocate = { row: it.row, col: it.col }
+				this.locateKey = `${it.row}-${it.col}`
+				if (this.locTimer) clearTimeout(this.locTimer)
+				this.locTimer = setTimeout(() => { this.locateKey = '' }, 2600)
+				// 分区表按 curAreaId 重建，等渲染完再量位置
+				this.$nextTick(() => { setTimeout(() => this.scrollToCell(it.row, it.col), 120) })
+			},
+			// 量目标格与视口的相对位置，算出让它居中所需的 scrollLeft/scrollTop
+			scrollToCell(row, col) {
+				const q = uni.createSelectorQuery().in(this)
+				q.select('#seat-cell-' + row + '-' + col).boundingClientRect()
+				q.select('.sheet-scroll').boundingClientRect()
+				q.select('.sheet-scroll').scrollOffset()
+				q.exec((res) => {
+					const cell = res[0]
+					const view = res[1]
+					const off = res[2]
+					if (!cell || !view || !off) return
+					const left = Math.max(0, off.scrollLeft + (cell.left - view.left) - (view.width - cell.width) / 2)
+					const top = Math.max(0, off.scrollTop + (cell.top - view.top) - (view.height - cell.height) / 2)
+					// 受控值相同不会再次触发滚动，交替加 0.1px 微扰保证重复定位同一格也生效
+					this.locSeq++
+					const nudge = (this.locSeq % 2) * 0.1
+					this.scrollLeft = left + nudge
+					this.scrollTop = top + nudge
+				})
 			},
 
 			// ===== 复制全场名单（按分区分组，座位号排序） =====
@@ -1167,7 +1303,16 @@ $red: #ef4444;
 		}
 	}
 	&.hit.sel { box-shadow: inset 0 0 0 4rpx $green, inset 0 0 0 7rpx rgba(239, 68, 68, 0.55); }
+	/* 搜索定位：绿框→红框脉冲三次后自动消退 */
+	&.locate {
+		z-index: 6;
+		animation: locatePulse 0.85s ease-in-out 3;
+	}
 	&:active { filter: brightness(0.96); }
+}
+@keyframes locatePulse {
+	0%, 100% { box-shadow: inset 0 0 0 4rpx $green; }
+	50% { box-shadow: inset 0 0 0 6rpx $red, 0 0 20rpx rgba(239, 68, 68, 0.55); }
 }
 .sheet-empty {
 	position: absolute;
@@ -1190,6 +1335,133 @@ $red: #ef4444;
 	background: #f8fafc;
 	border-top: 1rpx solid $line;
 	padding: 8rpx 0;
+}
+
+/* ===== 搜索结果面板（悬浮在表格上方，不挤占网格高度） ===== */
+.ss-panel {
+	position: absolute;
+	top: 10rpx;
+	left: 10rpx;
+	right: 10rpx;
+	max-height: 76%;
+	display: flex;
+	flex-direction: column;
+	background: #fff;
+	border: 1rpx solid $line;
+	border-radius: 14rpx;
+	box-shadow: 0 16rpx 48rpx rgba(30, 41, 59, 0.22);
+	z-index: 60;
+	overflow: hidden;
+}
+.ssp-head {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14rpx 20rpx;
+	font-size: 22rpx;
+	color: #64748b;
+	background: #f8fafc;
+	border-bottom: 1rpx solid $line;
+}
+.ssp-close {
+	color: $green-deep;
+	font-weight: 600;
+	padding: 0 8rpx;
+}
+.ssp-list {
+	flex: 1;
+	min-height: 0;
+	max-height: 480rpx;
+}
+.ssp-item {
+	display: flex;
+	align-items: center;
+	padding: 14rpx 20rpx;
+	border-bottom: 1rpx solid #eef1f5;
+	&:active { background: #f0fdf4; }
+}
+.ssp-dot {
+	flex-shrink: 0;
+	width: 18rpx;
+	height: 18rpx;
+	border-radius: 4rpx;
+	margin-right: 14rpx;
+}
+.ssp-main {
+	flex: 1;
+	min-width: 0;
+}
+.ssp-line1 {
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+}
+.ssp-label {
+	font-size: 24rpx;
+	font-weight: 700;
+	color: $ink;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.ssp-state {
+	flex-shrink: 0;
+	font-size: 18rpx;
+	line-height: 28rpx;
+	padding: 0 10rpx;
+	border-radius: 12rpx;
+	&.mine { color: #92400e; background: #fef3c7; }
+	&.taken { color: #0e7490; background: #cffafe; }
+}
+.ssp-line2 {
+	display: flex;
+	gap: 12rpx;
+	margin-top: 4rpx;
+	font-size: 22rpx;
+	color: #475569;
+	white-space: nowrap;
+	overflow: hidden;
+
+	.hit { color: $red; font-weight: 700; }
+}
+.ssp-nick {
+	flex-shrink: 0;
+	max-width: 45%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.ssp-remark {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: #64748b;
+	&.none { color: #b6c2d2; }
+}
+.ssp-go {
+	flex-shrink: 0;
+	margin-left: 14rpx;
+	font-size: 22rpx;
+	font-weight: 600;
+	color: #fff;
+	background: linear-gradient(135deg, $green 0%, $green-deep 100%);
+	border-radius: 22rpx;
+	padding: 6rpx 22rpx;
+	box-shadow: 0 4rpx 12rpx rgba(16, 124, 65, 0.25);
+}
+.ssp-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8rpx;
+	padding: 40rpx 0;
+	font-size: 24rpx;
+	color: #64748b;
+}
+.ssp-empty-sub {
+	font-size: 20rpx;
+	color: #94a3b8;
 }
 
 /* ===== 工作表标签 ===== */
@@ -1257,5 +1529,101 @@ $red: #ef4444;
 		.tab-n { background: #dcfce7; color: $green-deep; }
 	}
 	&:active { opacity: 0.8; }
+}
+
+/* ===== 横屏（pageOrientation: auto）：rpx 随长边变大，改用 px 压缩头部/工具/标签，把高度留给表格 ===== */
+@media (orientation: landscape) {
+	.banner {
+		padding: 8px 14px 10px;
+
+		.bn-title { font-size: 16px; }
+		.bn-sub { font-size: 11px; margin-top: 2px; }
+		.bn-btn { font-size: 11px; padding: 3px 12px; border-radius: 13px; }
+		.bn-stats { margin-top: 6px; gap: 18px; }
+		.stat {
+			.st-num { font-size: 18px; }
+			.st-lab { font-size: 10px; margin-top: 1px; }
+		}
+		.occ {
+			.occ-bar { height: 6px; border-radius: 3px; }
+			.occ-text { font-size: 10px; margin-top: 2px; }
+		}
+	}
+	.fx-bar {
+		padding: 4px 8px;
+
+		.fx-name { height: 26px; line-height: 24px; font-size: 11px; max-width: 130px; padding: 0 8px; }
+		.fx-icon { font-size: 12px; padding: 0 8px; }
+		.fx-content { height: 26px; }
+		.fx-text { font-size: 12px; line-height: 26px; }
+	}
+	.toolbar {
+		padding: 4px 8px 2px;
+		gap: 6px;
+
+		.tb-search { height: 30px; border-radius: 15px; padding: 0 10px; }
+		.tb-icon { width: 10px; height: 10px; border-width: 2px; margin-right: 7px; }
+		.tb-input { height: 30px; font-size: 12px; }
+		.tb-hit { font-size: 10px; padding: 1px 6px; }
+		.tb-clear { font-size: 16px; }
+		.tb-font {
+			height: 30px; border-radius: 15px;
+			.tf-btn { font-size: 12px; line-height: 26px; padding: 0 7px; }
+			.tf-val { font-size: 10px; min-width: 32px; }
+		}
+		.tb-copy { height: 30px; line-height: 30px; font-size: 12px; padding: 0 13px; border-radius: 15px; }
+	}
+	.toolbar2 {
+		padding: 2px 10px 4px;
+
+		.legend { gap: 10px; .lg { font-size: 10px; } .dot { width: 9px; height: 9px; margin-right: 3px; } }
+		.tg-empty {
+			font-size: 10px;
+			.tg-track { width: 28px; height: 15px; margin-right: 5px; }
+			.tg-knob { width: 12px; height: 12px; top: 1.5px; left: 1.5px; }
+			&.on .tg-knob { transform: translateX(13px); }
+		}
+	}
+	.sheet-wrap { margin: 0 8px; border-radius: 8px 8px 0 0; }
+	.sheet { font-size: 11px !important; }
+	.s-corner, .s-rowh { width: 48px; font-size: 11px; }
+	.s-corner { height: 30px; font-size: 10px; }
+	.s-colh { width: 88px; height: 30px; font-size: 11px; }
+	.s-rowh { height: 56px; }
+	.s-seat {
+		width: 88px;
+		height: 56px;
+		padding: 4px 5px;
+
+		.se-mine { font-size: 8px; padding: 2px 4px; }
+		.se-sub { font-size: 9px !important; margin-top: 2px; }
+		.se-empty { font-size: 10px; }
+	}
+	.sheet-hint { font-size: 10px; padding: 3px 0; }
+	.ss-panel {
+		top: 6px; left: 6px; right: 6px; border-radius: 8px;
+
+		.ssp-head { padding: 5px 10px; font-size: 11px; }
+		.ssp-list { max-height: 46vh; }
+		.ssp-item { padding: 5px 10px; }
+		.ssp-dot { width: 9px; height: 9px; margin-right: 7px; }
+		.ssp-label { font-size: 12px; }
+		.ssp-state { font-size: 9px; line-height: 14px; padding: 0 5px; }
+		.ssp-line2 { font-size: 11px; margin-top: 1px; gap: 6px; }
+		.ssp-go { font-size: 11px; padding: 2px 11px; margin-left: 7px; }
+		.ssp-empty { padding: 16px 0; font-size: 12px; }
+		.ssp-empty-sub { font-size: 10px; }
+	}
+	.tabs {
+		padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+
+		.tab {
+			height: 30px; padding: 0 12px; border-radius: 6px 6px 0 0;
+			.tab-dot { width: 7px; height: 7px; margin-right: 5px; }
+			.tab-name { font-size: 12px; max-width: 110px; }
+			.tab-n { font-size: 10px; line-height: 16px; padding: 0 6px; margin-left: 5px; }
+			&.active { height: 33px; border-top-width: 3px; }
+		}
+	}
 }
 </style>
