@@ -64,7 +64,7 @@
 				<view class="fx-name" :class="{on: !!selected}">{{selRef || '—'}}</view>
 				<text class="fx-icon">fx</text>
 				<scroll-view class="fx-content" scroll-x :show-scrollbar="false">
-					<text class="fx-text" :class="{ph: !selText}">{{selText || '点击单元格，这里显示完整昵称与备注'}}</text>
+					<text class="fx-text" :class="{ph: !selText}">{{selText || '点击单元格，这里显示完整备注与昵称'}}</text>
 				</scroll-view>
 			</view>
 
@@ -120,9 +120,8 @@
 									<text class="ssp-state" :class="it.mine ? 'mine' : 'taken'">{{it.mine ? '我的' : '已占'}}</text>
 								</view>
 								<view class="ssp-line2">
-									<text class="ssp-nick"><text v-for="(p, pi) in hitParts(it.nickname)" :key="'n' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
-									<text class="ssp-remark" v-if="it.remark"><text v-for="(p, pi) in hitParts(it.remark)" :key="'r' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
-									<text class="ssp-remark none" v-else>未留备注</text>
+									<text class="ssp-main-text" :class="{none: !it.remark && !it.hasNick}"><text v-for="(p, pi) in hitParts(it.main)" :key="'m' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-sub-text" v-if="it.sub"><text v-for="(p, pi) in hitParts(it.sub)" :key="'s' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
 								</view>
 							</view>
 							<text class="ssp-go">定位</text>
@@ -165,7 +164,7 @@
 							>
 								<block v-if="c.occ">
 									<text class="se-mine" v-if="c.occ.mine">我</text>
-									<text class="se-main" :class="{only: c.remarkOnly}">{{c.main}}</text>
+									<text class="se-main" :class="{only: c.placeholder}">{{c.main}}</text>
 									<text class="se-sub" v-if="c.sub" :style="{fontSize: (cellFont - 4) + 'rpx'}">{{c.sub}}</text>
 								</block>
 								<text class="se-empty" v-else-if="showEmptyNo">{{c.label}}</text>
@@ -318,7 +317,7 @@
 			cellFont() {
 				return Math.round(22 * this.fontScale)
 			},
-			// 当前分区逐格预处理：展示文案按「微信用户→仅备注，否则昵称+备注」规则生成，
+			// 当前分区逐格预处理：展示文案按「以备注为主：有备注突出备注（昵称退为副标题），无备注突出昵称」规则生成，
 			// 筛选命中标记与淡出也在这里算好，模板只做渲染
 			sheetRows() {
 				const area = this.curArea
@@ -332,22 +331,24 @@
 						const occ = this.occMap[`${area._id}-${row}-${col}`] || null
 						let main = ''
 						let sub = ''
-						let remarkOnly = false
+						let placeholder = false
 						let hit = false
 						let dim = false
 						if (occ) {
 							const nick = String(occ.nickname || '').trim()
-							remarkOnly = !nick || nick === '微信用户'
-							main = remarkOnly ? (occ.remark || '未留备注') : nick
-							sub = remarkOnly ? '' : (occ.remark || '')
+							const remark = String(occ.remark || '').trim()
+							const realNick = nick && nick !== '微信用户' ? nick : ''
+							main = remark || realNick || '未留备注'
+							sub = remark ? realNick : ''
+							placeholder = !remark && !realNick
 							if (kw) {
-								hit = nick.toLowerCase().indexOf(kw) >= 0 || String(occ.remark || '').toLowerCase().indexOf(kw) >= 0
+								hit = nick.toLowerCase().indexOf(kw) >= 0 || remark.toLowerCase().indexOf(kw) >= 0
 								dim = !hit
 							}
 						} else if (kw) {
 							dim = true
 						}
-						return { row, col, label: cl, occ, main, sub, remarkOnly, hit, dim }
+						return { row, col, label: cl, occ, main, sub, placeholder, hit, dim }
 					})
 				}))
 			},
@@ -360,8 +361,9 @@
 					this.seats.forEach(s => {
 						if (s.areaId !== area._id) return
 						const nickname = String(s.nickname || '').trim()
-						const remark = String(s.remark || '')
+						const remark = String(s.remark || '').trim()
 						if (nickname.toLowerCase().indexOf(kw) < 0 && remark.toLowerCase().indexOf(kw) < 0) return
+						const realNick = nickname && nickname !== '微信用户' ? nickname : ''
 						out.push({
 							key: `${s.areaId}-${s.row}-${s.col}`,
 							areaId: s.areaId,
@@ -369,6 +371,10 @@
 							col: s.col,
 							nickname: nickname || '微信用户',
 							remark,
+							hasNick: !!realNick,
+							// 与表格同规则：备注优先作主标题，昵称退为副标题
+							main: remark || realNick || '未留备注',
+							sub: remark ? realNick : '',
 							mine: !!s.mine,
 							label: this.buildLabel(area, s.row, s.col)
 						})
@@ -392,8 +398,12 @@
 				const occ = this.occMap[`${s.areaId}-${s.row}-${s.col}`]
 				if (!occ) return label + ' · 空座'
 				const nick = String(occ.nickname || '').trim()
-				const remarkOnly = !nick || nick === '微信用户'
-				const who = remarkOnly ? ('备注：' + (occ.remark || '未留备注')) : ('昵称：' + nick + (occ.remark ? '　备注：' + occ.remark : '　备注：未留'))
+				const remark = String(occ.remark || '').trim()
+				const realNick = nick && nick !== '微信用户' ? nick : ''
+				// 与单元格同规则：备注优先展示，昵称随后
+				const who = remark
+					? ('备注：' + remark + (realNick ? '　昵称：' + realNick : ''))
+					: (realNick ? '昵称：' + realNick + '　备注：未留' : '未留备注')
 				return label + (occ.mine ? '（我的）' : '') + ' · ' + who
 			}
 		},
@@ -1254,7 +1264,7 @@ $red: #ef4444;
 		overflow: hidden;
 		text-overflow: ellipsis;
 
-		/* 微信用户：仅备注，用青蓝斜体区分“这是备注不是昵称” */
+		/* 无备注也无昵称时的「未留备注」占位，用青蓝斜体弱化 */
 		&.only {
 			color: #0e7490;
 			font-style: italic;
@@ -1425,19 +1435,21 @@ $red: #ef4444;
 
 	.hit { color: $red; font-weight: 700; }
 }
-.ssp-nick {
-	flex-shrink: 0;
-	max-width: 45%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-.ssp-remark {
+.ssp-main-text {
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	color: #64748b;
-	&.none { color: #b6c2d2; }
+	color: $ink;
+	font-weight: 600;
+	&.none { color: #b6c2d2; font-weight: 400; font-style: italic; }
+}
+.ssp-sub-text {
+	flex-shrink: 0;
+	max-width: 40%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: #94a3b8;
 }
 .ssp-go {
 	flex-shrink: 0;
