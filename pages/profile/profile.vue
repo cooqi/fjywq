@@ -5,9 +5,13 @@
 			<view class="login-content">
 				<view class="login-title">欢迎使用宇青青宇备忘录</view>
 				<view class="login-desc">登录后可以记录你的追星历程，还有更多 surprises 等你来发现</view>
-				<view class="login-desc">登录即是认同青宇/宇青</view>
-				<view class="login-desc" @click="goPrivacy">《隐私说明》</view>
-				<button class="login-btn" @click="getUserInfo">立即登录</button>
+				<view class="agree-row" :class="{ 'agree-row--shake': agreeShake }" @click="toggleAgree">
+					<view class="agree-checkbox" :class="{ 'agree-checkbox--checked': agreed }">
+						<text v-if="agreed" class="agree-check-icon">✓</text>
+					</view>
+					<view class="agree-text">登录即青宇99/宇青99，我已阅读并同意<text class="agree-link" @click.stop="goPrivacy">《隐私说明》</text></view>
+				</view>
+				<button class="login-btn" :class="{ 'login-btn--disabled': !agreed }" @click="getUserInfo">立即登录</button>
 			</view>
 		</view>
 		
@@ -112,6 +116,8 @@
 				todoCount: 0,
 				joinDays: 0, // 入坑天数
 				canManageConcert: false, // 是否有演唱会管理权限
+				agreed: false, // 是否已勾选同意隐私说明
+				agreeShake: false, // 未勾选时点击登录的抖动提示
 				showProvincePopup: false, // 省份选择弹窗
 				provinceList: ['北京','天津','上海','重庆','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','内蒙古','广西','西藏','宁夏','新疆','香港','澳门','台湾'],
 				// 编辑表单数据
@@ -142,15 +148,29 @@
 				this.canManageConcert = hasConcertPermission(this.userInfo, 'manage')
 				if (this.userInfo._id) {
 					this.getUserStats()
-				} else {
-					this.getUserInfo()
 				}
-			} else {
-				this.getUserInfo()
 			}
+			// 未登录时不再自动拉起登录，需用户勾选同意后手动点击登录
 		},
 		methods: {
+			// 切换勾选同意状态
+			toggleAgree() {
+				this.agreed = !this.agreed
+			},
 			getUserInfo() {
+				// 未勾选同意隐私说明时禁止登录
+				if (!this.agreed) {
+					uni.showToast({
+						title: '请先勾选同意《隐私说明》',
+						icon: 'none'
+					})
+					this.agreeShake = false
+					this.$nextTick(() => {
+						this.agreeShake = true
+						setTimeout(() => { this.agreeShake = false }, 500)
+					})
+					return
+				}
 				const _this = this
 				uni.getUserProfile({
 					desc: '用于完善会员资料',
@@ -559,6 +579,56 @@
 			margin-bottom: 48rpx;
 		}
 		
+		// 勾选同意行
+		.agree-row {
+			display: flex;
+			align-items: flex-start;
+			text-align: left;
+			margin-bottom: 40rpx;
+			padding: 8rpx 4rpx;
+			
+			&--shake {
+				animation: agree-shake 0.4s ease;
+			}
+			
+			.agree-checkbox {
+				flex-shrink: 0;
+				width: 36rpx;
+				height: 36rpx;
+				border: 3rpx solid #c9b8e8;
+				border-radius: 50%;
+				margin-right: 16rpx;
+				margin-top: 2rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: #fff;
+				transition: all 0.2s;
+				
+				&--checked {
+					border-color: #c62828;
+					background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+				}
+				
+				.agree-check-icon {
+					color: #fff;
+					font-size: 24rpx;
+					line-height: 1;
+				}
+			}
+			
+			.agree-text {
+				flex: 1;
+				font-size: 24rpx;
+				color: #999;
+				line-height: 1.6;
+				
+				.agree-link {
+					color: #8b5cf6;
+				}
+			}
+		}
+		
 		.login-btn {
 			width: 100%;
 			height: 88rpx;
@@ -567,6 +637,11 @@
 			border-radius: 44rpx;
 			font-size: 32rpx;
 			border: none;
+			transition: opacity 0.2s;
+			
+			&--disabled {
+				opacity: 0.45;
+			}
 		}
 	}
 }
@@ -835,5 +910,13 @@
 
 .province-option:active {
 	background: #f0f0f0;
+}
+
+@keyframes agree-shake {
+	0%, 100% { transform: translateX(0); }
+	20% { transform: translateX(-12rpx); }
+	40% { transform: translateX(12rpx); }
+	60% { transform: translateX(-8rpx); }
+	80% { transform: translateX(8rpx); }
 }
 </style>
