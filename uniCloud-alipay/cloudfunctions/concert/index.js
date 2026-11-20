@@ -39,9 +39,10 @@ async function getConcertList(event) {
 			];
 		}
 		
+		// 按演出时间倒序，最新场次在最前
 		const res = await db.collection('Concert')
 			.where(query)
-			.orderBy('time', 'asc')
+			.orderBy('time', 'desc')
 			.get();
 		
 		return {

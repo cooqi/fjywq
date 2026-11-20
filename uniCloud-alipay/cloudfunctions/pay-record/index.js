@@ -298,12 +298,23 @@ exports.main = async (event, context) => {
 				.orderBy('creatTime', 'desc')
 				.get()
 			
-			console.log('查询结果数量:', res.data.length)
+			// 兼容存量数据：creatTime 可能是字符串时间戳，跨类型 orderBy 会错乱，
+			// 归一化为毫秒数字后再按创建时间倒序（最新在最前）
+			const toTimeNum = (val) => {
+				if (typeof val === 'number' && isFinite(val)) return val
+				const str = String(val === null || val === undefined ? '' : val).trim()
+				if (/^\d{13}$/.test(str)) return Number(str)
+				const parsed = Date.parse(str)
+				return isFinite(parsed) ? parsed : 0
+			}
+			const list = (res.data || []).sort((a, b) => toTimeNum(b.creatTime) - toTimeNum(a.creatTime))
+			
+			console.log('查询结果数量:', list.length)
 			
 			return {
 				code: 0,
 				message: '查询成功',
-				data: res.data
+				data: list
 			}
 		} catch (err) {
 			console.error('查询失败:', err)
