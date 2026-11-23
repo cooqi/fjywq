@@ -72,8 +72,9 @@ function buildSeatLabel(area, row, col) {
 	const c = colLabelOf(area, col);
 	const rText = /[排座]$/.test(r) ? r : `${r}排`;
 	const cText = /[号座]$/.test(c) ? c : `${c}号`;
-	
-	return `${(area && area.name) || ''}${rText}${cText}`;
+	const name = (area && area.name) || '';
+	// 分区名与排号之间加空格，避免「VIP1 11排」与「VIP 11排」产生歧义
+	return name ? `${name} ${rText}${cText}` : `${rText}${cText}`;
 }
 
 // 读取分区配置（含自定义编号数组），按 sort 排序；getSeatMap / getRoster 共用
