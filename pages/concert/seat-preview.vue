@@ -1228,13 +1228,14 @@ $red: #ef4444;
 	position: sticky;
 	left: 0;
 	z-index: 10;
-	height: 116rpx;
+	min-height: 116rpx;
 	font-weight: 600;
 }
 .s-seat {
 	position: relative;
 	width: 176rpx;
-	height: 116rpx;
+	/* 高度随内容撑开：备注/昵称换行后整行变高，行首用 min-height 跟随拉伸 */
+	min-height: 116rpx;
 	padding: 8rpx 10rpx;
 	display: flex;
 	flex-direction: column;
@@ -1255,14 +1256,18 @@ $red: #ef4444;
 		border-radius: 0 0 0 10rpx;
 		z-index: 2;
 	}
+	/* 昵称与备注均自动换行：超出行数用省略号收尾，完整内容见 fx 编辑栏 / 点击弹窗 */
 	.se-main {
-		display: block;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
 		font-weight: 600;
 		color: $ink;
 		line-height: 1.3;
-		white-space: nowrap;
+		white-space: normal;
+		word-break: break-all;
 		overflow: hidden;
-		text-overflow: ellipsis;
 
 		/* 无备注也无昵称时的「未留备注」占位，用青蓝斜体弱化 */
 		&.only {
@@ -1272,13 +1277,16 @@ $red: #ef4444;
 		}
 	}
 	.se-sub {
-		display: block;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		color: #64748b;
 		line-height: 1.3;
 		margin-top: 4rpx;
-		white-space: nowrap;
+		white-space: normal;
+		word-break: break-all;
 		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 	.se-empty {
 		color: #cbd5e1;
@@ -1287,6 +1295,8 @@ $red: #ef4444;
 		width: 100%;
 	}
 
+	/* 我的座位：正文下沉让出右上角「我」角标，避免换行后的首行被角标压住 */
+	&.mine { padding-top: 32rpx; }
 	&.mine .se-main { color: #92400e; }
 	&.mine .se-main.only { color: #0e7490; }
 	&.dim { opacity: 0.28; }
@@ -1601,12 +1611,13 @@ $red: #ef4444;
 	.s-corner, .s-rowh { width: 48px; font-size: 11px; }
 	.s-corner { height: 30px; font-size: 10px; }
 	.s-colh { width: 88px; height: 30px; font-size: 11px; }
-	.s-rowh { height: 56px; }
+	.s-rowh { min-height: 56px; }
 	.s-seat {
 		width: 88px;
-		height: 56px;
+		min-height: 56px;
 		padding: 4px 5px;
 
+		&.mine { padding-top: 16px; }
 		.se-mine { font-size: 8px; padding: 2px 4px; }
 		.se-sub { font-size: 9px !important; margin-top: 2px; }
 		.se-empty { font-size: 10px; }
