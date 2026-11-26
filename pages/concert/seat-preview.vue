@@ -168,6 +168,11 @@
 									<text class="se-sub" v-if="c.sub" :style="{fontSize: (cellFont - 4) + 'rpx'}">{{c.sub}}</text>
 								</block>
 								<text class="se-empty" v-else-if="showEmptyNo">{{c.label}}</text>
+								<!-- 座位标签名：右下角胶囊（最多显示 2 个，其余折叠为 +N） -->
+								<view class="se-tags" v-if="c.tagsDisp.length > 0">
+									<text class="se-tag" v-for="(t, ti) in c.tagsDisp" :key="ti" :style="{background: t.color, color: t.textColor}">{{t.name}}</text>
+									<text class="se-tag more" v-if="c.tagsMore > 0">+{{c.tagsMore}}</text>
+								</view>
 							</view>
 						</view>
 					</view>
@@ -225,6 +230,8 @@
 				areas: [],
 				seats: [],
 				seatColors: {},
+				// 座位标签定义（Concert.seat_tags），单元格右下角圆点展示
+				seatTags: [],
 				seatEnabled: false,
 				emptyText: '本场次不开放选座',
 				totalSelected: 0,
@@ -293,6 +300,44 @@
 				})
 				return out
 			},
+			// 标签定义（Concert.seat_tags）；空名回退「未命名」，非法颜色回退橙色
+			tagDefs() {
+				const list = Array.isArray(this.seatTags) ? this.seatTags : []
+				return list.filter(t => t && t.id).map(t => {
+					const name = String(t.name || '').trim().slice(0, 8)
+					const color = /^#[0-9a-fA-F]{6}$/.test(String(t.color || '')) ? String(t.color).toLowerCase() : '#ef6c00'
+					// 按底色亮度自动选前景色：深色底白字、浅色底深字，保证胶囊文字可读
+					const n = parseInt(color.slice(1), 16)
+					const luma = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255
+					return {
+						id: String(t.id),
+						name: name || '未命名',
+						color,
+						textColor: luma > 0.62 ? '#37474f' : '#ffffff'
+					}
+				})
+			},
+			tagDefMap() {
+				const map = {}
+				this.tagDefs.forEach(t => { map[t.id] = t })
+				return map
+			},
+			// 打标索引：`${areaId}-${row}-${col}` → 标签定义对象数组（每座≤3）
+			seatTagIndex() {
+				const index = {}
+				const defMap = this.tagDefMap
+				;(this.areas || []).forEach(area => {
+					const list = Array.isArray(area.seatTags) ? area.seatTags : []
+					list.forEach(item => {
+						const tags = (Array.isArray(item.tags) ? item.tags : [])
+							.map(id => defMap[String(id)])
+							.filter(Boolean)
+							.slice(0, 3)
+						if (tags.length > 0) index[`${area._id}-${item.row}-${item.col}`] = tags
+					})
+				})
+				return index
+			},
 			// 占座索引：`${areaId}-${row}-${col}` → 记录
 			occMap() {
 				const map = {}
@@ -348,7 +393,13 @@
 						} else if (kw) {
 							dim = true
 						}
-						return { row, col, label: cl, occ, main, sub, placeholder, hit, dim }
+						const tags = this.seatTagIndex[`${area._id}-${row}-${col}`] || []
+						// 单元格只放前 2 个标签名，其余折叠为 +N（完整名称见 fx 栏/点击详情）
+						return {
+							row, col, label: cl, occ, main, sub, placeholder, hit, dim, tags,
+							tagsDisp: tags.slice(0, 2),
+							tagsMore: Math.max(0, tags.length - 2)
+						}
 					})
 				}))
 			},
@@ -395,8 +446,10 @@
 				const area = this.seatAreas.find(a => a._id === s.areaId)
 				if (!area) return ''
 				const label = this.buildLabel(area, s.row, s.col)
+				const tags = this.seatTagIndex[`${s.areaId}-${s.row}-${s.col}`] || []
+				const tagText = tags.length ? '　标签：' + tags.map(t => t.name).join('、') : ''
 				const occ = this.occMap[`${s.areaId}-${s.row}-${s.col}`]
-				if (!occ) return label + ' · 空座'
+				if (!occ) return label + ' · 空座' + tagText
 				const nick = String(occ.nickname || '').trim()
 				const remark = String(occ.remark || '').trim()
 				const realNick = nick && nick !== '微信用户' ? nick : ''
@@ -404,7 +457,7 @@
 				const who = remark
 					? ('备注：' + remark + (realNick ? '　昵称：' + realNick : ''))
 					: (realNick ? '昵称：' + realNick + '　备注：未留' : '未留备注')
-				return label + (occ.mine ? '（我的）' : '') + ' · ' + who
+				return label + (occ.mine ? '（我的）' : '') + ' · ' + who + tagText
 			}
 		},
 		watch: {
@@ -479,6 +532,7 @@
 				this.areas = d.areas || []
 				this.seats = d.seats || []
 				this.seatColors = d.seatColors || {}
+				this.seatTags = d.seatTags || []
 				this.totalSelected = Number(d.totalSelected) || 0
 				this.totalCapacity = Number(d.totalCapacity) || 0
 				// 保留当前分区（若仍存在），否则落到第一张表
@@ -517,6 +571,8 @@
 				if (c.occ) cls.push(c.occ.mine ? 'mine' : 'taken')
 				if (c.hit) cls.push('hit')
 				if (c.dim) cls.push('dim')
+				// 有标签的占座格底部留出胶囊空间，避免遮挡正文末行
+				if (c.occ && c.tags && c.tags.length > 0) cls.push('has-tag')
 				if (this.locateKey === `${c.row}-${c.col}`) cls.push('locate')
 				const s = this.selected
 				if (s && this.curArea && s.areaId === this.curArea._id && s.row === c.row && s.col === c.col) cls.push('sel')
@@ -543,10 +599,13 @@
 				const label = this.buildLabel(this.curArea, c.row, c.col)
 				const nick = String(occ.nickname || '').trim() || '微信用户'
 				const remark = occ.remark || '未留备注'
+				// 标签名称随详情展示，弥补单元格圆点看不到名称的不足
+				const tags = this.seatTagIndex[`${this.curArea._id}-${c.row}-${c.col}`] || []
+				const tagText = tags.length ? '\n标签：' + tags.map(t => t.name).join('、') : ''
 				const line = label + '：' + (nick === '微信用户' ? ('备注 ' + remark) : (nick + '（备注：' + remark + '）'))
 				uni.showModal({
 					title: label + (occ.mine ? '（我的）' : ''),
-					content: '昵称：' + nick + '\n备注：' + remark + '\n状态：' + (occ.mine ? '我的座位' : '他人已占'),
+					content: '昵称：' + nick + '\n备注：' + remark + tagText + '\n状态：' + (occ.mine ? '我的座位' : '他人已占'),
 					confirmText: '复制该条',
 					cancelText: '关闭',
 					success: (m) => {
@@ -1294,6 +1353,36 @@ $red: #ef4444;
 		text-align: center;
 		width: 100%;
 	}
+	/* 标签胶囊：固定在单元格右下角；选中时让出右下角填充柄 */
+	.se-tags {
+		position: absolute;
+		right: 8rpx;
+		bottom: 8rpx;
+		max-width: calc(100% - 16rpx);
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 4rpx;
+		z-index: 3;
+		pointer-events: none;
+	}
+	.se-tag {
+		max-width: 110rpx;
+		font-size: 16rpx;
+		line-height: 1;
+		padding: 4rpx 8rpx;
+		border-radius: 8rpx;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		box-sizing: border-box;
+
+		&.more {
+			background: #64748b;
+			color: #ffffff;
+			flex-shrink: 0;
+		}
+	}
 
 	/* 我的座位：正文下沉让出右上角「我」角标，避免换行后的首行被角标压住 */
 	&.mine { padding-top: 32rpx; }
@@ -1323,6 +1412,10 @@ $red: #ef4444;
 		}
 	}
 	&.hit.sel { box-shadow: inset 0 0 0 4rpx $green, inset 0 0 0 7rpx rgba(239, 68, 68, 0.55); }
+	/* 选中时标签胶囊左移，避开右下角填充柄 */
+	&.sel .se-tags { right: 24rpx; }
+	/* 有标签：底部让出胶囊高度，正文不下沉时也不被遮挡 */
+	&.has-tag { padding-bottom: 36rpx; }
 	/* 搜索定位：绿框→红框脉冲三次后自动消退 */
 	&.locate {
 		z-index: 6;
@@ -1621,6 +1714,20 @@ $red: #ef4444;
 		.se-mine { font-size: 8px; padding: 2px 4px; }
 		.se-sub { font-size: 9px !important; margin-top: 2px; }
 		.se-empty { font-size: 10px; }
+		.se-tags {
+			right: 4px;
+			bottom: 4px;
+			gap: 2px;
+			max-width: calc(100% - 8px);
+		}
+		.se-tag {
+			max-width: 56px;
+			font-size: 9px;
+			padding: 2px 4px;
+			border-radius: 4px;
+		}
+		&.sel .se-tags { right: 11px; }
+		&.has-tag { padding-bottom: 17px; }
 	}
 	.sheet-hint { font-size: 10px; padding: 3px 0; }
 	.ss-panel {

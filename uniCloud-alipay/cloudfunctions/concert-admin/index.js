@@ -210,6 +210,70 @@ function normalizeSeatColors(input) {
 	return out;
 }
 
+// 座位标签：标签定义存 Concert.seat_tags（{id,name,color}），座位打标存 seat_area.seatTags（稀疏数组，只存有标签的座位）
+const SEAT_TAG_MAX_DEFS = 20;
+const SEAT_TAG_MAX_PER_SEAT = 3;
+const SEAT_TAG_MAX_SEATS_PER_AREA = 3000;
+const SEAT_TAG_FALLBACK_COLOR = '#ef6c00';
+
+function normalizeSeatTagDefs(input) {
+	if (!Array.isArray(input)) return [];
+	const list = [];
+	const idSet = {};
+	const nameSet = {};
+	
+	for (const raw of input) {
+		const src = raw && typeof raw === 'object' ? raw : {};
+		const id = String(src.id == null ? '' : src.id).trim().slice(0, 24);
+		const name = String(src.name == null ? '' : src.name).trim().slice(0, 8);
+		const color = String(src.color == null ? '' : src.color).trim();
+		// id 与名称都要求唯一，空标签直接丢弃
+		if (!id || !name || idSet[id] || nameSet[name]) continue;
+		idSet[id] = true;
+		nameSet[name] = true;
+		list.push({
+			id,
+			name,
+			color: /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : SEAT_TAG_FALLBACK_COLOR
+		});
+		if (list.length >= SEAT_TAG_MAX_DEFS) break;
+	}
+	
+	return list;
+}
+
+// 座位打标清洗：越界坐标、未知标签 id、重复坐标一律丢弃，每座位最多 3 个标签
+function normalizeAreaSeatTags(input, rows, cols, tagIdMap) {
+	if (!Array.isArray(input) || !(rows >= 1) || !(cols >= 1)) return [];
+	const list = [];
+	const seen = {};
+	
+	for (const raw of input) {
+		const src = raw && typeof raw === 'object' ? raw : {};
+		const row = parseInt(src.row);
+		const col = parseInt(src.col);
+		if (!(row >= 1 && row <= rows) || !(col >= 1 && col <= cols)) continue;
+		const key = `${row}-${col}`;
+		if (seen[key]) continue;
+		
+		const tags = [];
+		const srcTags = Array.isArray(src.tags) ? src.tags : [];
+		for (const rawTag of srcTags) {
+			const id = String(rawTag == null ? '' : rawTag).trim();
+			if (!tagIdMap[id] || tags.indexOf(id) > -1) continue;
+			tags.push(id);
+			if (tags.length >= SEAT_TAG_MAX_PER_SEAT) break;
+		}
+		if (tags.length === 0) continue;
+		
+		seen[key] = true;
+		list.push({ row, col, tags });
+		if (list.length >= SEAT_TAG_MAX_SEATS_PER_AREA) break;
+	}
+	
+	return list;
+}
+
 exports.main = async (event, context) => {
 	const { action } = event;
 	
@@ -320,6 +384,7 @@ async function add(event) {
 			seat_enabled: false,
 			max_seats_per_user: 6,
 			seat_version: 1,
+			seat_tags: [],
 			createTime: Date.now()
 		});
 		
@@ -483,6 +548,8 @@ async function getSeatConfig(event) {
 				rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
 				colLabels: Array.isArray(item.colLabels) ? item.colLabels : [],
 				labelRule: item.labelRule || null,
+				// 座位标签（稀疏，只含有标签的座位）
+				seatTags: Array.isArray(item.seatTags) ? item.seatTags : [],
 				totalSeats: isStage ? 0 : rows * cols
 			};
 		});
@@ -504,7 +571,9 @@ async function getSeatConfig(event) {
 					seat_enabled: !!concert.seat_enabled,
 					max_seats_per_user: Number(concert.max_seats_per_user) || 0,
 					seat_version: Number(concert.seat_version) || 1,
-					seat_colors: concert.seat_colors || {}
+					seat_colors: concert.seat_colors || {},
+					// 座位标签定义 [{id,name,color}]，配置页回显与用户端筛选用
+					seat_tags: Array.isArray(concert.seat_tags) ? concert.seat_tags : []
 				},
 				areas: areaList,
 				canvasW: canvas.canvasW,
@@ -537,6 +606,13 @@ async function saveSeatConfig(event) {
 		if (!concert) {
 			return { code: -1, message: '演唱会不存在' };
 		}
+		
+		// 标签定义：旧版客户端不传 seatTags 时沿用已存定义，避免保存座位表把标签整体清空
+		const tagDefs = event.seatTags === undefined
+			? normalizeSeatTagDefs(concert.seat_tags)
+			: normalizeSeatTagDefs(event.seatTags);
+		const tagIdMap = {};
+		tagDefs.forEach(tag => { tagIdMap[tag.id] = true; });
 		
 		// 入参校验（含画布坐标、舞台/装饰区、自定义编号）
 		const normalized = [];
@@ -607,7 +683,9 @@ async function saveSeatConfig(event) {
 				stageH,
 				rowLabels: rowLabelsRes.list,
 				colLabels: colLabelsRes.list,
-				labelRule: normalizeLabelRule(item.labelRule)
+				labelRule: normalizeLabelRule(item.labelRule),
+				// 原始打标入参，待 oldMap 就绪后统一清洗（旧版客户端传 undefined 时沿用原标签）
+				seatTagsInput: item.seatTags
 			});
 		}
 		
@@ -631,11 +709,16 @@ async function saveSeatConfig(event) {
 			}
 			
 			// 空座位表不允许保持开放，避免用户端看到空选座图
-			await db.collection('Concert').doc(concertId).update({
+			const wipeUpdate = {
 				seat_enabled: false,
 				seat_version: (Number(concert.seat_version) || 1) + 1,
 				updateTime: wipeNow
-			});
+			};
+			// 一键清空时若同时提交了标签定义，同步保存（便于重新配置时复用）
+			if (event.seatTags !== undefined) {
+				wipeUpdate.seat_tags = tagDefs;
+			}
+			await db.collection('Concert').doc(concertId).update(wipeUpdate);
 			
 			return {
 				code: 0,
@@ -674,6 +757,21 @@ async function saveSeatConfig(event) {
 		const oldAreas = oldAreasRes.data || [];
 		const oldMap = {};
 		oldAreas.forEach(item => { oldMap[item._id] = item; });
+		
+		// 座位标签：显式传了 seatTags 按新值清洗；未传（旧版客户端）沿用原分区标签，并按新行列数裁剪越界坐标
+		normalized.forEach(item => {
+			const old = item._id && oldMap[item._id];
+			const source = item.seatTagsInput !== undefined
+				? item.seatTagsInput
+				: (old && Array.isArray(old.seatTags) ? old.seatTags : []);
+			item.seatTags = normalizeAreaSeatTags(
+				source,
+				item.isStage ? 0 : item.rows,
+				item.isStage ? 0 : item.cols,
+				tagIdMap
+			);
+			delete item.seatTagsInput;
+		});
 		
 		const keptIds = normalized.filter(item => item._id && oldMap[item._id]).map(item => item._id);
 		const removedAreas = oldAreas.filter(item => keptIds.indexOf(item._id) === -1);
@@ -728,7 +826,8 @@ async function saveSeatConfig(event) {
 				stageH: item.stageH,
 				rowLabels: item.rowLabels,
 				colLabels: item.colLabels,
-				labelRule: item.labelRule
+				labelRule: item.labelRule,
+				seatTags: item.seatTags
 			};
 			
 			if (item._id && oldMap[item._id]) {
@@ -779,6 +878,10 @@ async function saveSeatConfig(event) {
 		// 旧版客户端不传 seatColors 时保持原配色不动；传了则按清洗结果整体覆盖（完整四键）
 		if (event.seatColors !== undefined) {
 			concertUpdate.seat_colors = normalizeSeatColors(event.seatColors);
+		}
+		// 标签定义同理：未传则不动，传了则整体覆盖（空数组 = 清空全部标签定义）
+		if (event.seatTags !== undefined) {
+			concertUpdate.seat_tags = tagDefs;
 		}
 		
 		await db.collection('Concert').doc(concertId).update(concertUpdate);

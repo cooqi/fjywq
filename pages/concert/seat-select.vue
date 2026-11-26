@@ -26,7 +26,7 @@
 				<view class="tab-item" :class="{active: focusIndex === -1}" @click="focusOverview">
 					<view class="tab-dot all"></view>
 					<text class="tab-name">总览</text>
-					<text class="tab-sel">已售{{totalSelected}}/{{totalCapacity}}</text>
+					<text class="tab-sel">已选{{totalSelected}}/{{totalCapacity}}</text>
 				</view>
 				<view
 					class="tab-item"
@@ -61,6 +61,28 @@
 				</view>
 			</view>
 
+			<!-- 标签筛选：点击标签进行选择（可多选，座位需同时含全部选中标签），不走关键词输入 -->
+			<view class="tag-filter" v-if="tagDefs.length > 0">
+				<view class="tf-head">
+					<text class="tf-title">标签筛选</text>
+					<text class="tf-hint" v-if="activeTags.length === 0">点下方标签选择</text>
+					<text class="tf-sel" v-else>已选 {{ activeTags.length }} 个标签</text>
+					<text class="tf-clear" v-if="activeTags.length > 0" @click="clearTagFilter">清除筛选</text>
+				</view>
+				<scroll-view class="tf-scroll" scroll-x :show-scrollbar="false">
+					<view class="tf-inner">
+						<view class="tf-chip" v-for="tag in tagDefs" :key="tag.id" :class="{on: activeTagSet[tag.id]}" @click="toggleTagFilter(tag.id)">
+							<view class="tf-dot" :style="{background: tag.color}"></view>
+							<text class="tf-name">{{tag.name}}</text>
+							<text class="tf-count" v-if="tagCountMap[tag.id]">{{tagCountMap[tag.id]}}</text>
+						</view>
+					</view>
+				</scroll-view>
+			</view>
+			<view class="tag-filter-empty" v-else-if="isAdmin" @click="goSeatConfig">
+				<text>本场暂未配置座位标签，点此前往配置</text>
+			</view>
+
 			<!-- 模糊搜索：按微信昵称 / 座位备注找人找座，命中结果可一键定位到画布 -->
 			<view class="seat-search">
 				<view class="ss-box" :class="{focused: searchFocused}">
@@ -68,7 +90,7 @@
 					<input
 						class="ss-input"
 						v-model="searchKey"
-						placeholder="搜索昵称 / 座位备注"
+						placeholder="搜索昵称 / 备注"
 						placeholder-class="ss-ph"
 						confirm-type="search"
 						@focus="onSearchFocus"
@@ -89,12 +111,13 @@
 							<view class="ssp-main">
 								<view class="ssp-line1">
 									<text class="ssp-label">{{it.label}}</text>
-									<text class="ssp-state" :class="it.state">{{it.state === 'mine' ? '我的' : '锁定'}}</text>
+									<text class="ssp-state" :class="it.state">{{ stateText(it.state) }}</text>
 								</view>
 								<view class="ssp-line2">
-									<text class="ssp-nick"><text v-for="(p, pi) in hitParts(it.nickname)" :key="'n' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
+									<text class="ssp-nick" v-if="it.nickname"><text v-for="(p, pi) in hitParts(it.nickname)" :key="'n' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
 									<text class="ssp-remark" v-if="it.remark"><text v-for="(p, pi) in hitParts(it.remark)" :key="'r' + pi" :class="{hit: p.hit}">{{p.t}}</text></text>
-									<text class="ssp-remark none" v-else>未留备注</text>
+									<text class="ssp-tags" v-if="it.tagText">{{it.tagText}}</text>
+									<text class="ssp-remark none" v-if="!it.nickname && !it.remark && !it.tagText">未留备注</text>
 								</view>
 							</view>
 							<text class="ssp-go">定位</text>
@@ -159,10 +182,10 @@
 								v-for="seat in area.seats"
 								:key="seat.key"
 								class="seat"
-								:class="[seat.state, seat.key === highlightKey ? 'hl' : '']"
-								:style="{left: seat.left + 'rpx', top: seat.top + 'rpx', width: seat.size + 'rpx', height: seat.size + 'rpx', fontSize: seat.font + 'rpx', lineHeight: seat.size + 'rpx', background: seatColorMap[seat.state], color: seatFg(seat.state)}"
+								:class="[seat.state, seat.key === highlightKey ? 'hl' : '', seat.dim ? 'dim' : '', seat.match ? 'match' : '']"
+								:style="seatStyle(seat)"
 								@click.stop="onSeatTap(seat)"
-							></view>
+							><view class="seat-tag-dot" v-if="seat.tagDotStyle" :style="seat.tagDotStyle"></view></view>
 							<!-- 座位备注（超过10字隐藏，点击可查看完整） -->
 							<!-- <view
 								v-for="seat in area.notes"
@@ -203,7 +226,7 @@
 				<view class="cart-bottom">
 					<view class="cart-sum">
 						<text class="cs-count">已选 {{selectedSeats.length}}{{maxSeatsPerUser > 0 ? ' / ' + maxSeatsPerUser : ''}} 座</text>
-						<text class="cs-amount">合计 ¥{{totalAmount}}</text>
+						<text class="cs-amount">花费 ¥{{totalAmount}}</text>
 					</view>
 					<button class="cart-submit" :disabled="selectedSeats.length === 0 || submitting" @click="confirmSubmit">确认选座</button>
 				</view>
@@ -218,6 +241,25 @@
 					<view class="sm-item" v-for="(it, i) in seatMenuInfo.items" :key="i" @click="onSeatMenuTap(i)">{{ it }}</view>
 				</view>
 				<view class="sm-cancel" @click="closeSeatMenu">取消</view>
+			</view>
+		</view>
+
+		<!-- 修改标签弹层：仅本人已选座位；多选、每座最多 3 个，不选保存=清除该座标签 -->
+		<view class="tag-edit-mask" v-if="tagEditInfo.open" @click="closeTagEdit">
+			<view class="tag-edit" @click.stop>
+				<view class="te-head">{{ tagEditInfo.seat ? tagEditInfo.seat.label : '修改标签' }}</view>
+				<view class="te-tip">点选标签（最多 3 个）；不选任何标签保存即清除该座位的标签</view>
+				<scroll-view class="te-list" scroll-y v-if="tagDefs.length > 0">
+					<view class="te-chip" v-for="tag in tagDefs" :key="tag.id" :class="{on: tagEditInfo.sel.indexOf(tag.id) > -1}" @click="toggleTagEdit(tag.id)">
+						<view class="te-dot" :style="{background: tag.color}"></view>
+						<text>{{ tag.name }}</text>
+					</view>
+				</scroll-view>
+				
+				<view class="te-btns">
+					<text class="te-btn gray" @click="closeTagEdit">取消</text>
+					<text class="te-btn main" :class="{busy: tagEditSaving}" @click="saveTagEdit">保存</text>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -263,6 +305,9 @@
 				seatEnabled: false,
 				// 管理员配置的座位状态配色 {avail,selected,taken,mine}，空/非法值回退内置默认
 				seatColors: {},
+				// 座位标签定义 [{id,name,color}]（Concert.seat_tags）；activeTags 为用户端筛选（多选 AND）
+				seatTags: [],
+				activeTags: [],
 				totalSelected: 0,
 				totalCapacity: 0,
 				emptyText: '本场次不开放选座',
@@ -291,6 +336,9 @@
 				cartH: 0,
 				// 自定义座位操作菜单：微信 showActionSheet 不支持 alertText 头部，改用自带遮罩的固定弹层
 				seatMenuInfo: { open: false, title: '', items: [], seat: null, rec: null, action: '' },
+				// 修改标签弹层：仅本人已选座位；sel 为勾选的标签 id（≤3）
+				tagEditInfo: { open: false, seat: null, sel: [] },
+				tagEditSaving: false,
 				// 未设昵称用户首次选座时提示过一次备注必填，不再重复打扰
 				nickTipShown: false,
 				// 模糊搜索：关键词 / 结果面板开关 / 输入框聚焦态
@@ -374,6 +422,53 @@
 				})
 				return out
 			},
+			// ===== 座位标签 =====
+			// 标签定义（Concert.seat_tags）；名称移除首尾空格（空名回退「未命名」保留展示），非法颜色回退橙色
+			tagDefs() {
+				const list = Array.isArray(this.seatTags) ? this.seatTags : []
+				return list.filter(t => t && t.id).map(t => {
+					const name = String(t.name || '').trim().slice(0, 8)
+					return {
+						id: String(t.id),
+						name: name || '未命名',
+						color: /^#[0-9a-fA-F]{6}$/.test(String(t.color || '')) ? String(t.color).toLowerCase() : '#ef6c00'
+					}
+				})
+			},
+			tagDefMap() {
+				const map = {}
+				this.tagDefs.forEach(t => { map[t.id] = t })
+				return map
+			},
+			// 已激活的筛选标签集合（AND 语义：座位需同时包含全部选中标签）
+			activeTagSet() {
+				const set = {}
+				this.activeTags.forEach(id => { set[id] = true })
+				return set
+			},
+			// 每个标签覆盖的座位数（筛选栏徽标）
+			tagCountMap() {
+				const map = {}
+				this.areas.forEach(area => {
+					if (area.isStage) return
+					;(Array.isArray(area.seatTags) ? area.seatTags : []).forEach(item => {
+						(item.tags || []).forEach(id => { map[id] = (map[id] || 0) + 1 })
+					})
+				})
+				return map
+			},
+			// 座位 key -> [tagId]：由各分区稀疏打标数组 [{row,col,tags}] 摊平
+			seatTagIndex() {
+				const map = {}
+				this.areas.forEach(area => {
+					if (area.isStage) return
+					;(Array.isArray(area.seatTags) ? area.seatTags : []).forEach(item => {
+						if (!item || !Array.isArray(item.tags) || item.tags.length === 0) return
+						map[`${area._id}-${item.row}-${item.col}`] = item.tags
+					})
+				})
+				return map
+			},
 			// 推给 wxs 的视图状态：缩放/平移（rpx）+ 视口与画布尺寸 + 过渡开关；每次逻辑层变更后 change:gs 触发同步
 			gestureState() {
 				return {
@@ -411,6 +506,10 @@
 				const gutTop = this.gutTop
 				const titleH = this.titleH
 				const axisH = this.axisH
+				const tagDefMap = this.tagDefMap
+				const seatTagIndex = this.seatTagIndex
+				const activeTags = this.activeTags
+				const tagFilterOn = activeTags.length > 0
 				return this.areas.map((area, index) => {
 					const isStage = !!area.isStage
 					const rows = Number(area.rows) || 0
@@ -461,6 +560,24 @@
 							} else if (this.selectedSet[key]) {
 								state = 'selected'
 							}
+							// 标签：筛选为 AND（需同时包含全部激活标签）；匹配座描边、非匹配座变淡
+							const tagIds = seatTagIndex[key] || []
+							const seatTagDefs = []
+							tagIds.forEach(id => { if (tagDefMap[id]) seatTagDefs.push(tagDefMap[id]) })
+							let match = false
+							let matchColor = ''
+							if (tagFilterOn && seatTagDefs.length >= activeTags.length) {
+								let allHit = true
+								for (let i = 0; i < activeTags.length; i++) {
+									if (tagIds.indexOf(activeTags[i]) < 0) { allHit = false; break }
+								}
+								if (allHit) {
+									const firstDef = tagDefMap[activeTags[0]]
+									match = true
+									matchColor = firstDef ? firstDef.color : '#ff7043'
+								}
+							}
+							const tagText = seatTagDefs.map(t => t.name).join('、')
 							const seat = {
 								key,
 								areaId: area._id,
@@ -468,6 +585,12 @@
 								col: c,
 								state,
 								note,
+								tags: tagIds,
+								tagText,
+								tagDotStyle: this.tagDotStyleOf(seatTagDefs),
+								match,
+								matchColor,
+								dim: tagFilterOn && !match,
 								price: area.price,
 								label: this.buildLabel(area, r, c),
 								left: gutLeft + (c - 1) * cell,
@@ -499,11 +622,21 @@
 				return !nick || nick === '微信用户'
 			},
 			// 模糊搜索：不区分大小写子串匹配占座人昵称与座位备注，我的座位排前；
-			// 数据全部来自已加载的 takenSet/mySeatSet，无需请求云端
+			// 标签不参与关键词输入筛选，统一走上方标签筛选栏点选；数据纯本地计算
 			searchResults() {
 				const kw = String(this.searchKey || '').trim().toLowerCase()
 				if (!kw) return []
 				const out = []
+				const seen = {}
+				const tagTextOf = (tagIds) => {
+					if (!tagIds || tagIds.length === 0) return ''
+					return tagIds.map(id => this.tagDefMap[id]).filter(Boolean).map(t => t.name).join('、')
+				}
+				const push = (item) => {
+					if (seen[item.key]) return
+					seen[item.key] = true
+					out.push(item)
+				}
 				const collect = (key, rec, state) => {
 					const m = /^(.*)-(\d+)-(\d+)$/.exec(key)
 					if (!m) return
@@ -515,7 +648,8 @@
 					const nickname = state === 'mine' ? (this.userNick || '微信用户') : (rec.nickname || '')
 					const remark = rec.remark || ''
 					if (nickname.toLowerCase().indexOf(kw) < 0 && remark.toLowerCase().indexOf(kw) < 0) return
-					out.push({ key, state, nickname, remark, row, col, areaIndex, label: this.buildLabel(area, row, col) })
+					const tags = this.seatTagIndex[key] || []
+					push({ key, state, nickname, remark, tags, tagText: tagTextOf(tags), row, col, areaIndex, label: this.buildLabel(area, row, col) })
 				}
 				Object.keys(this.mySeatSet).forEach(k => collect(k, this.mySeatSet[k], 'mine'))
 				Object.keys(this.takenSet).forEach(k => collect(k, this.takenSet[k], 'taken'))
@@ -569,7 +703,7 @@
 			// 必须登录后才能选座
 			if (!this.userId) {
 				this.loading = false
-				this.emptyText = '请先登录后再选座'
+				this.emptyText = '请先登录后再选座（登录即青宇99宇青99）'
 				this.requireLogin()
 				return
 			}
@@ -581,10 +715,72 @@
 				return seatTextColor(this.seatColorMap[state], DEFAULT_SEAT_TEXT[state] || '#37474f')
 			},
 
+			// 座位样式：配色 + 标签筛选态（匹配座位按激活标签色描边；非匹配变淡）
+			seatStyle(seat) {
+				const st = {
+					left: seat.left + 'rpx',
+					top: seat.top + 'rpx',
+					width: seat.size + 'rpx',
+					height: seat.size + 'rpx',
+					fontSize: seat.font + 'rpx',
+					lineHeight: seat.size + 'rpx',
+					background: this.seatColorMap[seat.state],
+					color: this.seatFg(seat.state)
+				}
+				if (seat.dim) st.opacity = 0.2
+				if (seat.match) st.boxShadow = '0 0 0 2rpx ' + (seat.matchColor || '#ff7043')
+				return st
+			},
+
+			// 每座最多 3 个标签圆点：首色实心点 + box-shadow 纵向偏移叠画（单节点方案，避免整馆节点膨胀）
+			tagDotStyleOf(tagDefs) {
+				if (!tagDefs || tagDefs.length === 0) return ''
+				const colors = tagDefs.slice(0, 3).map(t => t.color)
+				let style = 'background:' + colors[0] + ';'
+				if (colors.length > 1) {
+					const shadows = []
+					for (let i = 1; i < colors.length; i++) shadows.push('0 ' + (i * 7) + 'rpx 0 0 ' + colors[i])
+					style += 'box-shadow:' + shadows.join(',') + ';'
+				}
+				return style
+			},
+
+			// 搜索/菜单里的座位状态文案
+			stateText(state) {
+				const map = { mine: '我的', taken: '锁定', selected: '预选', avail: '可选' }
+				return map[state] || ''
+			},
+
+			// ===== 标签筛选 =====
+			toggleTagFilter(id) {
+				const list = this.activeTags.slice()
+				const i = list.indexOf(id)
+				if (i > -1) list.splice(i, 1)
+				else list.push(id)
+				this.activeTags = list
+			},
+
+			clearTagFilter() {
+				this.activeTags = []
+			},
+
+			// 同步标签定义；已选筛选标签若已被管理员删除则自动移除
+			syncSeatTags(raw) {
+				this.seatTags = Array.isArray(raw) ? raw : []
+				const valid = {}
+				this.tagDefs.forEach(t => { valid[t.id] = true })
+				this.activeTags = this.activeTags.filter(id => valid[id])
+			},
+
 			// ===== 模糊搜索 =====
 			// 跳转 Excel 排版的占座名单预览页
 			goSeatPreview() {
 				uni.navigateTo({ url: '/pages/concert/seat-preview?id=' + this.concertId })
+			},
+
+			// 管理员：跳座位表配置页补配标签
+			goSeatConfig() {
+				uni.navigateTo({ url: '/pages/concert/seat-config?id=' + this.concertId })
 			},
 			onSearchFocus() {
 				this.searchFocused = true
@@ -846,6 +1042,7 @@
 							this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
 							this.seatVersion = Number(d.seatVersion) || 1
 							this.seatColors = d.seatColors || {}
+							this.syncSeatTags(d.seatTags)
 							this.isAdmin = !!d.isAdmin
 							this.focusIndex = -1
 
@@ -910,6 +1107,7 @@
 						this.areas = d.areas || []
 						this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
 						this.seatColors = d.seatColors || {}
+						this.syncSeatTags(d.seatTags)
 						this.isAdmin = !!d.isAdmin
 
 						const taken = {}
@@ -954,7 +1152,7 @@
 			requireLogin() {
 				uni.showModal({
 					title: '需要登录',
-					content: '选座需登录后进行，现在登录吗？',
+					content: '选座需登录后进行，现在登录吗？（登录即青宇99宇青99）',
 					confirmText: '立即登录',
 					cancelText: '暂不',
 					success: (m) => {
@@ -971,7 +1169,7 @@
 					},
 					fail: () => {
 						uni.showModal({
-							content: '暂未登录，登录后才能选座',
+							content: '暂未登录，登录后才能选座（登录即青宇99宇青99）',
 							showCancel: false,
 							success: () => uni.navigateBack()
 						})
@@ -1048,13 +1246,16 @@
 				// 只有可选座位是无确认弹窗直接写入选座车的，先检查缩放够不够
 				if (seat.state === 'avail' && !this.ensureReadableForTap(seat)) return
 				if (seat.state === 'mine') {
-					// 自己的座位：菜单顶部直接展示当前备注，可修改备注、记录消费或释放后重选
+					// 自己的座位：菜单顶部直接展示当前备注与标签，可改标签/备注、记录消费或释放后重选
 					const rec = this.mySeatSet[seat.key] || {}
+					const mineItems = ['修改备注', '记录消费', '释放座位']
+					// 本场配置了标签定义才开放「修改标签」入口
+					if (this.tagDefs.length > 0) mineItems.unshift('修改标签')
 					this.openSeatMenu({
 						action: 'mine',
 						seat: seat,
-						title: seat.label + ' 备注：' + (this.clipText(rec.remark) || '无'),
-						items: ['修改备注', '记录消费', '释放座位']
+						title: seat.label + (seat.tagText ? ' · 标签：' + seat.tagText : '') + ' 备注：' + (this.clipText(rec.remark) || '无'),
+						items: mineItems
 					})
 					return
 				}
@@ -1062,20 +1263,23 @@
 					// 备注超过 10 字已在座位上隐藏，点击弹窗看完整内容
 					const rec = this.takenSet[seat.key] || {}
 					if (this.isAdmin) {
-						// 管理员可改任何人备注、释放任何人的座位；菜单顶部展示占座人与备注摘要
+						// 管理员可改任何人的标签/备注、释放任何人的座位；菜单顶部展示占座人与备注摘要
 						const who = rec.nickname ? '占座人：' + this.clipText(rec.nickname) + '，' : ''
+						const adminItems = ['修改备注', '释放座位']
+						// 本场配置了标签定义才开放「修改标签」入口（与本人座位菜单一致）
+						if (this.tagDefs.length > 0) adminItems.unshift('修改标签')
 						this.openSeatMenu({
 							action: 'admin',
 							seat: seat,
 							rec: rec,
-							title: seat.label + ' ' + who + '备注：' + (this.clipText(rec.remark) || '无'),
-							items: ['修改备注', '释放座位']
+							title: seat.label + (seat.tagText ? ' · 标签：' + seat.tagText : '') + ' ' + who + '备注：' + (this.clipText(rec.remark) || '无'),
+							items: adminItems
 						})
 						return
 					}
 					uni.showModal({
 						title: seat.label,
-						content: (rec.remark ? '备注：' + rec.remark + '\n' : '占座人未留备注\n') + '该座位已被他人选择，如需沟通可截图发到群聊。',
+						content: (seat.tagText ? '标签：' + seat.tagText + '\n' : '') + (rec.remark ? '备注：' + rec.remark + '\n' : '占座人未留备注\n') + '该座位已被他人选择，如需沟通可截图发到群聊。',
 						confirmText: '我知道了',
 						showCancel: false
 					})
@@ -1131,16 +1335,103 @@
 				const seat = m.seat
 				const rec = m.rec
 				const action = m.action
+				// 按菜单文字分发，菜单项动态增减（如配置了标签才有「修改标签」）时索引不会错位
+				const label = m.items[i] || ''
 				this.closeSeatMenu()
 				if (!seat) return
 				if (action === 'mine') {
-					if (i === 0) this.editSeatRemark(seat)
-					else if (i === 1) this.recordSeatExpense(seat)
-					else if (i === 2) this.confirmReleaseMine(seat)
+					if (label === '修改标签') this.openTagEdit(seat)
+					else if (label === '修改备注') this.editSeatRemark(seat)
+					else if (label === '记录消费') this.recordSeatExpense(seat)
+					else if (label === '释放座位') this.confirmReleaseMine(seat)
 				} else if (action === 'admin') {
-					if (i === 0) this.editSeatRemark(seat)
-					else if (i === 1) this.confirmReleaseAny(seat, rec)
+					if (label === '修改标签') this.openTagEdit(seat)
+					else if (label === '修改备注') this.editSeatRemark(seat)
+					else if (label === '释放座位') this.confirmReleaseAny(seat, rec)
 				}
+			},
+
+			// ===== 修改自己座位的标签 =====
+			// 打开标签编辑弹层：初始勾选当前座位已有的合法标签（最多 3 个）
+			openTagEdit(seat) {
+				const valid = {}
+				this.tagDefs.forEach(t => { valid[t.id] = true })
+				const current = (seat.tags || []).filter(id => valid[id]).slice(0, 3)
+				this.tagEditInfo = { open: true, seat, sel: current }
+			},
+			closeTagEdit() {
+				this.tagEditInfo = { open: false, seat: null, sel: [] }
+			},
+			toggleTagEdit(id) {
+				const list = this.tagEditInfo.sel.slice()
+				const i = list.indexOf(id)
+				if (i > -1) {
+					list.splice(i, 1)
+				} else {
+					if (list.length >= 3) {
+						uni.showToast({ title: '每个座位最多 3 个标签', icon: 'none' })
+						return
+					}
+					list.push(id)
+				}
+				// 整体替换触发响应式（小程序直接改嵌套数组有时不刷新）
+				this.tagEditInfo = Object.assign({}, this.tagEditInfo, { sel: list })
+			},
+			saveTagEdit() {
+				const info = this.tagEditInfo
+				const seat = info.seat
+				if (!seat || this.tagEditSaving) return
+				this.tagEditSaving = true
+				uni.showLoading({ title: '保存中' })
+				uniCloud.callFunction({
+					name: 'seat-select',
+					data: {
+						action: 'setSeatTags',
+						concertId: this.concertId,
+						seat: { areaId: seat.areaId, row: seat.row, col: seat.col },
+						tags: info.sel,
+						userId: this.userId
+					},
+					success: (res) => {
+						uni.hideLoading()
+						this.tagEditSaving = false
+						if (res.result.code === 0) {
+							this.applyLocalSeatTags(seat, (res.result.data && res.result.data.tags) || [])
+							this.closeTagEdit()
+							uni.showToast({ title: '标签已更新', icon: 'none' })
+						} else if (res.result.code === 401) {
+							this.requireLogin()
+						} else if (res.result.code === 403) {
+							// 服务端判定非本人且非管理员：同步失效本地管理员标识
+							this.isAdmin = false
+							uni.showToast({ title: res.result.message || '无权限修改该座位标签', icon: 'none' })
+						} else {
+							uni.showToast({ title: res.result.message || '标签保存失败', icon: 'none' })
+						}
+					},
+					fail: () => {
+						uni.hideLoading()
+						this.tagEditSaving = false
+						uni.showToast({ title: '标签保存失败', icon: 'none' })
+					}
+				})
+			},
+			// 保存成功后同步本地分区打标数据，圆点/筛选/计数立即生效（无需整页刷新）
+			applyLocalSeatTags(seat, tags) {
+				const area = this.areas.find(a => a._id === seat.areaId)
+				if (!area) return
+				const list = (Array.isArray(area.seatTags) ? area.seatTags : [])
+					.map(item => ({ row: item.row, col: item.col, tags: Array.isArray(item.tags) ? item.tags.slice() : [] }))
+				const idx = list.findIndex(item => Number(item.row) === seat.row && Number(item.col) === seat.col)
+				if (tags.length === 0) {
+					if (idx > -1) list.splice(idx, 1)
+				} else if (idx > -1) {
+					list[idx].tags = tags.slice()
+				} else {
+					list.push({ row: seat.row, col: seat.col, tags: tags.slice() })
+				}
+				// 整体替换 areas，让 computed seatTagIndex/tagCountMap 与座位圆点重算
+				this.areas = this.areas.map(a => a._id === seat.areaId ? Object.assign({}, a, { seatTags: list }) : a)
 			},
 
 			removeSeat(seat) {
@@ -1767,6 +2058,85 @@
 	}
 }
 
+/* 标签筛选栏：点击标签选择（多选 AND），不是关键词输入；匹配座位描边、非匹配变淡 */
+.tag-filter {
+	background: #fff;
+	border-bottom: 1rpx solid #eee;
+	padding: 8rpx 16rpx;
+
+	.tf-head {
+		display: flex;
+		align-items: center;
+		margin-bottom: 6rpx;
+
+		.tf-title { font-size: 20rpx; color: #78909c; letter-spacing: 1rpx; }
+		.tf-hint { font-size: 20rpx; color: #b0bec5; margin-left: 10rpx; }
+		.tf-sel { font-size: 20rpx; color: #1976D2; margin-left: 10rpx; }
+
+		.tf-clear {
+			margin-left: auto;
+			font-size: 20rpx;
+			color: #c62828;
+			padding: 4rpx 8rpx;
+		}
+	}
+
+	.tf-scroll {
+		width: 100%;
+		white-space: nowrap;
+	}
+
+	.tf-inner {
+		display: inline-flex;
+		align-items: center;
+		padding-right: 4rpx;
+	}
+
+	.tf-chip {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		height: 48rpx;
+		padding: 0 18rpx;
+		margin-right: 12rpx;
+		background: #f5f6fa;
+		border: 1rpx solid #e0e3ec;
+		border-radius: 24rpx;
+
+		.tf-dot {
+			width: 14rpx;
+			height: 14rpx;
+			border-radius: 50%;
+			margin-right: 8rpx;
+		}
+
+		.tf-name { font-size: 22rpx; color: #555; }
+
+		.tf-count {
+			font-size: 18rpx;
+			color: #90a4ae;
+			margin-left: 8rpx;
+		}
+
+		&.on {
+			background: #e3f2fd;
+			border-color: #64b5f6;
+
+			.tf-name { color: #1565c0; font-weight: 600; }
+			.tf-count { color: #1976D2; }
+		}
+	}
+}
+
+/* 管理员空态提示：本场未配置标签时给管理员一个明确入口 */
+.tag-filter-empty {
+	background: #fff;
+	border-bottom: 1rpx solid #eee;
+	padding: 12rpx 16rpx;
+	font-size: 20rpx;
+	color: #90a4ae;
+}
+
 /* 模糊搜索栏：结果面板悬浮在画布上方，不挤占座位图高度 */
 .seat-search {
 	position: relative;
@@ -1937,6 +2307,8 @@
 
 			&.mine { background: #fff8e1; color: #b28704; }
 			&.taken { background: #e0f7fa; color: #006064; }
+			&.avail { background: #eceff1; color: #546e7a; }
+			&.selected { background: #ede7f6; color: #5e35b1; }
 		}
 	}
 
@@ -1950,6 +2322,14 @@
 		.ssp-nick {
 			color: #5e35b1;
 			background: #ede7f6;
+			border-radius: 6rpx;
+			padding: 0 8rpx;
+			margin-right: 10rpx;
+		}
+
+		.ssp-tags {
+			color: #8d6e63;
+			background: #fff3e0;
 			border-radius: 6rpx;
 			padding: 0 8rpx;
 			margin-right: 10rpx;
@@ -2106,6 +2486,20 @@
 		&.hl {
 			z-index: 6;
 			animation: seatHlPulse 0.7s ease-in-out infinite alternate;
+		}
+
+		/* 标签筛选：非匹配座位变淡，匹配座位按激活标签色描边 */
+		&.dim { opacity: 0.18; }
+		&.match { z-index: 4; }
+
+		/* 标签圆点：贴座位右缘纵向排列，多标签用 box-shadow 叠画（单节点） */
+		.seat-tag-dot {
+			position: absolute;
+			top: 2rpx;
+			right: 2rpx;
+			width: 6rpx;
+			height: 6rpx;
+			border-radius: 50%;
 		}
 	}
 
@@ -2305,5 +2699,87 @@
 	background: #ffffff;
 	border-radius: 24rpx;
 	&:active { background: #f5f5f7; }
+}
+
+/* ===== 修改标签弹层（本人已选座位） ===== */
+.tag-edit-mask {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.45);
+	z-index: 10000;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+.tag-edit {
+	background: #ffffff;
+	border-radius: 24rpx 24rpx 0 0;
+	box-sizing: border-box;
+	padding: 26rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+}
+.te-head {
+	text-align: center;
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #2c3e50;
+}
+.te-tip {
+	margin-top: 8rpx;
+	text-align: center;
+	font-size: 22rpx;
+	color: #90a4ae;
+	line-height: 1.5;
+}
+.te-list {
+	max-height: 480rpx;
+	margin: 20rpx 0 8rpx;
+}
+.te-chip {
+	display: flex;
+	align-items: center;
+	padding: 18rpx 20rpx;
+	margin-bottom: 12rpx;
+	background: #f5f6fa;
+	border: 1rpx solid #e0e3ec;
+	border-radius: 16rpx;
+	font-size: 26rpx;
+	color: #455a64;
+	&.on {
+		background: #e3f2fd;
+		border-color: #64b5f6;
+		color: #1565c0;
+		font-weight: 600;
+	}
+}
+.te-dot {
+	width: 20rpx;
+	height: 20rpx;
+	border-radius: 50%;
+	margin-right: 14rpx;
+	flex-shrink: 0;
+}
+.te-empty {
+	padding: 36rpx 0;
+	text-align: center;
+	font-size: 24rpx;
+	color: #b0bec5;
+}
+.te-btns {
+	display: flex;
+	gap: 20rpx;
+	margin-top: 16rpx;
+}
+.te-btn {
+	flex: 1;
+	text-align: center;
+	padding: 22rpx 0;
+	border-radius: 44rpx;
+	font-size: 28rpx;
+	&.gray { background: #f0f0f0; color: #666666; }
+	&.main { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: #ffffff; }
+	&.busy { opacity: 0.6; }
 }
 </style>

@@ -8,6 +8,7 @@
  *   - releaseMine : 释放自己的已选座位（选座保存后可修改）
  *   - releaseAny  : 管理员释放任意人的座位（服务端二次校验管理员身份）
  *   - updateRemark: 修改已选座位的备注（本人可改自己的，管理员可改任意人的，服务端二次校验）
+ *   - setSeatTags : 修改已选座位的标签（本人可改自己的，管理员可改任意人的，服务端二次校验）
  * 说明：uniCloud-支付宝云不支持数据库事务，故采用「提交前重新查询已占集合 → 逐条写入 →
  * 任一条失败则删除本次已写入记录」的方式实现整批原子效果。
  */
@@ -100,7 +101,9 @@ async function fetchAreas(concertId) {
 			stageW: Number(item.stageW) || (isStage ? cols : 0),
 			stageH: Number(item.stageH) || (isStage ? rows : 0),
 			rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
-			colLabels: Array.isArray(item.colLabels) ? item.colLabels : []
+			colLabels: Array.isArray(item.colLabels) ? item.colLabels : [],
+			// 座位标签 [{row,col,tags:[标签id]}]，稀疏只含有标签的座位；标签定义在 Concert.seat_tags
+			seatTags: Array.isArray(item.seatTags) ? item.seatTags : []
 		};
 	});
 	areas.sort((a, b) => a.sort - b.sort);
@@ -155,6 +158,8 @@ exports.main = async (event, context) => {
 			return await releaseAny(event);
 		case 'updateRemark':
 			return await updateRemark(event);
+		case 'setSeatTags':
+			return await setSeatTags(event);
 		default:
 			return { code: -1, message: '未知的操作类型' };
 	}
@@ -232,6 +237,8 @@ async function getSeatMap(event) {
 				seatVersion: Number(concert.seat_version) || 1,
 				// 管理员配置的座位状态配色；空对象表示前端用内置默认
 				seatColors: concert.seat_colors || {},
+				// 座位标签定义 [{id,name,color}]，前端渲染座位圆点与筛选栏
+				seatTags: Array.isArray(concert.seat_tags) ? concert.seat_tags : [],
 				totalSelected: selections.length,
 				totalCapacity: capacity,
 				canvasW: canvas.canvasW,
@@ -309,6 +316,8 @@ async function getRoster(event) {
 					time: concert.time || ''
 				},
 				seatColors: concert.seat_colors || {},
+				// 座位标签定义 [{id,name,color}]，预览页在单元格右下角渲染标签圆点
+				seatTags: Array.isArray(concert.seat_tags) ? concert.seat_tags : [],
 				totalSelected: selections.length,
 				totalCapacity: capacity,
 				areas: areas.map(item => Object.assign({}, item, { selected: selectedByArea[item._id] || 0 })),
@@ -586,6 +595,83 @@ async function updateRemark(event) {
 	} catch (err) {
 		console.error('修改座位备注失败:', err);
 		return { code: -1, message: '备注保存失败，请重试：' + err.message };
+	}
+}
+
+// 修改已选座位的标签：本人可改自己的，管理员可改任意人的（服务端二次校验角色）
+// 标签必须在管理员定义范围内，每座最多 3 个；清空标签则移除该条目
+async function setSeatTags(event) {
+	try {
+		const { concertId, seat = {}, tags = [], userId } = event;
+		
+		if (!userId) {
+			return { code: 401, message: '请先登录后再操作' };
+		}
+		if (!concertId || !seat.areaId) {
+			return { code: -1, message: '参数不完整' };
+		}
+		const row = parseInt(seat.row);
+		const col = parseInt(seat.col);
+		if (!(row >= 1) || !(col >= 1)) {
+			return { code: -1, message: '座位参数不正确' };
+		}
+		
+		// 座位必须有人占用；普通用户只能改自己的，管理员可改任意人的
+		const selRes = await db.collection(SELECT_COLLECTION)
+			.where({ concertId, areaId: seat.areaId, row, col })
+			.limit(10)
+			.get();
+		const selDocs = selRes.data || [];
+		if (selDocs.length === 0) {
+			return { code: -1, message: '该座位还没有人选座' };
+		}
+		const isMine = selDocs.some(doc => doc.userId === userId);
+		if (!isMine) {
+			const isAdmin = await isAdminUser(userId);
+			if (!isAdmin) {
+				return { code: 403, message: '只能修改自己已选座位的标签' };
+			}
+		}
+		const concertRes = await db.collection('Concert').doc(concertId).get();
+		const concert = concertRes.data && concertRes.data[0];
+		if (!concert) {
+			return { code: -1, message: '演唱会不存在' };
+		}
+		const defs = Array.isArray(concert.seat_tags) ? concert.seat_tags : [];
+		const validMap = {};
+		defs.forEach(t => { if (t && t.id) validMap[String(t.id)] = true; });
+		
+		// 去重 + 只保留合法标签 + 每座最多 3 个
+		const nextTags = [];
+		(Array.isArray(tags) ? tags : []).forEach(id => {
+			const key = String(id || '');
+			if (validMap[key] && nextTags.indexOf(key) === -1 && nextTags.length < 3) nextTags.push(key);
+		});
+		
+		const areaRes = await db.collection(AREA_COLLECTION).doc(seat.areaId).get();
+		const area = areaRes.data && areaRes.data[0];
+		if (!area) {
+			return { code: -1, message: '分区不存在' };
+		}
+		
+		const list = Array.isArray(area.seatTags)
+			? area.seatTags.map(item => ({ row: item.row, col: item.col, tags: Array.isArray(item.tags) ? item.tags.slice() : [] }))
+			: [];
+		const hitIndex = list.findIndex(item => Number(item.row) === row && Number(item.col) === col);
+		if (nextTags.length === 0) {
+			if (hitIndex > -1) list.splice(hitIndex, 1);
+		} else if (hitIndex > -1) {
+			list[hitIndex].tags = nextTags;
+		} else {
+			list.push({ row, col, tags: nextTags });
+		}
+		
+		await db.collection(AREA_COLLECTION).doc(seat.areaId).update({ seatTags: list });
+		
+		return { code: 0, message: '标签已更新', data: { tags: nextTags } };
+	} catch (err) {
+		console.error('修改座位标签失败:', err);
+		return { code: -1, message: '标签保存失败，请重试：' + err.message };
 	}
 }
 

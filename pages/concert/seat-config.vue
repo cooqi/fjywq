@@ -272,9 +272,88 @@
 								@click="pickSeatColor(c.key, p)"
 							></view>
 						</view>
-						<input class="color-hex" v-model="seatColors[c.key]" @input="dirty = true" placeholder="可自定义" maxlength="7" />
+						<input class="color-hex" :value="seatColors[c.key]" @input="onSeatColorInput(c.key, $event)" placeholder="可自定义" maxlength="7" />
 					</view>
 					<text class="color-tip">选预设色或手填 #RRGGBB；留空为默认配色</text>
+				</view>
+
+				<!-- 座位标签：多选座位批量打标；标签同时作为用户端筛选条件 -->
+				<view class="section">
+					<view class="section-head">
+						<text class="section-title">座位标签</text>
+						<text class="mini-btn" @click="addSeatTag">+ 新增标签</text>
+					</view>
+
+					<view class="tag-def-empty" v-if="seatTagDefs.length === 0">还没有标签。点击「+ 新增标签」创建后，可在下方多选座位批量打标；用户端选座页会显示标签圆点，并支持按标签筛选座位。</view>
+
+					<!-- 标签定义：名称 + 颜色 + 使用量 -->
+					<view class="tag-def" v-for="(tag, ti) in seatTagDefs" :key="tag.id">
+						<view class="tag-def-line">
+							<view class="color-swatch" :style="{ background: tag.color }"></view>
+							<input class="tag-name-input" :value="tag.name" maxlength="8" placeholder="标签名称（最多8字）" @input="onTagNameInput(ti, $event)" />
+							<text class="tag-used">已标 {{ tagUsage[tag.id] || 0 }} 座</text>
+							<text class="tag-del" @click="removeSeatTag(ti)">删除</text>
+						</view>
+						<view class="tag-def-line">
+							<view class="color-presets">
+								<view class="color-preset" v-for="p in tagColorPresets" :key="p" :style="{ background: p }" @click="pickTagColor(tag, p)"></view>
+							</view>
+							<input class="color-hex" :value="tag.color" maxlength="7" placeholder="#RRGGBB" @input="onTagColorInput(ti, $event)" />
+						</view>
+					</view>
+
+					<!-- 批量打标：分区切换 + 待应用标签 + 多选座位 -->
+					<block v-if="seatTagDefs.length > 0">
+						<view class="tag-sub-title">批量打标</view>
+						<view class="tag-tip" v-if="tagAreaList.length === 0">先在「分区配置」添加座位区（舞台/装饰区不参与打标）</view>
+						<block v-else>
+							<scroll-view class="tag-area-scroll" scroll-x>
+								<view class="ta-chip" v-for="(a, ai) in tagAreaList" :key="a.index" :class="{ on: tagAreaIndex === ai }" @click="switchTagArea(ai)">{{ a.name }}</view>
+							</scroll-view>
+							<view class="tag-apply-row" v-if="tagArea">
+								<view class="tpa-chip" v-for="tag in seatTagDefs" :key="tag.id" :class="{ on: tagApply.indexOf(tag.id) > -1 }" @click="toggleApplyTag(tag.id)">
+									<view class="tpa-dot" :style="{ background: tag.color }"></view>
+									<text>{{ tag.name || '未命名' }}</text>
+								</view>
+							</view>
+							<view class="tag-apply-btns" v-if="tagArea">
+								<text class="tab-btn main" @click="applyTagsToSelection(true)">加入标签（已选 {{ tagSelCount }} 座）</text>
+								<text class="tab-btn" @click="applyTagsToSelection(false)">移除标签</text>
+								<text class="tab-btn gray" @click="clearTagsOfSelection">清空所选座位标签</text>
+							</view>
+							<view class="tag-grid-head" v-if="tagArea">
+								<text class="tgh-info">{{ tagArea.name }}：已选 {{ tagSelCount }} 座 · 已打标 {{ tagAreaTaggedCount }} 座</text>
+								<view class="tgh-btns">
+									<text class="tgh-btn" @click="selectAllTagSeats">全选本区</text>
+									<text class="tgh-btn gray" @click="clearTagSelection">清空选择</text>
+								</view>
+							</view>
+							<!-- 上次点击的座位号：点击后常驻显示，避免只靠 toast 一闪而过 -->
+							<view class="tag-last-tap" v-if="tagLastTap">
+								<text class="tlt-state" :class="{ off: !tagLastTap.on }">{{ tagLastTap.on ? '已选中' : '已取消' }}</text>
+								<text class="tlt-label">{{ tagLastTap.label }}</text>
+							</view>
+							<view class="tag-tip" v-if="tagArea && tagArea.rows * tagArea.cols > tagSeatLimit">该分区座位数超过 {{ tagSeatLimit }}，请先缩小行列数再批量打标</view>
+							<scroll-view class="tag-seat-scroll" v-else-if="tagArea" scroll-x scroll-y>
+								<view class="ts-canvas" :style="{ width: tagGridW + 'rpx', height: tagGridH + 'rpx' }">
+									<view class="ts-corner" :style="{ width: tagAxisW + 'rpx', height: tagAxisH + 'rpx' }"></view>
+									<view class="ts-col-label" v-for="c in tagArea.cols" :key="'tc' + c" :style="{ left: (tagAxisW + (c - 1) * tagCell) + 'rpx', width: tagCell + 'rpx', height: tagAxisH + 'rpx', lineHeight: tagAxisH + 'rpx' }">{{ tagColLabel(c) }}</view>
+									<view class="ts-row-label" v-for="r in tagArea.rows" :key="'tr' + r" :style="{ top: (tagAxisH + (r - 1) * tagCell) + 'rpx', width: tagAxisW + 'rpx', height: tagCell + 'rpx', lineHeight: tagCell + 'rpx' }">{{ tagRowLabel(r) }}</view>
+									<view
+										class="ts-seat"
+										:class="{ on: cell.on, tagged: cell.tagged }"
+										v-for="cell in tagSeatCells"
+										:key="cell.key"
+										:style="{ left: (cell.left + 3) + 'rpx', top: (cell.top + 3) + 'rpx', width: (tagCell - 6) + 'rpx', height: (tagCell - 6) + 'rpx' }"
+										@click="toggleTagSeat(cell.row, cell.col)"
+									>
+										<view class="ts-dot" v-if="cell.dotStyle" :style="cell.dotStyle"></view>
+									</view>
+								</view>
+							</scroll-view>
+							<view class="tag-tip">点座位可多选/取消，每次点击会提示座位号；圆点表示该座位已有标签（每座最多 3 个）。移除标签时未勾选标签则清空所选座位的全部标签；改动需点击底部「保存座位表」生效</view>
+						</block>
+					</block>
 				</view>
 
 				<!-- 已选座位管理 -->
@@ -319,6 +398,21 @@
 		{ key: 'mine', name: '我的' }
 	]
 	const SEAT_COLOR_PRESETS = ['#dfe4ea', '#b39ddb', '#80deea', '#ffd54f',  '#a5d6a7', '#ef9a9a', '#90caf9']
+	// 座位标签：定义上限 20 个、每座位最多 3 个；打标面板座位网格尺寸（rpx）与单区渲染上限
+	const SEAT_TAG_MAX_DEFS = 20
+	const SEAT_TAG_MAX_PER_SEAT = 3
+	const SEAT_TAG_PRESETS = ['#ef5350', '#ffa726', '#66bb6a', '#42a5f5', '#ab47bc', '#26c6da', '#8d6e63', '#ec407a']
+	const TAG_CELL = 44
+	const TAG_ROW_AXIS = 64
+	const TAG_COL_AXIS = 30
+	const TAG_SEAT_LIMIT = 3000
+	// 小程序 input 事件取值：优先 detail.value，H5 回退 target.value
+	function readInputValue(e) {
+		if (!e) return ''
+		if (e.detail && e.detail.value != null) return String(e.detail.value)
+		if (e.target && e.target.value != null) return String(e.target.value)
+		return ''
+	}
 	// 预览画布：1 格基准边长（rpx），再乘 previewScale 缩放
 	const PREVIEW_CELL = 24
 	const CANVAS_PAD = 20
@@ -340,6 +434,19 @@
 				colorPresets: SEAT_COLOR_PRESETS,
 				// 座位状态配色：空字符串表示用默认，保存时只提交合法 #RRGGBB
 				seatColors: { avail: '', selected: '', taken: '', mine: '' },
+				// 座位标签：定义 [{id,name,color}]；打标为分区 seatTags 稀疏数组 [{row,col,tags}]，只存有标签的座位
+				seatTagDefs: [],
+				tagColorPresets: SEAT_TAG_PRESETS,
+				// 批量打标面板状态：当前分区（tagAreaList 下标）、已选座位 {"row-col": true}、待应用标签 id
+				tagAreaIndex: 0,
+				tagSel: {},
+				tagApply: [],
+				// 最近点击的座位 { label, on }，常驻显示在网格上方，防止多选时点错行/列
+				tagLastTap: null,
+				tagCell: TAG_CELL,
+				tagAxisW: TAG_ROW_AXIS,
+				tagAxisH: TAG_COL_AXIS,
+				tagSeatLimit: TAG_SEAT_LIMIT,
 				seatAreas: [],
 				seatSelectionCount: 0,
 				seatSelections: [],
@@ -422,6 +529,86 @@
 			},
 			overlapTips() {
 				return this.overlapSet.tips
+			},
+			// ===== 座位标签 =====
+			// 可打标的分区（舞台/装饰区除外）
+			tagAreaList() {
+				const list = []
+				this.seatAreas.forEach((a, index) => {
+					if (a.isStage) return
+					list.push({ index, name: a.name || `分区${index + 1}` })
+				})
+				return list
+			},
+			// 当前打标分区（含行列数、自定义编号与已打标）
+			tagArea() {
+				if (this.tagAreaList.length === 0) return null
+				const pos = Math.min(Math.max(0, this.tagAreaIndex), this.tagAreaList.length - 1)
+				const item = this.tagAreaList[pos]
+				const area = this.seatAreas[item.index]
+				if (!area) return null
+				return {
+					index: item.index,
+					name: item.name,
+					rows: Math.min(Math.max(parseInt(area.rows) || 0, 0), 100),
+					cols: Math.min(Math.max(parseInt(area.cols) || 0, 0), 100),
+					rowLabelType: Number(area.rowLabelType) || 1,
+					rowLabels: area.rowLabels || [],
+					colLabels: area.colLabels || [],
+					seatTags: Array.isArray(area.seatTags) ? area.seatTags : []
+				}
+			},
+			// 每个标签被多少个座位使用（跨全部分区统计）
+			tagUsage() {
+				const map = {}
+				this.seatAreas.forEach(a => {
+					(Array.isArray(a.seatTags) ? a.seatTags : []).forEach(item => {
+						(item.tags || []).forEach(id => { map[id] = (map[id] || 0) + 1 })
+					})
+				})
+				return map
+			},
+			tagAreaTaggedCount() {
+				return this.tagArea ? this.tagArea.seatTags.length : 0
+			},
+			tagSelCount() {
+				let count = 0
+				Object.keys(this.tagSel).forEach(key => { if (this.tagSel[key]) count++ })
+				return count
+			},
+			tagGridW() {
+				return this.tagArea ? this.tagAxisW + this.tagArea.cols * this.tagCell + 4 : 0
+			},
+			tagGridH() {
+				return this.tagArea ? this.tagAxisH + this.tagArea.rows * this.tagCell + 4 : 0
+			},
+			// 打标网格座位单元格（含标签圆点样式）
+			tagSeatCells() {
+				const area = this.tagArea
+				if (!area || area.rows < 1 || area.cols < 1) return []
+				const tagMap = {}
+				area.seatTags.forEach(item => {
+					tagMap[item.row + '-' + item.col] = item.tags || []
+				})
+				const cells = []
+				for (let r = 1; r <= area.rows; r++) {
+					for (let c = 1; c <= area.cols; c++) {
+						const key = r + '-' + c
+						const tags = tagMap[key] || []
+						cells.push({
+							key,
+							row: r,
+							col: c,
+							left: this.tagAxisW + (c - 1) * this.tagCell,
+							top: this.tagAxisH + (r - 1) * this.tagCell,
+							on: !!this.tagSel[key],
+							tagged: tags.length > 0,
+							dotStyle: this.buildTagDotStyle(tags)
+						})
+						if (cells.length >= TAG_SEAT_LIMIT) return cells
+					}
+				}
+				return cells
 			},
 			layoutBlocks() {
 				const cell = this.cellSize
@@ -510,6 +697,276 @@
 				uni.showToast({ title: '已恢复默认配色，保存后生效', icon: 'none' })
 			},
 
+			// 同 v-for 内 v-model 兼 @input 的数组 handler 风险：色值输入改为显式写回
+			onSeatColorInput(key, e) {
+				this.seatColors[key] = readInputValue(e)
+				this.dirty = true
+			},
+
+			// ===== 座位标签 =====
+			addSeatTag() {
+				if (this.seatTagDefs.length >= SEAT_TAG_MAX_DEFS) {
+					uni.showToast({ title: `最多 ${SEAT_TAG_MAX_DEFS} 个标签`, icon: 'none' })
+					return
+				}
+				const idx = this.seatTagDefs.length
+				this.seatTagDefs.push({
+					id: 't' + Date.now().toString(36) + idx,
+					name: '',
+					color: SEAT_TAG_PRESETS[idx % SEAT_TAG_PRESETS.length]
+				})
+				this.dirty = true
+			},
+
+			pickTagColor(tag, p) {
+				tag.color = p
+				this.dirty = true
+			},
+
+			// 小程序端 v-for 内 v-model 与 @input 同时使用会生成数组 handler，个别基础库下输入不落库，
+			// 这里改为显式处理：按索引直接写回 seatTagDefs，保证名称/颜色改动即时生效
+			onTagNameInput(ti, e) {
+				const tag = this.seatTagDefs[ti]
+				if (!tag) return
+				tag.name = readInputValue(e)
+				this.dirty = true
+			},
+
+			onTagColorInput(ti, e) {
+				const tag = this.seatTagDefs[ti]
+				if (!tag) return
+				tag.color = readInputValue(e)
+				this.dirty = true
+			},
+
+			tagColorOf(id) {
+				const def = this.seatTagDefs.find(t => t.id === id)
+				return def ? def.color : '#ef6c00'
+			},
+
+			// 每座最多 3 个圆点：首色实心点 + box-shadow 偏移画额外圆点，避免每座多渲染节点
+			buildTagDotStyle(tags) {
+				if (!tags || tags.length === 0) return ''
+				const colors = []
+				tags.forEach(id => {
+					if (colors.length < SEAT_TAG_MAX_PER_SEAT) colors.push(this.tagColorOf(id))
+				})
+				let style = 'background:' + colors[0] + ';'
+				if (colors.length > 1) {
+					const shadows = []
+					for (let i = 1; i < colors.length; i++) shadows.push((i * 12) + 'rpx 0 0 0 ' + colors[i])
+					style += 'box-shadow:' + shadows.join(',') + ';'
+				}
+				return style
+			},
+
+			tagRowLabel(row) {
+				const area = this.tagArea
+				if (!area) return String(row)
+				const custom = area.rowLabels[row - 1]
+				if (custom != null && String(custom).trim()) return String(custom).trim()
+				return area.rowLabelType === 2 ? this.letterOf(row) : String(row)
+			},
+
+			tagColLabel(col) {
+				const area = this.tagArea
+				if (!area) return String(col)
+				const custom = area.colLabels[col - 1]
+				if (custom != null && String(custom).trim()) return String(custom).trim()
+				return String(col)
+			},
+
+			// 打标座位的完整座位号（与用户端选座页一致：分区名 + 排号 + 列号）
+			tagSeatLabel(row, col) {
+				const area = this.tagArea
+				if (!area) return row + '排' + col + '号'
+				const r = this.tagRowLabel(row)
+				const c = this.tagColLabel(col)
+				const rText = /[排座]$/.test(r) ? r : r + '排'
+				const cText = /[号座]$/.test(c) ? c : c + '号'
+				return area.name + ' ' + rText + cText
+			},
+
+			switchTagArea(ai) {
+				this.tagAreaIndex = ai
+				this.tagSel = {}
+				this.tagLastTap = null
+			},
+
+			toggleTagSeat(row, col) {
+				const key = row + '-' + col
+				const next = Object.assign({}, this.tagSel)
+				const willSelect = !next[key]
+				if (willSelect) next[key] = true
+				else delete next[key]
+				this.tagSel = next
+				// 点击即提示座位号：批量多选时防止点错行/列
+				const label = this.tagSeatLabel(row, col)
+				this.tagLastTap = { label, on: willSelect }
+				uni.showToast({ title: (willSelect ? '选中 ' : '取消 ') + label, icon: 'none', duration: 1000 })
+			},
+
+			toggleApplyTag(id) {
+				const list = this.tagApply.slice()
+				const i = list.indexOf(id)
+				if (i > -1) list.splice(i, 1)
+				else list.push(id)
+				this.tagApply = list
+			},
+
+			selectAllTagSeats() {
+				const area = this.tagArea
+				if (!area) return
+				if (area.rows * area.cols > TAG_SEAT_LIMIT) {
+					uni.showToast({ title: `超过 ${TAG_SEAT_LIMIT} 座，请缩小行列数`, icon: 'none' })
+					return
+				}
+				const next = {}
+				for (let r = 1; r <= area.rows; r++) {
+					for (let c = 1; c <= area.cols; c++) next[r + '-' + c] = true
+				}
+				this.tagSel = next
+				this.tagLastTap = null
+			},
+
+			clearTagSelection() {
+				this.tagSel = {}
+				this.tagLastTap = null
+			},
+
+			// 取分区打标数组（拷贝，避免直接改 computed 派生对象）
+			seatTagsOfArea(idx) {
+				const area = this.seatAreas[idx]
+				const list = area && Array.isArray(area.seatTags) ? area.seatTags : []
+				return list.map(item => ({ row: item.row, col: item.col, tags: (item.tags || []).slice() }))
+			},
+
+			setAreaSeatTags(idx, list) {
+				const area = this.seatAreas[idx]
+				if (!area) return
+				area.seatTags = list
+				this.dirty = true
+			},
+
+			// 多选座位批量加入/移除标签；移除时未勾选标签=清空这些座位的全部标签
+			applyTagsToSelection(add) {
+				const area = this.tagArea
+				if (!area) return
+				const selKeys = Object.keys(this.tagSel).filter(key => this.tagSel[key])
+				if (selKeys.length === 0) {
+					uni.showToast({ title: '请先点选座位', icon: 'none' })
+					return
+				}
+				if (add && this.tagApply.length === 0) {
+					uni.showToast({ title: '请先勾选要加入的标签', icon: 'none' })
+					return
+				}
+				const map = {}
+				this.seatTagsOfArea(area.index).forEach(item => { map[item.row + '-' + item.col] = item.tags })
+				if (add) {
+					selKeys.forEach(key => {
+						const tags = map[key] || []
+						this.tagApply.forEach(id => {
+							if (tags.indexOf(id) < 0 && tags.length < SEAT_TAG_MAX_PER_SEAT) tags.push(id)
+						})
+						if (tags.length > 0) map[key] = tags
+					})
+				} else {
+					selKeys.forEach(key => {
+						const tags = map[key]
+						if (!tags) return
+						if (this.tagApply.length === 0) {
+							delete map[key]
+							return
+						}
+						const next = tags.filter(id => this.tagApply.indexOf(id) < 0)
+						if (next.length === 0) delete map[key]
+						else map[key] = next
+					})
+				}
+				const nextList = []
+				Object.keys(map).forEach(key => {
+					const parts = key.split('-')
+					nextList.push({ row: parseInt(parts[0]), col: parseInt(parts[1]), tags: map[key] })
+				})
+				this.setAreaSeatTags(area.index, nextList)
+				uni.showToast({ title: add ? '已加入标签' : '已更新标签', icon: 'none' })
+			},
+
+			clearTagsOfSelection() {
+				const area = this.tagArea
+				if (!area) return
+				const selKeys = Object.keys(this.tagSel).filter(key => this.tagSel[key])
+				if (selKeys.length === 0) {
+					uni.showToast({ title: '请先点选座位', icon: 'none' })
+					return
+				}
+				const selMap = {}
+				selKeys.forEach(key => { selMap[key] = true })
+				const remain = this.seatTagsOfArea(area.index).filter(item => !selMap[item.row + '-' + item.col])
+				if (remain.length === area.seatTags.length) {
+					uni.showToast({ title: '所选座位暂无标签', icon: 'none' })
+					return
+				}
+				this.setAreaSeatTags(area.index, remain)
+				uni.showToast({ title: '已清空所选座位标签', icon: 'none' })
+			},
+
+			removeSeatTag(ti) {
+				const tag = this.seatTagDefs[ti]
+				if (!tag) return
+				const used = this.tagUsage[tag.id] || 0
+				uni.showModal({
+					title: '删除标签',
+					content: used > 0
+						? `「${tag.name || '未命名'}」已用于 ${used} 个座位，删除后会同时清除这些座位上的该标签，确定删除吗？`
+						: `确定删除标签「${tag.name || '未命名'}」吗？`,
+					confirmText: '删除',
+					confirmColor: '#c62828',
+					success: (m) => {
+						if (!m.confirm) return
+						this.seatTagDefs.splice(ti, 1)
+						// 全局剔除该标签的打标
+						this.seatAreas.forEach(area => {
+							if (!Array.isArray(area.seatTags) || area.seatTags.length === 0) return
+							const next = []
+							area.seatTags.forEach(item => {
+								const tags = (item.tags || []).filter(id => id !== tag.id)
+								if (tags.length > 0) next.push({ row: item.row, col: item.col, tags })
+							})
+							area.seatTags = next
+						})
+						this.tagApply = this.tagApply.filter(id => id !== tag.id)
+						this.dirty = true
+						uni.showToast({ title: '已删除标签', icon: 'none' })
+					}
+				})
+			},
+
+			// 行列数变化/切舞台后裁剪越界打标
+			pruneAreaSeatTags(idx) {
+				const area = this.seatAreas[idx]
+				if (!area || !Array.isArray(area.seatTags)) return
+				const rows = parseInt(area.rows) || 0
+				const cols = parseInt(area.cols) || 0
+				area.seatTags = area.seatTags.filter(item => item.row >= 1 && item.row <= rows && item.col >= 1 && item.col <= cols)
+			},
+
+			validateSeatTags() {
+				const nameSet = {}
+				for (let i = 0; i < this.seatTagDefs.length; i++) {
+					const tag = this.seatTagDefs[i]
+					const name = String(tag.name || '').trim()
+					const color = String(tag.color || '').trim()
+					if (!name) return `第${i + 1}个标签未填写名称`
+					if (name.length > 8) return `标签「${name}」名称超过 8 个字符`
+					if (nameSet[name]) return `标签名称「${name}」重复`
+					nameSet[name] = true
+					if (!/^#[0-9a-fA-F]{6}$/.test(color)) return `标签「${name}」颜色格式应为 #RRGGBB`
+				}
+				return ''
+			},
+
 			loadSeatConfig() {
 				this.loading = true
 				uniCloud.callFunction({
@@ -538,7 +995,8 @@
 								stageH: a.stageH,
 								rowLabels: a.rowLabels || [],
 								colLabels: a.colLabels || [],
-								labelRule: a.labelRule || null
+								labelRule: a.labelRule || null,
+								seatTags: a.seatTags
 							}))
 							this.seatMaxPerUser = String(d.concert.max_seats_per_user != null ? d.concert.max_seats_per_user : 6)
 							// 座位配色回显：云函数始终存完整四键；与内置默认相同的视为未设置（置空），仅自定义色差才回填
@@ -547,6 +1005,16 @@
 								const v = String(savedColors[c.key] || '').toLowerCase()
 								this.seatColors[c.key] = (/^#[0-9a-fA-F]{6}$/.test(v) && v !== SEAT_COLOR_DEFAULTS[c.key]) ? v : ''
 							})
+							// 座位标签定义回显（id/名称缺失的脏数据丢弃，颜色非法回退默认橙色）
+							const savedTags = Array.isArray(d.concert.seat_tags) ? d.concert.seat_tags : []
+							this.seatTagDefs = savedTags.map(t => ({
+								id: String(t.id || ''),
+								name: String(t.name || ''),
+								color: /^#[0-9a-fA-F]{6}$/.test(String(t.color || '')) ? String(t.color).toLowerCase() : '#ef6c00'
+							})).filter(t => t.id && t.name)
+							this.tagAreaIndex = 0
+							this.tagSel = {}
+							this.tagApply = []
 							this.seatSelectionCount = d.selectionCount || 0
 							// 配置变更后已选记录需重新拉取
 							this.seatLoadedSelections = false
@@ -585,6 +1053,7 @@
 				area.showLabelPanel = false
 				area.editingKind = ''
 				area.editText = ''
+				area.seatTags = Array.isArray(area.seatTags) ? area.seatTags : []
 				return area
 			},
 
@@ -607,7 +1076,8 @@
 					stageH: isStage ? 2 : 0,
 					rowLabels: [],
 					colLabels: [],
-					labelRule: null
+					labelRule: null,
+					seatTags: []
 				}))
 				this.selectedIndex = idx
 				this.dirty = true
@@ -618,6 +1088,8 @@
 				const doRemove = () => {
 					this.seatAreas.splice(idx, 1)
 					this.selectedIndex = this.seatAreas.length > 0 ? 0 : -1
+					this.tagAreaIndex = 0
+					this.tagSel = {}
 					this.dirty = true
 				}
 				if (area && !area.isStage && this.seatSelectionCount > 0) {
@@ -649,6 +1121,8 @@
 						if (!m.confirm) return
 						this.seatAreas = []
 						this.selectedIndex = -1
+						this.tagAreaIndex = 0
+						this.tagSel = {}
 						this.dirty = true
 						this.saveSeatConfig(true)
 					}
@@ -669,6 +1143,10 @@
 					area.colLabels = []
 					area.showLabelPanel = false
 					area.editingKind = ''
+					// 舞台不参与打标，转为舞台时清空该区标签
+					area.seatTags = []
+					this.tagAreaIndex = 0
+					this.tagSel = {}
 				}
 				this.dirty = true
 			},
@@ -866,6 +1344,9 @@
 				if (count > 100) count = 100
 				area[field] = count
 				this.dirty = true
+				// 行列缩小后裁剪越界打标，并清空打标面板选择
+				this.pruneAreaSeatTags(idx)
+				this.tagSel = {}
 
 				const key = field === 'rows' ? 'rowLabels' : 'colLabels'
 				const list = area[key] || []
@@ -1146,6 +1627,13 @@
 					uni.showToast({ title: badColor.name + '颜色格式应为 #RRGGBB', icon: 'none' })
 					return
 				}
+				// 标签定义校验（名称非空/不重复、颜色 #RRGGBB）；保存前再裁剪一次越界打标
+				const tagErr = this.validateSeatTags()
+				if (tagErr) {
+					uni.showToast({ title: tagErr, icon: 'none' })
+					return
+				}
+				this.seatAreas.forEach((a, i) => this.pruneAreaSeatTags(i))
 				this.savingSeat = true
 				uni.showLoading({ title: '保存中' })
 				uniCloud.callFunction({
@@ -1156,6 +1644,7 @@
 						areas: this.seatAreas,
 						maxSeatsPerUser: this.seatMaxPerUser,
 						seatColors: this.seatColors,
+						seatTags: this.seatTagDefs.map(t => ({ id: t.id, name: String(t.name || '').trim(), color: String(t.color || '').trim().toLowerCase() })),
 						force,
 						userId: this.userInfo._id
 					},
@@ -2001,6 +2490,272 @@
 
 			&[disabled] { opacity: 0.5; }
 		}
+	}
+}
+
+/* ===== 座位标签 ===== */
+.tag-sub-title {
+	font-size: 26rpx;
+	font-weight: 600;
+	color: #333;
+	margin: 24rpx 0 12rpx;
+}
+
+.tag-def-empty {
+	font-size: 24rpx;
+	color: #999;
+	line-height: 1.6;
+	background: #fafbfe;
+	border: 1rpx dashed #d5dbe6;
+	border-radius: 12rpx;
+	padding: 20rpx;
+}
+
+.tag-def {
+	border: 1rpx solid #eceff5;
+	border-radius: 12rpx;
+	padding: 14rpx 16rpx;
+	margin-top: 14rpx;
+	background: #fbfcff;
+
+	.tag-def-line {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-top: 8rpx;
+
+		&:first-child { margin-top: 0; }
+	}
+
+	.tag-name-input {
+		flex: 1;
+		height: 56rpx;
+		background: #f5f5f5;
+		border-radius: 10rpx;
+		padding: 0 16rpx;
+		font-size: 26rpx;
+	}
+
+	.tag-used {
+		font-size: 22rpx;
+		color: #8d6e63;
+		background: #fff3e0;
+		border-radius: 18rpx;
+		padding: 6rpx 14rpx;
+		flex-shrink: 0;
+	}
+
+	.tag-del {
+		font-size: 22rpx;
+		color: #c62828;
+		background: #ffebee;
+		border-radius: 18rpx;
+		padding: 6rpx 16rpx;
+		flex-shrink: 0;
+	}
+}
+
+.tag-area-scroll {
+	white-space: nowrap;
+	margin-bottom: 12rpx;
+
+	.ta-chip {
+		display: inline-block;
+		font-size: 24rpx;
+		color: #555;
+		background: #f5f6fa;
+		border: 1rpx solid #e0e3ec;
+		border-radius: 24rpx;
+		padding: 8rpx 24rpx;
+		margin-right: 12rpx;
+
+		&.on {
+			background: #e3f2fd;
+			border-color: #64b5f6;
+			color: #1565c0;
+			font-weight: 600;
+		}
+	}
+}
+
+.tag-apply-row {
+	display: flex;
+	flex-wrap: wrap;
+
+	.tpa-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 8rpx;
+		font-size: 22rpx;
+		color: #555;
+		background: #f5f6fa;
+		border: 1rpx solid #e0e3ec;
+		border-radius: 24rpx;
+		padding: 8rpx 18rpx;
+		margin: 0 12rpx 12rpx 0;
+
+		.tpa-dot {
+			width: 14rpx;
+			height: 14rpx;
+			border-radius: 50%;
+		}
+
+		&.on {
+			background: #e3f2fd;
+			border-color: #64b5f6;
+			color: #1565c0;
+			font-weight: 600;
+		}
+	}
+}
+
+.tag-apply-btns {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12rpx;
+	margin-bottom: 12rpx;
+
+	.tab-btn {
+		font-size: 24rpx;
+		color: #1976D2;
+		background: #e3f2fd;
+		border-radius: 24rpx;
+		padding: 10rpx 20rpx;
+
+		&.main {
+			color: #fff;
+			background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+		}
+
+		&.gray {
+			color: #666;
+			background: #f0f0f0;
+		}
+	}
+}
+
+.tag-grid-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10rpx;
+
+	.tgh-info {
+		flex: 1;
+		font-size: 22rpx;
+		color: #666;
+		margin-right: 12rpx;
+	}
+
+	.tgh-btns { display: flex; gap: 12rpx; }
+
+	.tgh-btn {
+		font-size: 22rpx;
+		color: #1976D2;
+		background: #e3f2fd;
+		border-radius: 18rpx;
+		padding: 6rpx 16rpx;
+
+		&.gray { color: #666; background: #f0f0f0; }
+	}
+}
+
+.tag-last-tap {
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+	margin-bottom: 10rpx;
+	font-size: 22rpx;
+	color: #37474f;
+
+	.tlt-state {
+		font-size: 20rpx;
+		color: #2e7d32;
+		background: #e8f5e9;
+		border-radius: 16rpx;
+		padding: 2rpx 12rpx;
+
+		&.off { color: #8d6e63; background: #efebe9; }
+	}
+
+	.tlt-label { font-weight: 500; }
+}
+
+.tag-tip {
+	display: block;
+	font-size: 22rpx;
+	color: #999;
+	margin-top: 10rpx;
+	line-height: 1.5;
+
+	&.warn { color: #e65100; }
+}
+
+.tag-seat-scroll {
+	width: 100%;
+	height: 520rpx;
+	background: #fafcff;
+	border: 1rpx dashed #b0bec5;
+	border-radius: 12rpx;
+}
+
+.ts-canvas {
+	position: relative;
+}
+
+.ts-corner {
+	position: absolute;
+	left: 0;
+	top: 0;
+	background: #f0f3f8;
+	border-right: 1rpx solid #e2e8f2;
+	border-bottom: 1rpx solid #e2e8f2;
+}
+
+.ts-col-label {
+	position: absolute;
+	top: 0;
+	font-size: 18rpx;
+	color: #90a4ae;
+	text-align: center;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.ts-row-label {
+	position: absolute;
+	left: 0;
+	font-size: 18rpx;
+	color: #90a4ae;
+	text-align: center;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.ts-seat {
+	position: absolute;
+	box-sizing: border-box;
+	background: #eef1f7;
+	border: 1rpx solid #d3dae6;
+	border-radius: 8rpx;
+
+	&.tagged {
+		background: #fff3e0;
+		border-color: #ffcc80;
+	}
+
+	&.on {
+		background: #b39ddb;
+		border-color: #7e57c2;
+	}
+
+	.ts-dot {
+		position: absolute;
+		left: 4rpx;
+		bottom: 4rpx;
+		width: 10rpx;
+		height: 10rpx;
+		border-radius: 50%;
 	}
 }
 </style>
