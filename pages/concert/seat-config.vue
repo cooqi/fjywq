@@ -160,7 +160,7 @@
 								</view>
 								<view class="area-field total-seats">
 									<text class="af-label">小计</text>
-									<text class="af-val">{{ (area.rows||0) * (area.cols||0) }} 座</text>
+									<text class="af-val">{{ areaSeatCount(area) }} 座<text v-if="!area.isStage && areaInvalidCountOf(area) > 0" class="af-inv-note">（已扣无效 {{ areaInvalidCountOf(area) }}）</text></text>
 								</view>
 							</view>
 						</block>
@@ -251,7 +251,7 @@
 
 					<view class="empty-area" v-if="seatAreas.length === 0">暂无分区，点击上方“+ 新增分区”</view>
 
-					<view class="seat-total">座位总数：{{ seatTotalSeats }} 座（不含舞台区）</view>
+					<view class="seat-total">座位总数：{{ seatTotalSeats }} 座（不含舞台区与无效座位）</view>
 				</view>
 
 				<!-- 座位状态配色：管理员自定义，留空则用内置默认 -->
@@ -275,6 +275,55 @@
 						<input class="color-hex" :value="seatColors[c.key]" @input="onSeatColorInput(c.key, $event)" placeholder="可自定义" maxlength="7" />
 					</view>
 					<text class="color-tip">选预设色或手填 #RRGGBB；留空为默认配色</text>
+				</view>
+
+				<!-- 无效座位：点格直接切换无效态；无效座位在用户端不可选择 -->
+				<view class="section">
+					<view class="section-head">
+						<text class="section-title">无效座位</text>
+						<text class="mini-btn gray" @click="clearInvalidOfArea">清除本区标记</text>
+					</view>
+					<view class="inv-hide-row">
+						<text class="ih-label">隐藏无效座位</text>
+						<switch :checked="hideInvalidSeats" color="#9e9e9e" style="transform:scale(0.8)" @change="onHideInvalidChange" />
+						<text class="ih-tip">开启后用户端不显示未被占用的无效座位</text>
+					</view>
+					<view class="tag-tip" v-if="tagAreaList.length === 0">先在「分区配置」添加座位区（舞台/装饰区不设置无效座位）</view>
+					<block v-else>
+						<scroll-view class="tag-area-scroll" scroll-x>
+							<view class="ta-chip" v-for="(a, ai) in tagAreaList" :key="a.index" :class="{ on: invAreaIndex === ai }" @click="switchInvArea(ai)">{{ a.name }}</view>
+						</scroll-view>
+						<view class="tag-grid-head" v-if="invArea">
+							<text class="tgh-info">{{ invArea.name }}：无效 {{ invAreaInvalidCount }} 座 · 全场共 {{ invalidTotalCount }} 座</text>
+							<view class="tgh-btns">
+								<text class="tgh-btn" :class="{ paint: invPaintMode }" @click="toggleInvPaintMode">{{ invPaintMode ? '退出涂选' : '滑动涂选' }}</text>
+							</view>
+						</view>
+						<view class="tag-last-tap" v-if="invLastTap">
+							<text class="tlt-state" :class="{ off: !invLastTap.on }">{{ invLastTap.on ? '已设为无效' : '已恢复有效' }}</text>
+							<text class="tlt-label">{{ invLastTap.label }}</text>
+						</view>
+						<view class="tag-tip" v-if="invArea && invArea.rows * invArea.cols > tagSeatLimit">该分区座位数超过 {{ tagSeatLimit }}，请先缩小行列数再设置无效座位</view>
+						<scroll-view class="tag-seat-scroll" v-else-if="invArea" :scroll-x="!invPaintMode" :scroll-y="!invPaintMode">
+							<view class="ts-canvas inv-grid" id="inv-grid" :style="{ width: invGridW + 'rpx', height: invGridH + 'rpx' }" @touchstart="onInvTouchStart" @touchmove="onInvTouchMove" @touchend="onInvTouchEnd" @touchcancel="onInvTouchEnd" @mousedown="onInvMouseDown" @mousemove="onInvMouseMove" @mouseup="onInvMouseUp" @mouseleave="onInvMouseUp">
+								<view class="ts-corner" :style="{ width: tagAxisW + 'rpx', height: tagAxisH + 'rpx' }"></view>
+								<view class="ts-col-label" v-for="c in invArea.cols" :key="'ic' + c" :style="{ left: (tagAxisW + (c - 1) * tagCell) + 'rpx', width: tagCell + 'rpx', height: tagAxisH + 'rpx', lineHeight: tagAxisH + 'rpx' }">{{ tagColLabel(c, invArea) }}</view>
+								<view class="ts-row-label" v-for="r in invArea.rows" :key="'ir' + r" :style="{ top: (tagAxisH + (r - 1) * tagCell) + 'rpx', width: tagAxisW + 'rpx', height: tagCell + 'rpx', lineHeight: tagCell + 'rpx' }">{{ tagRowLabel(r, invArea) }}</view>
+								<view
+									class="ts-seat"
+									:class="{ invalid: cell.invalid }"
+									v-for="cell in invSeatCells"
+									:key="cell.key"
+									:style="{ left: (cell.left + 3) + 'rpx', top: (cell.top + 3) + 'rpx', width: (tagCell - 6) + 'rpx', height: (tagCell - 6) + 'rpx', background: cell.invalid ? invalidColor : '' }"
+									@click="toggleInvalidSeat(cell.row, cell.col)"
+								>
+									<text class="ts-inv-x" v-if="cell.invalid">✕</text>
+								</view>
+							</view>
+						</scroll-view>
+						<view class="inv-tip" v-if="invPaintMode">涂选中：网格已锁定滚动，按住拖动即可批量涂选（起点有效格＝涂无效，起点无效格＝恢复）；需要滚动到其他区域时先「退出涂选」</view>
+						<view class="inv-tip" v-else>点击单个座位切换无效态；点「滑动涂选」进入涂选模式后可按住拖动批量涂选；无效座位灰底显示 ✕，用户端不可选择。改动需点击底部「保存座位表」生效</view>
+					</block>
 				</view>
 
 				<!-- 座位标签：多选座位批量打标；标签同时作为用户端筛选条件 -->
@@ -390,14 +439,15 @@
 
 <script>
 	// 座位状态内置默认配色（与选座页 seat-select.vue 保持一致；留空/非法均回退此默认）
-	const SEAT_COLOR_DEFAULTS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' }
+	const SEAT_COLOR_DEFAULTS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f', invalid: '#9e9e9e' }
 	const SEAT_COLOR_DEFS = [
 		{ key: 'avail', name: '可选' },
 		{ key: 'selected', name: '预选' },
 		{ key: 'taken', name: '锁定' },
-		{ key: 'mine', name: '我的' }
+		{ key: 'mine', name: '我的' },
+		{ key: 'invalid', name: '无效座位' }
 	]
-	const SEAT_COLOR_PRESETS = ['#dfe4ea', '#b39ddb', '#80deea', '#ffd54f',  '#a5d6a7', '#ef9a9a', '#90caf9']
+	const SEAT_COLOR_PRESETS = ['#dfe4ea', '#b39ddb', '#80deea', '#ffd54f',  '#a5d6a7', '#ef9a9a', '#90caf9', '#9e9e9e']
 	// 座位标签：定义上限 20 个、每座位最多 3 个；打标面板座位网格尺寸（rpx）与单区渲染上限
 	const SEAT_TAG_MAX_DEFS = 20
 	const SEAT_TAG_MAX_PER_SEAT = 3
@@ -433,7 +483,15 @@
 				seatColorDefs: SEAT_COLOR_DEFS,
 				colorPresets: SEAT_COLOR_PRESETS,
 				// 座位状态配色：空字符串表示用默认，保存时只提交合法 #RRGGBB
-				seatColors: { avail: '', selected: '', taken: '', mine: '' },
+				seatColors: { avail: '', selected: '', taken: '', mine: '', invalid: '' },
+				// 无效座位：分区 invalidSeats 稀疏数组 [{row,col}]；hideInvalidSeats 为用户端隐藏开关（存 Concert.hide_invalid_seats）
+				hideInvalidSeats: false,
+				invAreaIndex: 0,
+				invLastTap: null,
+				// 滑动涂选态：rect=网格视口坐标（px），intent=本次涂无效/恢复有效，moved=已拖离起点
+				invPaint: null,
+				// 涂选模式：开启后锁定网格滚动，拖动专用于批量涂选，彻底避开 scroll-view 手势冲突
+				invPaintMode: false,
 				// 座位标签：定义 [{id,name,color}]；打标为分区 seatTags 稀疏数组 [{row,col,tags}]，只存有标签的座位
 				seatTagDefs: [],
 				tagColorPresets: SEAT_TAG_PRESETS,
@@ -471,7 +529,8 @@
 			seatTotalSeats() {
 				return this.seatAreas.reduce((sum, a) => {
 					if (a.isStage) return sum
-					return sum + (parseInt(a.rows) || 0) * (parseInt(a.cols) || 0)
+					const inv = Array.isArray(a.invalidSeats) ? a.invalidSeats.length : 0
+					return sum + Math.max((parseInt(a.rows) || 0) * (parseInt(a.cols) || 0) - inv, 0)
 				}, 0)
 			},
 			cellSize() {
@@ -570,6 +629,65 @@
 			},
 			tagAreaTaggedCount() {
 				return this.tagArea ? this.tagArea.seatTags.length : 0
+			},
+			// ===== 无效座位 =====
+			// 无效座位生效色（供网格 :style 复用，避免每格调用方法）
+			invalidColor() {
+				return this.effectiveColor('invalid')
+			},
+			// 全场已标记无效座位总数
+			invalidTotalCount() {
+				return this.seatAreas.reduce((sum, a) => sum + (Array.isArray(a.invalidSeats) ? a.invalidSeats.length : 0), 0)
+			},
+			// 当前无效座位设置分区（复用可打标分区列表）
+			invArea() {
+				if (this.tagAreaList.length === 0) return null
+				const pos = Math.min(Math.max(0, this.invAreaIndex), this.tagAreaList.length - 1)
+				const item = this.tagAreaList[pos]
+				const area = this.seatAreas[item.index]
+				if (!area) return null
+				return {
+					index: item.index,
+					name: item.name,
+					rows: Math.min(Math.max(parseInt(area.rows) || 0, 0), 100),
+					cols: Math.min(Math.max(parseInt(area.cols) || 0, 0), 100),
+					rowLabelType: Number(area.rowLabelType) || 1,
+					rowLabels: area.rowLabels || [],
+					colLabels: area.colLabels || [],
+					invalidSeats: Array.isArray(area.invalidSeats) ? area.invalidSeats : []
+				}
+			},
+			invAreaInvalidCount() {
+				return this.invArea ? this.invArea.invalidSeats.length : 0
+			},
+			invGridW() {
+				return this.invArea ? this.tagAxisW + this.invArea.cols * this.tagCell + 4 : 0
+			},
+			invGridH() {
+				return this.invArea ? this.tagAxisH + this.invArea.rows * this.tagCell + 4 : 0
+			},
+			// 无效座位网格单元格：点座直接切换无效态，无效座显示 ✕
+			invSeatCells() {
+				const area = this.invArea
+				if (!area || area.rows < 1 || area.cols < 1) return []
+				const invMap = {}
+				area.invalidSeats.forEach(item => { invMap[item.row + '-' + item.col] = true })
+				const cells = []
+				for (let r = 1; r <= area.rows; r++) {
+					for (let c = 1; c <= area.cols; c++) {
+						const key = r + '-' + c
+						cells.push({
+							key,
+							row: r,
+							col: c,
+							left: this.tagAxisW + (c - 1) * this.tagCell,
+							top: this.tagAxisH + (r - 1) * this.tagCell,
+							invalid: !!invMap[key]
+						})
+						if (cells.length >= TAG_SEAT_LIMIT) return cells
+					}
+				}
+				return cells
 			},
 			tagSelCount() {
 				let count = 0
@@ -760,28 +878,28 @@
 				return style
 			},
 
-			tagRowLabel(row) {
-				const area = this.tagArea
+			tagRowLabel(row, areaRef) {
+				const area = areaRef || this.tagArea
 				if (!area) return String(row)
 				const custom = area.rowLabels[row - 1]
 				if (custom != null && String(custom).trim()) return String(custom).trim()
 				return area.rowLabelType === 2 ? this.letterOf(row) : String(row)
 			},
 
-			tagColLabel(col) {
-				const area = this.tagArea
+			tagColLabel(col, areaRef) {
+				const area = areaRef || this.tagArea
 				if (!area) return String(col)
 				const custom = area.colLabels[col - 1]
 				if (custom != null && String(custom).trim()) return String(custom).trim()
 				return String(col)
 			},
 
-			// 打标座位的完整座位号（与用户端选座页一致：分区名 + 排号 + 列号）
-			tagSeatLabel(row, col) {
-				const area = this.tagArea
+			// 打标座位的完整座位号（与用户端选座页一致：分区名 + 排号 + 列号）；areaRef 供无效座位面板复用
+			tagSeatLabel(row, col, areaRef) {
+				const area = areaRef || this.tagArea
 				if (!area) return row + '排' + col + '号'
-				const r = this.tagRowLabel(row)
-				const c = this.tagColLabel(col)
+				const r = this.tagRowLabel(row, area)
+				const c = this.tagColLabel(col, area)
 				const rText = /[排座]$/.test(r) ? r : r + '排'
 				const cText = /[号座]$/.test(c) ? c : c + '号'
 				return area.name + ' ' + rText + cText
@@ -952,6 +1070,222 @@
 				area.seatTags = area.seatTags.filter(item => item.row >= 1 && item.row <= rows && item.col >= 1 && item.col <= cols)
 			},
 
+			// 行列数变化后裁剪越界的无效座位标记
+			pruneAreaInvalidSeats(idx) {
+				const area = this.seatAreas[idx]
+				if (!area || !Array.isArray(area.invalidSeats)) return
+				const rows = parseInt(area.rows) || 0
+				const cols = parseInt(area.cols) || 0
+				area.invalidSeats = area.invalidSeats.filter(item => item.row >= 1 && item.row <= rows && item.col >= 1 && item.col <= cols)
+			},
+
+			// ===== 无效座位设置 =====
+			// 分区无效座数（实时含未保存改动）
+			areaInvalidCountOf(area) {
+				return area && Array.isArray(area.invalidSeats) ? area.invalidSeats.length : 0
+			},
+
+			// 分区可选座位数 = 行列总数 - 无效座位（舞台计 0）
+			areaSeatCount(area) {
+				if (!area || area.isStage) return 0
+				return Math.max((parseInt(area.rows) || 0) * (parseInt(area.cols) || 0) - this.areaInvalidCountOf(area), 0)
+			},
+
+			switchInvArea(ai) {
+				this.invAreaIndex = ai
+				this.invLastTap = null
+			},
+
+			onHideInvalidChange(e) {
+				this.hideInvalidSeats = !!e.detail.value
+				this.dirty = true
+			},
+
+			// 点座位直接切换无效/有效（区别于打标的两步式操作）
+			toggleInvalidSeat(row, col) {
+				const area = this.invArea
+				if (!area) return
+				const target = this.seatAreas[area.index]
+				if (!target) return
+				const list = Array.isArray(target.invalidSeats) ? target.invalidSeats : []
+				const willInvalid = !list.some(s => s.row === row && s.col === col)
+				this.setInvalidEntry(target, row, col, willInvalid)
+				const label = this.tagSeatLabel(row, col, target)
+				this.invLastTap = { label, on: willInvalid }
+				uni.showToast({ title: (willInvalid ? '已设为无效：' : '已恢复有效：') + label, icon: 'none', duration: 1200 })
+			},
+
+			// 写回单个坐标的无效态（in-place，供点击/涂选共用）
+			setInvalidEntry(target, row, col, want) {
+				if (!Array.isArray(target.invalidSeats)) target.invalidSeats = []
+				const list = target.invalidSeats
+				const i = list.findIndex(s => s.row === row && s.col === col)
+				if (want && i < 0) list.push({ row: row, col: col })
+				else if (!want && i > -1) list.splice(i, 1)
+				else return
+				this.dirty = true
+			},
+
+			// ===== 无效座位滑动涂选 =====
+			// 涂选模式：开启后 scroll-view 双向滚动锁定，拖动手势完全给涂选，彻底避开 scroll-view 抢占
+			toggleInvPaintMode() {
+				this.invPaintMode = !this.invPaintMode
+				this.invPaint = null
+				uni.showToast({ title: this.invPaintMode ? '涂选模式：按住拖动批量涂选' : '已退出涂选，网格可滚动', icon: 'none' })
+			},
+
+			// 起点格决定本次意图：有效格→涂无效，无效格→恢复有效；滑过的格子统一按意图应用
+			invTouchPoint(e) {
+				if (e.touches && e.touches.length) return e.touches[0]
+				if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0]
+				if (e.mp && e.mp.touches && e.mp.touches.length) return e.mp.touches[0]
+				// H5 鼠标事件：坐标直接挂在事件对象上
+				if (e.clientX != null || e.pageX != null) return e
+				return null
+			},
+
+			// 异步测网格视口 rect（px）；rect 就绪后立刻补解析起点，避免 60ms 竞态死锁
+			measureInvGrid() {
+				uni.createSelectorQuery().in(this).select('#inv-grid').boundingClientRect().exec((res) => {
+					const r = res && res[0]
+					if (!this.invPaint || !r) return
+					this.invPaint.rect = { left: r.left, top: r.top }
+					if (this.invPaint.intent === null) this.invResolveIntent()
+				})
+			},
+
+			// 触点坐标（视口 px，与 boundingClientRect/touch 同单位）→ 网格行列；rpx 常量仅在此处换算，越界返回 null
+			invCellAt(x, y) {
+				const p = this.invPaint
+				const area = this.invArea
+				if (!p || !p.rect || !area) return null
+				const axisW = uni.upx2px(this.tagAxisW)
+				const axisH = uni.upx2px(this.tagAxisH)
+				const cellPx = uni.upx2px(this.tagCell)
+				if (!cellPx) return null
+				const c = Math.floor((x - p.rect.left - axisW) / cellPx) + 1
+				const r = Math.floor((y - p.rect.top - axisH) / cellPx) + 1
+				if (r < 1 || r > area.rows || c < 1 || c > area.cols) return null
+				return { row: r, col: c }
+			},
+
+			invPaintStart(e) {
+				if (!this.invPaintMode) return
+				const area = this.invArea
+				if (!area) return
+				const t = this.invTouchPoint(e)
+				if (!t) return
+				// touch 坐标与 boundingClientRect 同为视口 px，不再做 upx2px 换算
+				const x = t.clientX != null ? t.clientX : t.pageX
+				const y = t.clientY != null ? t.clientY : t.pageY
+				if (x == null || y == null) return
+				this.invPaint = { rect: null, intent: null, startCell: null, last: '', moved: false, count: 0 }
+				this.invPaint.startXY = { x, y }
+				this.measureInvGrid()
+			},
+
+			// rect 就绪后解析起点格并定意图；起点格本身不立即应用（纯单点交给 click 切换，防双重翻转）
+			invResolveIntent() {
+				const p = this.invPaint
+				if (!p || p.intent !== null || !p.rect) return
+				const cell = this.invCellAt(p.startXY.x, p.startXY.y)
+				if (!cell) return
+				const target = this.seatAreas[this.invArea.index]
+				if (!target) return
+				const list = Array.isArray(target.invalidSeats) ? target.invalidSeats : []
+				p.intent = !list.some(s => s.row === cell.row && s.col === cell.col)
+				p.startCell = cell
+				p.last = cell.row + '-' + cell.col
+			},
+
+			invApplyPaint(x, y) {
+				const p = this.invPaint
+				if (!p) return
+				if (p.intent === null) this.invResolveIntent()
+				if (p.intent === null) return
+				const cell = this.invCellAt(x, y)
+				if (!cell) return
+				const target = this.seatAreas[this.invArea.index]
+				if (!target) return
+				const key = cell.row + '-' + cell.col
+				if (p.last === key) return
+				// 首次真正拖离起点时，先把起点格按意图补上
+				if (!p.moved && p.startCell) {
+					p.moved = true
+					const sb = target.invalidSeats.length
+					this.setInvalidEntry(target, p.startCell.row, p.startCell.col, p.intent)
+					if (target.invalidSeats.length !== sb) p.count++
+				}
+				p.last = key
+				const before = target.invalidSeats.length
+				this.setInvalidEntry(target, cell.row, cell.col, p.intent)
+				if (target.invalidSeats.length !== before) p.count++
+				this.invLastTap = {
+					label: this.tagSeatLabel(cell.row, cell.col, target),
+					on: p.intent
+				}
+			},
+
+			onInvTouchStart(e) {
+				this.invPaintStart(e)
+			},
+
+			onInvTouchMove(e) {
+				const p = this.invPaint
+				if (!p) return
+				const t = this.invTouchPoint(e)
+				if (!t) return
+				const x = t.clientX != null ? t.clientX : t.pageX
+				const y = t.clientY != null ? t.clientY : t.pageY
+				if (x == null || y == null) return
+				// rect 可能因 scroll-view 内部滚动而偏移，移动中持续重测
+				if (p.intent === null) this.measureInvGrid()
+				this.invApplyPaint(x, y)
+			},
+
+			onInvTouchEnd() {
+				const p = this.invPaint
+				this.invPaint = null
+				// 纯单点（未拖出第二格）不处理，交给 click 切换，避免双重翻转
+				if (p && p.moved) {
+					uni.showToast({ title: (p.intent ? '已涂选 ' : '已恢复 ') + p.count + ' 个座位', icon: 'none' })
+				}
+			},
+
+			// H5 端鼠标事件复用同一套涂选逻辑（mousedown 复用 touch 事件的 touches 结构）
+			onInvMouseDown(e) {
+				this.invPaintStart(e)
+			},
+
+			onInvMouseMove(e) {
+				if (!this.invPaint) return
+				if (e.buttons === undefined || e.buttons > 0) this.onInvTouchMove(e)
+			},
+
+			onInvMouseUp() {
+				this.onInvTouchEnd()
+			},
+
+			clearInvalidOfArea() {
+				const area = this.invArea
+				if (!area || area.invalidSeats.length === 0) {
+					uni.showToast({ title: '该分区暂无无效座位标记', icon: 'none' })
+					return
+				}
+				uni.showModal({
+					title: '清除无效标记',
+					content: `将「${area.name}」的 ${area.invalidSeats.length} 个无效座位全部恢复为可选，确定吗？`,
+					success: (m) => {
+						if (!m.confirm) return
+						const target = this.seatAreas[area.index]
+						if (target) target.invalidSeats = []
+						this.invLastTap = null
+						this.dirty = true
+						uni.showToast({ title: '已清除', icon: 'none' })
+					}
+				})
+			},
+
 			validateSeatTags() {
 				const nameSet = {}
 				for (let i = 0; i < this.seatTagDefs.length; i++) {
@@ -996,7 +1330,8 @@
 								rowLabels: a.rowLabels || [],
 								colLabels: a.colLabels || [],
 								labelRule: a.labelRule || null,
-								seatTags: a.seatTags
+								seatTags: a.seatTags,
+								invalidSeats: a.invalidSeats
 							}))
 							this.seatMaxPerUser = String(d.concert.max_seats_per_user != null ? d.concert.max_seats_per_user : 6)
 							// 座位配色回显：云函数始终存完整四键；与内置默认相同的视为未设置（置空），仅自定义色差才回填
@@ -1015,6 +1350,12 @@
 							this.tagAreaIndex = 0
 							this.tagSel = {}
 							this.tagApply = []
+							// 无效座位：隐藏开关回显与面板状态重置
+							this.hideInvalidSeats = d.concert.hide_invalid_seats === true
+							this.invAreaIndex = 0
+							this.invLastTap = null
+							this.invPaintMode = false
+							this.invPaint = null
 							this.seatSelectionCount = d.selectionCount || 0
 							// 配置变更后已选记录需重新拉取
 							this.seatLoadedSelections = false
@@ -1054,6 +1395,7 @@
 				area.editingKind = ''
 				area.editText = ''
 				area.seatTags = Array.isArray(area.seatTags) ? area.seatTags : []
+				area.invalidSeats = Array.isArray(area.invalidSeats) ? area.invalidSeats : []
 				return area
 			},
 
@@ -1077,7 +1419,8 @@
 					rowLabels: [],
 					colLabels: [],
 					labelRule: null,
-					seatTags: []
+					seatTags: [],
+					invalidSeats: []
 				}))
 				this.selectedIndex = idx
 				this.dirty = true
@@ -1143,8 +1486,9 @@
 					area.colLabels = []
 					area.showLabelPanel = false
 					area.editingKind = ''
-					// 舞台不参与打标，转为舞台时清空该区标签
+					// 舞台不参与打标与无效座位设置，转为舞台时清空
 					area.seatTags = []
+					area.invalidSeats = []
 					this.tagAreaIndex = 0
 					this.tagSel = {}
 				}
@@ -1346,7 +1690,9 @@
 				this.dirty = true
 				// 行列缩小后裁剪越界打标，并清空打标面板选择
 				this.pruneAreaSeatTags(idx)
+				this.pruneAreaInvalidSeats(idx)
 				this.tagSel = {}
+				this.invLastTap = null
 
 				const key = field === 'rows' ? 'rowLabels' : 'colLabels'
 				const list = area[key] || []
@@ -1633,7 +1979,10 @@
 					uni.showToast({ title: tagErr, icon: 'none' })
 					return
 				}
-				this.seatAreas.forEach((a, i) => this.pruneAreaSeatTags(i))
+				this.seatAreas.forEach((a, i) => {
+					this.pruneAreaSeatTags(i)
+					this.pruneAreaInvalidSeats(i)
+				})
 				this.savingSeat = true
 				uni.showLoading({ title: '保存中' })
 				uniCloud.callFunction({
@@ -1645,6 +1994,7 @@
 						maxSeatsPerUser: this.seatMaxPerUser,
 						seatColors: this.seatColors,
 						seatTags: this.seatTagDefs.map(t => ({ id: t.id, name: String(t.name || '').trim(), color: String(t.color || '').trim().toLowerCase() })),
+						hideInvalidSeats: this.hideInvalidSeats,
 						force,
 						userId: this.userInfo._id
 					},
@@ -2657,6 +3007,7 @@
 		padding: 6rpx 16rpx;
 
 		&.gray { color: #666; background: #f0f0f0; }
+		&.paint { color: #fff; background: #7e57c2; }
 	}
 }
 
@@ -2749,6 +3100,19 @@
 		border-color: #7e57c2;
 	}
 
+	&.invalid {
+		border-color: #757575;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.ts-inv-x {
+		font-size: 22rpx;
+		line-height: 1;
+		color: #ffffff;
+	}
+
 	.ts-dot {
 		position: absolute;
 		left: 4rpx;
@@ -2757,5 +3121,37 @@
 		height: 10rpx;
 		border-radius: 50%;
 	}
+}
+
+/* 无效座位设置 */
+.inv-hide-row {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+	margin-bottom: 14rpx;
+
+	.ih-label {
+		font-size: 26rpx;
+		color: #37474f;
+		font-weight: 600;
+	}
+
+	.ih-tip {
+		font-size: 22rpx;
+		color: #999;
+	}
+}
+
+.inv-tip {
+	display: block;
+	font-size: 22rpx;
+	color: #999;
+	margin-top: 10rpx;
+	line-height: 1.5;
+}
+
+.af-inv-note {
+	font-size: 20rpx;
+	color: #e65100;
 }
 </style>

@@ -103,7 +103,9 @@ async function fetchAreas(concertId) {
 			rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
 			colLabels: Array.isArray(item.colLabels) ? item.colLabels : [],
 			// 座位标签 [{row,col,tags:[标签id]}]，稀疏只含有标签的座位；标签定义在 Concert.seat_tags
-			seatTags: Array.isArray(item.seatTags) ? item.seatTags : []
+			seatTags: Array.isArray(item.seatTags) ? item.seatTags : [],
+			// 无效座位 [{row,col}] 稀疏数组：管理员标记的不可选座位（如过道/损坏位）
+			invalidSeats: Array.isArray(item.invalidSeats) ? item.invalidSeats : []
 		};
 	});
 	areas.sort((a, b) => a.sort - b.sort);
@@ -192,7 +194,11 @@ async function getSeatMap(event) {
 		}
 		
 		const canvas = computeCanvas(areas);
-		const capacity = areas.reduce((sum, item) => sum + item.rows * item.cols, 0);
+		// 可售容量 = 行列总数 - 无效座位（无效座不可选，不计入分区/全场总数）
+		const capacity = areas.reduce((sum, item) => {
+			const inv = Array.isArray(item.invalidSeats) ? item.invalidSeats.length : 0;
+			return sum + Math.max(item.rows * item.cols - inv, 0);
+		}, 0);
 		
 		const isAdmin = await isAdminUser(userId);
 		const selections = await getAllByPage({ concertId }, { areaId: true, row: true, col: true, userId: true, remark: true, nickname: true });
@@ -239,6 +245,8 @@ async function getSeatMap(event) {
 				seatColors: concert.seat_colors || {},
 				// 座位标签定义 [{id,name,color}]，前端渲染座位圆点与筛选栏
 				seatTags: Array.isArray(concert.seat_tags) ? concert.seat_tags : [],
+				// 隐藏无效座位开关：开启后前端不渲染未被占用的无效位
+				hideInvalidSeats: concert.hide_invalid_seats === true,
 				totalSelected: selections.length,
 				totalCapacity: capacity,
 				canvasW: canvas.canvasW,
@@ -283,7 +291,11 @@ async function getRoster(event) {
 		
 		const areaMap = {};
 		areas.forEach(item => { areaMap[item._id] = item; });
-		const capacity = areas.reduce((sum, item) => sum + item.rows * item.cols, 0);
+		// 名单页容量同样扣除无效座位
+		const capacity = areas.reduce((sum, item) => {
+			const inv = Array.isArray(item.invalidSeats) ? item.invalidSeats.length : 0;
+			return sum + Math.max(item.rows * item.cols - inv, 0);
+		}, 0);
 		
 		const selections = await getAllByPage({ concertId }, { areaId: true, row: true, col: true, userId: true, remark: true, nickname: true, seatLabel: true, createTime: true });
 		
@@ -395,6 +407,11 @@ async function submit(event) {
 		const areasRes = await db.collection(AREA_COLLECTION).where({ concertId }).get();
 		const areaMap = {};
 		(areasRes.data || []).forEach(item => {
+			// 无效座位坐标集：key 为 row-col，提交时服务端拦截
+			const invSet = {};
+			(Array.isArray(item.invalidSeats) ? item.invalidSeats : []).forEach(s => {
+				if (s && s.row && s.col) invSet[`${s.row}-${s.col}`] = true;
+			});
 			areaMap[item._id] = {
 				_id: item._id,
 				name: item.name,
@@ -404,7 +421,8 @@ async function submit(event) {
 				price: Number(item.price) || 0,
 				isStage: !!item.isStage,
 				rowLabels: Array.isArray(item.rowLabels) ? item.rowLabels : [],
-				colLabels: Array.isArray(item.colLabels) ? item.colLabels : []
+				colLabels: Array.isArray(item.colLabels) ? item.colLabels : [],
+				invalidSet: invSet
 			};
 		});
 		if (Object.keys(areaMap).length === 0) {
@@ -427,6 +445,10 @@ async function submit(event) {
 			}
 			if (!(row >= 1 && row <= area.rows) || !(col >= 1 && col <= area.cols)) {
 				return { code: -1, message: `座位坐标超出「${area.name}」范围（${area.rows}排 ${area.cols}列）` };
+			}
+			// 管理员标记的无效座位不可选（不信任前端置灰，服务端二次拦截）
+			if (area.invalidSet[`${row}-${col}`]) {
+				return { code: -1, message: `座位 ${buildSeatLabel(area, row, col)} 已被设为无效，请刷新座位图后重选` };
 			}
 			
 			const key = seatKey(area._id, row, col);

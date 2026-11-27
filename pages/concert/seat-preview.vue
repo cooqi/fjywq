@@ -700,7 +700,9 @@
 						.filter(s => s.areaId === area._id)
 						.sort((a, b) => (a.row - b.row) || (a.col - b.col))
 					if (list.length === 0) return
-					lines.push('【' + area.name + '】已占 ' + list.length + ' / ' + (area.rows * area.cols))
+					// 分母与 totalCapacity 同口径：行列总数 - 无效座位
+					const cap = Math.max((area.rows || 0) * (area.cols || 0) - (Array.isArray(area.invalidSeats) ? area.invalidSeats.length : 0), 0)
+					lines.push('【' + area.name + '】已占 ' + list.length + ' / ' + cap)
 					list.forEach(s => {
 						const nick = String(s.nickname || '').trim()
 						const remark = s.remark || ''

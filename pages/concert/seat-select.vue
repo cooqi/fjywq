@@ -37,7 +37,7 @@
 				>
 					<view class="tab-dot" :style="{background: area.color}"></view>
 					<text class="tab-name">{{area.name}}</text>
-					<text class="tab-sel" v-if="!area.isStage">{{area.selected || 0}}/{{area.rows * area.cols}}</text>
+					<text class="tab-sel" v-if="!area.isStage">{{area.selected || 0}}/{{areaCap(area)}}</text>
 					<text class="tab-sel" v-else>舞台</text>
 					<text class="tab-price" v-if="!area.isStage">¥{{area.price}}</text>
 				</view>
@@ -50,6 +50,7 @@
 					<view class="lg-item"><view class="lg-box selected" :style="{background: seatColorMap.selected}"></view><text>预选</text></view>
 					<view class="lg-item"><view class="lg-box taken" :style="{background: seatColorMap.taken}"></view><text>锁定</text></view>
 					<view class="lg-item"><view class="lg-box mine" :style="{background: seatColorMap.mine}"></view><text>我的</text></view>
+					<view class="lg-item" v-if="invalidTotalCount > 0"><view class="lg-box invalid" :style="{background: seatColorMap.invalid}"></view><text>无效</text></view>
 					
 				</view>
 				<view class="zoom-ctrl">
@@ -159,7 +160,7 @@
 							:style="{ height: area.showGutter ? area.titleH + 'rpx' : '100%', fontSize: titleFont + 'rpx' }"
 						>
 							<text class="at-name" :style="{ background: area.color }">{{area.name}}</text>
-							<text class="at-sel">已售{{area.selected || 0}}/{{area.rows * area.cols}}</text>
+							<text class="at-sel">已售{{area.selected || 0}}/{{area.cap}}</text>
 						</view>
 
 						<block v-if="!area.isStage">
@@ -276,8 +277,8 @@
 	const CANVAS_PAD = 16
 	const MIN_TAP_SCALE = 1 // 选座/取消选的最低缩放：小于 100% 座位太小，容易误触
 	// 座位状态内置默认配色（管理员可在座位配置页覆盖，存 Concert.seat_colors）
-	const DEFAULT_SEAT_COLORS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' }
-	const DEFAULT_SEAT_TEXT = { avail: '#37474f', selected: '#311b92', taken: '#006064', mine: '#6d4c41' }
+	const DEFAULT_SEAT_COLORS = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f', invalid: '#9e9e9e' }
+	const DEFAULT_SEAT_TEXT = { avail: '#37474f', selected: '#311b92', taken: '#006064', mine: '#6d4c41', invalid: '#ffffff' }
 	// 按背景感知亮度自动选前景色：深色底用白字，浅色底沿用同状态默认深色字
 	function seatTextColor(bg, fallback) {
 		const m = /^#([0-9a-fA-F]{6})$/.exec(bg || '')
@@ -303,8 +304,10 @@
 				maxSeatsPerUser: 0,
 				seatVersion: 1,
 				seatEnabled: false,
-				// 管理员配置的座位状态配色 {avail,selected,taken,mine}，空/非法值回退内置默认
+				// 管理员配置的座位状态配色 {avail,selected,taken,mine,invalid}，空/非法值回退内置默认
 				seatColors: {},
+				// 管理员开关（Concert.hide_invalid_seats）：开启后不渲染未被占用的无效座位
+				hideInvalidSeats: false,
 				// 座位标签定义 [{id,name,color}]（Concert.seat_tags）；activeTags 为用户端筛选（多选 AND）
 				seatTags: [],
 				activeTags: [],
@@ -469,6 +472,22 @@
 				})
 				return map
 			},
+			// 座位 key -> true：由各分区 invalidSeats 稀疏数组 [{row,col}] 摊平
+			invalidSeatIndex() {
+				const map = {}
+				this.areas.forEach(area => {
+					if (area.isStage) return
+					;(Array.isArray(area.invalidSeats) ? area.invalidSeats : []).forEach(item => {
+						if (!item) return
+						map[`${area._id}-${item.row}-${item.col}`] = true
+					})
+				})
+				return map
+			},
+			// 全场无效座位数（图例条件显示用；隐藏模式下只统计仍渲染的）
+			invalidTotalCount() {
+				return Object.keys(this.invalidSeatIndex).length
+			},
 			// 推给 wxs 的视图状态：缩放/平移（rpx）+ 视口与画布尺寸 + 过渡开关；每次逻辑层变更后 change:gs 触发同步
 			gestureState() {
 				return {
@@ -508,12 +527,16 @@
 				const axisH = this.axisH
 				const tagDefMap = this.tagDefMap
 				const seatTagIndex = this.seatTagIndex
+				const invalidSeatIndex = this.invalidSeatIndex
+				const hideInvalid = !!this.hideInvalidSeats
 				const activeTags = this.activeTags
 				const tagFilterOn = activeTags.length > 0
 				return this.areas.map((area, index) => {
 					const isStage = !!area.isStage
 					const rows = Number(area.rows) || 0
 					const cols = Number(area.cols) || 0
+					// 可选容量 = 行列总数 - 无效座位（与云函数 totalCapacity 同口径）
+					const invCount = Array.isArray(area.invalidSeats) ? area.invalidSeats.length : 0
 					const block = {
 						index,
 						_id: area._id,
@@ -523,6 +546,7 @@
 						isStage,
 						rows,
 						cols,
+						cap: Math.max(rows * cols - invCount, 0),
 						selected: area.selected || 0,
 						showGutter: showLabel,
 						gutLeft,
@@ -559,6 +583,12 @@
 								note = taken.remark || ''
 							} else if (this.selectedSet[key]) {
 								state = 'selected'
+							}
+							// 无效座位：仅原本可选的置为 invalid（mine/taken/selected 优先正常显示）；
+							// 隐藏开关开启时未占用的无效座直接不渲染，已占的保留供管理员释放
+							if (state === 'avail' && invalidSeatIndex[key]) {
+								if (hideInvalid) continue
+								state = 'invalid'
 							}
 							// 标签：筛选为 AND（需同时包含全部激活标签）；匹配座描边、非匹配座变淡
 							const tagIds = seatTagIndex[key] || []
@@ -710,6 +740,13 @@
 			this.loadSeatMap()
 		},
 		methods: {
+			// 分区可选座位数 = 行列总数 - 无效座位（tab 栏用原始 areas，与 layoutAreas.block.cap 同口径）
+			areaCap(area) {
+				const total = (Number(area.rows) || 0) * (Number(area.cols) || 0)
+				const inv = Array.isArray(area.invalidSeats) ? area.invalidSeats.length : 0
+				return Math.max(total - inv, 0)
+			},
+
 			// 座位前景色：根据生效背景亮度自动选白/深色，保证自定义配色下编号仍可读
 			seatFg(state) {
 				return seatTextColor(this.seatColorMap[state], DEFAULT_SEAT_TEXT[state] || '#37474f')
@@ -747,7 +784,7 @@
 
 			// 搜索/菜单里的座位状态文案
 			stateText(state) {
-				const map = { mine: '我的', taken: '锁定', selected: '预选', avail: '可选' }
+				const map = { mine: '我的', taken: '锁定', selected: '预选', avail: '可选', invalid: '无效' }
 				return map[state] || ''
 			},
 
@@ -1042,6 +1079,7 @@
 							this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
 							this.seatVersion = Number(d.seatVersion) || 1
 							this.seatColors = d.seatColors || {}
+							this.hideInvalidSeats = d.hideInvalidSeats === true
 							this.syncSeatTags(d.seatTags)
 							this.isAdmin = !!d.isAdmin
 							this.focusIndex = -1
@@ -1055,7 +1093,7 @@
 							this.mySeatSet = mine
 
 							this.totalSelected = Number(d.totalSelected) || 0
-							this.totalCapacity = Number(d.totalCapacity) || this.areas.reduce((sum, a) => sum + (a.isStage ? 0 : (a.rows || 0) * (a.cols || 0)), 0)
+							this.totalCapacity = Number(d.totalCapacity) || this.areas.reduce((sum, a) => sum + (a.isStage ? 0 : this.areaCap(a)), 0)
 
 							// 我的座位已从可选池剔除，清空与之冲突的暂存
 							this.selectedSet = {}
@@ -1107,6 +1145,7 @@
 						this.areas = d.areas || []
 						this.maxSeatsPerUser = Number(d.maxSeatsPerUser) || 0
 						this.seatColors = d.seatColors || {}
+						this.hideInvalidSeats = d.hideInvalidSeats === true
 						this.syncSeatTags(d.seatTags)
 						this.isAdmin = !!d.isAdmin
 
@@ -1119,7 +1158,7 @@
 						this.mySeatSet = mine
 
 						this.totalSelected = Number(d.totalSelected) || 0
-						this.totalCapacity = Number(d.totalCapacity) || this.areas.reduce((sum, a) => sum + (a.isStage ? 0 : (a.rows || 0) * (a.cols || 0)), 0)
+						this.totalCapacity = Number(d.totalCapacity) || this.areas.reduce((sum, a) => sum + (a.isStage ? 0 : this.areaCap(a)), 0)
 
 						// 选座车清洗：已是“我的”（如其它端已下单）静默出车；被他人抢占则移除并提醒
 						const lost = []
@@ -1243,6 +1282,11 @@
 			onSeatTap(seat) {
 				// 拖拽/捏合手势刚结束的紧随 click 一律忽略，防误选
 				if (this.justDragged()) return
+				// 无效座位：不可选择（服务端 submit 另有二次拦截）
+				if (seat.state === 'invalid') {
+					uni.showToast({ title: seat.label + ' 为无效座位，不可选择', icon: 'none' })
+					return
+				}
 				// 只有可选座位是无确认弹窗直接写入选座车的，先检查缩放够不够
 				if (seat.state === 'avail' && !this.ensureReadableForTap(seat)) return
 				if (seat.state === 'mine') {
@@ -2009,6 +2053,7 @@
 			&.selected { background: #b39ddb; }
 			&.taken { background: #80deea; }
 			&.mine { background: #ffd54f; }
+			&.invalid { background: #9e9e9e; }
 			&.stage { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); }
 		}
 	}

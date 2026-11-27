@@ -194,10 +194,10 @@ function normalizeLabelRule(rule) {
 	};
 }
 
-// 座位状态配色清洗：合法 #RRGGBB 采用自定义值，非法/缺省回填内置默认（始终存完整四键，避免空对象不清除旧值）
-const SEAT_COLOR_KEYS = ['avail', 'selected', 'taken', 'mine'];
+// 座位状态配色清洗：合法 #RRGGBB 采用自定义值，非法/缺省回填内置默认（始终存完整键，避免空对象不清除旧值）
+const SEAT_COLOR_KEYS = ['avail', 'selected', 'taken', 'mine', 'invalid'];
 // 与选座页 seat-select.vue / 配置页 seat-config.vue 内置默认保持一致
-const SEAT_COLOR_FALLBACK = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f' };
+const SEAT_COLOR_FALLBACK = { avail: '#dfe4ea', selected: '#b39ddb', taken: '#80deea', mine: '#ffd54f', invalid: '#9e9e9e' };
 
 function normalizeSeatColors(input) {
 	const src = input && typeof input === 'object' ? input : {};
@@ -268,6 +268,27 @@ function normalizeAreaSeatTags(input, rows, cols, tagIdMap) {
 		
 		seen[key] = true;
 		list.push({ row, col, tags });
+		if (list.length >= SEAT_TAG_MAX_SEATS_PER_AREA) break;
+	}
+	
+	return list;
+}
+
+// 无效座位清洗：[{row,col}] 稀疏数组，越界坐标与重复坐标丢弃，上限与打标一致
+function normalizeAreaInvalidSeats(input, rows, cols) {
+	if (!Array.isArray(input) || !(rows >= 1) || !(cols >= 1)) return [];
+	const list = [];
+	const seen = {};
+	
+	for (const raw of input) {
+		const src = raw && typeof raw === 'object' ? raw : {};
+		const row = parseInt(src.row);
+		const col = parseInt(src.col);
+		if (!(row >= 1 && row <= rows) || !(col >= 1 && col <= cols)) continue;
+		const key = `${row}-${col}`;
+		if (seen[key]) continue;
+		seen[key] = true;
+		list.push({ row, col });
 		if (list.length >= SEAT_TAG_MAX_SEATS_PER_AREA) break;
 	}
 	
@@ -550,7 +571,10 @@ async function getSeatConfig(event) {
 				labelRule: item.labelRule || null,
 				// 座位标签（稀疏，只含有标签的座位）
 				seatTags: Array.isArray(item.seatTags) ? item.seatTags : [],
-				totalSeats: isStage ? 0 : rows * cols
+				// 无效座位（稀疏，仅含被标记的座位）：不可选，可按场次开关隐藏
+				invalidSeats: Array.isArray(item.invalidSeats) ? item.invalidSeats : [],
+				// 可选座位数 = 行列总数 - 无效座位（舞台不渲染座位，计 0）
+				totalSeats: isStage ? 0 : Math.max(rows * cols - (Array.isArray(item.invalidSeats) ? item.invalidSeats.length : 0), 0)
 			};
 		});
 		const canvas = computeCanvas(areaList);
@@ -573,7 +597,9 @@ async function getSeatConfig(event) {
 					seat_version: Number(concert.seat_version) || 1,
 					seat_colors: concert.seat_colors || {},
 					// 座位标签定义 [{id,name,color}]，配置页回显与用户端筛选用
-					seat_tags: Array.isArray(concert.seat_tags) ? concert.seat_tags : []
+					seat_tags: Array.isArray(concert.seat_tags) ? concert.seat_tags : [],
+					// 用户端是否隐藏无效座位（隐藏时仅隐藏未被占用的无效位）
+					hide_invalid_seats: concert.hide_invalid_seats === true
 				},
 				areas: areaList,
 				canvasW: canvas.canvasW,
@@ -685,7 +711,9 @@ async function saveSeatConfig(event) {
 				colLabels: colLabelsRes.list,
 				labelRule: normalizeLabelRule(item.labelRule),
 				// 原始打标入参，待 oldMap 就绪后统一清洗（旧版客户端传 undefined 时沿用原标签）
-				seatTagsInput: item.seatTags
+				seatTagsInput: item.seatTags,
+				// 无效座位原始入参，同样延后清洗（未传时沿用旧值）
+				invalidSeatsInput: item.invalidSeats
 			});
 		}
 		
@@ -771,6 +799,16 @@ async function saveSeatConfig(event) {
 				tagIdMap
 			);
 			delete item.seatTagsInput;
+			// 无效座位同理：显式传了按新值清洗，未传沿用旧值并按新行列裁剪
+			const invSource = item.invalidSeatsInput !== undefined
+				? item.invalidSeatsInput
+				: (old && Array.isArray(old.invalidSeats) ? old.invalidSeats : []);
+			item.invalidSeats = normalizeAreaInvalidSeats(
+				invSource,
+				item.isStage ? 0 : item.rows,
+				item.isStage ? 0 : item.cols
+			);
+			delete item.invalidSeatsInput;
 		});
 		
 		const keptIds = normalized.filter(item => item._id && oldMap[item._id]).map(item => item._id);
@@ -827,7 +865,8 @@ async function saveSeatConfig(event) {
 				rowLabels: item.rowLabels,
 				colLabels: item.colLabels,
 				labelRule: item.labelRule,
-				seatTags: item.seatTags
+				seatTags: item.seatTags,
+				invalidSeats: item.invalidSeats
 			};
 			
 			if (item._id && oldMap[item._id]) {
@@ -882,6 +921,10 @@ async function saveSeatConfig(event) {
 		// 标签定义同理：未传则不动，传了则整体覆盖（空数组 = 清空全部标签定义）
 		if (event.seatTags !== undefined) {
 			concertUpdate.seat_tags = tagDefs;
+		}
+		// 隐藏无效座位开关：未传不动，传了按布尔覆盖
+		if (event.hideInvalidSeats !== undefined) {
+			concertUpdate.hide_invalid_seats = !!event.hideInvalidSeats;
 		}
 		
 		await db.collection('Concert').doc(concertId).update(concertUpdate);
