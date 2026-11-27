@@ -36,12 +36,24 @@
 			<!-- 已申请 -->
 			<view class="section-card" v-else-if="myApply">
 				<view class="applied-box">
-					<view class="applied-icon">✅</view>
-					<view class="applied-text">你已申请 {{ myApply.qty }} 份</view>
-					<view class="applied-status">{{ myApply.status === 1 ? '对方已标记互换' : '待对方处理' }}</view>
+					<view class="applied-icon">{{ myApply.status === 2 ? '🚫' : '✅' }}</view>
+					<view class="applied-text" :class="{ 'applied-cancelled': myApply.status === 2 }">{{ myApply.status === 2 ? '该申请已取消' : '你已申请 ' + myApply.qty + ' 份' }}</view>
+					<view class="applied-status">{{ myApply.status === 1 ? '对方已标记互换' : myApply.status === 2 ? '对方已取消该互换，你的申请同步取消' : '待对方处理' }}</view>
 					<view class="applied-offer" v-if="myApply.offer_item">互换物料：{{ myApply.offer_item }}</view>
+					<!-- 申请后可继续修改自己的备注（待处理状态下） -->
+					<view class="applied-remark" v-if="!editingRemark">
+						我的备注：{{ myApply.remark || '无' }}
+						<text class="remark-edit-link" v-if="myApply.status === 0" @click="startEditRemark">修改</text>
+					</view>
+					<view class="remark-edit-box" v-else>
+						<textarea class="field-textarea" v-model="editRemark" placeholder="如：我有B版小卡可以换" maxlength="100" :auto-height="false" />
+						<view class="remark-btn-row">
+							<text class="remark-save" @click="saveRemark">{{ savingRemark ? '保存中...' : '保存' }}</text>
+							<text class="remark-cancel" @click="editingRemark = false">取消</text>
+						</view>
+					</view>
 				</view>
-				<button class="ghost-btn danger" @click="cancelApply">取消我的申请</button>
+				<button class="ghost-btn danger" v-if="myApply.status !== 2" @click="cancelApply">取消我的申请</button>
 			</view>
 
 			<!-- 申请表单 -->
@@ -90,6 +102,9 @@ export default {
 			listing: { name: '', image: '', total_qty: 0, remaining: 0, remark: '', status: 1, allow_free: true },
 			myApply: null,
 			form: { nickname: '', qty: '1', remark: '', offerItem: '' },
+			editingRemark: false,
+			editRemark: '',
+			savingRemark: false,
 			submitting: false
 		}
 	},
@@ -99,6 +114,7 @@ export default {
 			if (s === 2) return '名额已满'
 			if (s === 3) return '该互换已结束'
 			if (s === 4) return '该互换已过期'
+			if (s === 5) return '对方已取消该互换'
 			return ''
 		},
 		canApply() {
@@ -206,6 +222,34 @@ export default {
 				}
 			})
 		},
+		startEditRemark() {
+			if (!this.myApply || this.myApply.status !== 0) return
+			this.editRemark = this.myApply.remark || ''
+			this.editingRemark = true
+		},
+		saveRemark() {
+			if (!this.myApply || this.savingRemark) return
+			this.savingRemark = true
+			uniCloud.callFunction({
+				name: 'exchange',
+				data: { action: 'updateApplyRemark', userId: this.userId, applyId: this.myApply._id, remark: (this.editRemark || '').trim() },
+				success: (res) => {
+					this.savingRemark = false
+					if (res.result.code === 0) {
+						uni.showToast({ title: '备注已保存', icon: 'none' })
+						this.editingRemark = false
+						this.myApply.remark = res.result.data.remark
+					} else {
+						uni.showToast({ title: res.result.msg, icon: 'none' })
+					}
+				},
+				fail: (err) => {
+					this.savingRemark = false
+					console.error('保存备注失败:', err)
+					uni.showToast({ title: '网络错误', icon: 'none' })
+				}
+			})
+		},
 		goManage() {
 			uni.redirectTo({ url: '/pages/game/xianxia/huhuan/huhuan-manage?mode=manage&listingId=' + this.listing._id })
 		},
@@ -240,8 +284,15 @@ export default {
 .applied-box { text-align: center; padding: 20rpx 0 30rpx; }
 .applied-icon { font-size: 70rpx; }
 .applied-text { font-size: 32rpx; font-weight: bold; color: #2e8b6f; margin-top: 12rpx; }
+.applied-text.applied-cancelled { color: #c62828; }
 .applied-status { font-size: 24rpx; color: #999; margin-top: 10rpx; }
 .applied-offer { font-size: 26rpx; color: #2e8b6f; margin-top: 10rpx; }
+.applied-remark { font-size: 26rpx; color: #666; margin-top: 14rpx; }
+.remark-edit-link { color: #38b2ac; font-size: 24rpx; margin-left: 16rpx; text-decoration: underline; }
+.remark-edit-box { margin-top: 20rpx; text-align: left; }
+.remark-btn-row { display: flex; justify-content: flex-end; gap: 30rpx; margin-top: 14rpx; }
+.remark-save { font-size: 26rpx; color: #2e8b6f; }
+.remark-cancel { font-size: 26rpx; color: #999; }
 .req-star { color: #c62828; }
 .opt-tag { color: #bbb; font-size: 22rpx; }
 

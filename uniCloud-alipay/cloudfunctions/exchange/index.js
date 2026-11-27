@@ -2,7 +2,8 @@
 /**
  * 物料互换 exchange 云函数
  * A 发布「物料 + 互换数量 N」生成物料码；B 凭码填「昵称 + 数量 + 备注」申请；
- * A 在申请列表里管理（改数量 / 删除 / 标记已互换）。
+ * A 在申请列表里管理（改数量 / 删除 / 标记已互换 / 添加仅自己可见的备注）。
+ * B 申请后可继续修改自己的备注（待处理状态下）；A 也可自行补录申请（线下代客登记）。
  * 核心约束：申请人数 ≤ N、总份数 ≤ N。用条件原子自增防超卖（不依赖事务）。
  * 返回统一格式：{ code, msg, data }，code=0 成功。
  */
@@ -55,6 +56,12 @@ exports.main = async (event, context) => {
 			case 'deleteListing':
 				if (!userId) return { code: -1, msg: '请先登录' };
 				return await deleteListing(event.listingId, userId);
+			case 'restoreListing':
+				if (!userId) return { code: -1, msg: '请先登录' };
+				return await restoreListing(event.listingId, userId);
+			case 'updateListing':
+				if (!userId) return { code: -1, msg: '请先登录' };
+				return await updateListing(event.listingId, userId, event);
 			// 申请侧
 			case 'getListingByCode':
 				return await getListingByCode((event.code || '').trim().toUpperCase(), userId);
@@ -67,6 +74,9 @@ exports.main = async (event, context) => {
 			case 'cancelApply':
 				if (!userId) return { code: -1, msg: '请先登录' };
 				return await softDeleteApply(event.applyId, userId, true);
+			case 'updateApplyRemark':
+				if (!userId) return { code: -1, msg: '请先登录' };
+				return await updateApplyRemark(event.applyId, userId, event.remark);
 			// A 管理申请
 			case 'updateApplyQty':
 				if (!userId) return { code: -1, msg: '请先登录' };
@@ -74,9 +84,15 @@ exports.main = async (event, context) => {
 			case 'deleteApply':
 				if (!userId) return { code: -1, msg: '请先登录' };
 				return await softDeleteApply(event.applyId, userId, false);
+			case 'ownerAddApply':
+				if (!userId) return { code: -1, msg: '请先登录' };
+				return await ownerAddApply(userId, event);
 			case 'confirmApply':
 				if (!userId) return { code: -1, msg: '请先登录' };
 				return await confirmApply(event.applyId, userId);
+			case 'setApplyNote':
+				if (!userId) return { code: -1, msg: '请先登录' };
+				return await setApplyNote(event.applyId, userId, event.note);
 			default:
 				return { code: -1, msg: '未知操作: ' + action };
 		}
@@ -102,11 +118,11 @@ async function createListing(userId, event) {
 	if (!(expireDays >= 1)) expireDays = 7;
 	if (expireDays > 90) expireDays = 90;
 
-	// 生成唯一码（最多重试 10 次）
+	// 生成唯一码（最多重试 10 次；已取消的旧单也占码，避免同码多单）
 	let code = '';
 	for (let i = 0; i < 10; i++) {
 		const c = genCode();
-		const exist = await db.collection(LISTING).where({ code: c, status: dbCmd.neq(LS_DELETED) }).count();
+		const exist = await db.collection(LISTING).where({ code: c }).count();
 		if (exist.total === 0) { code = c; break; }
 	}
 	if (!code) return { code: -1, msg: '物料码生成失败，请重试' };
@@ -133,8 +149,9 @@ async function createListing(userId, event) {
 async function getMyListings(userId) {
 	// 顺带把过期但未标记的发布单刷新一下
 	await autoExpireByUser(userId);
+	// 含已取消（软删）的单，便于发布者恢复/再次编辑
 	const res = await db.collection(LISTING)
-		.where({ user_id: userId, status: dbCmd.neq(LS_DELETED) })
+		.where({ user_id: userId })
 		.orderBy('create_date', 'desc')
 		.limit(100)
 		.get();
@@ -163,7 +180,7 @@ async function getListingForManage(listingId, userId) {
 	const listing = lRes.data && lRes.data[0];
 	if (!listing) return { code: -1, msg: '发布单不存在' };
 	if (listing.user_id !== userId) return { code: -1, msg: '无权查看该发布单' };
-	if (listing.status === LS_DELETED) return { code: -1, msg: '发布单已删除' };
+	// 已取消的单也允许进管理页（可恢复）
 
 	const aRes = await db.collection(APPLY)
 		.where({ listing_id: listingId, status: dbCmd.in([AP_PENDING, AP_CONFIRMED]) })
@@ -176,6 +193,8 @@ async function getListingForManage(listingId, userId) {
 		nickname: a.nickname,
 		qty: a.qty,
 		remark: a.remark || '',
+		owner_note: a.owner_note || '', // 仅发布者可见，只在管理接口返回
+		source: a.source || 'user', // owner = 发布者自行补录
 		offer_item: a.offer_item || '',
 		status: a.status,
 		applied_at: a.applied_at
@@ -212,22 +231,90 @@ async function deleteListing(listingId, userId) {
 	const listing = lRes.data && lRes.data[0];
 	if (!listing) return { code: -1, msg: '发布单不存在' };
 	if (listing.user_id !== userId) return { code: -1, msg: '无权删除该发布单' };
+	if (listing.status === LS_DELETED) return { code: 0, msg: '已是取消状态', data: {} };
 
 	await db.collection(LISTING).doc(listingId).update({ status: LS_DELETED, update_date: now() });
-	// 软删其下所有有效申请
-	await db.collection(APPLY)
+	// 软删其下所有有效申请：逐条记录原状态，供恢复时还原
+	const aRes = await db.collection(APPLY)
 		.where({ listing_id: listingId, status: dbCmd.in([AP_PENDING, AP_CONFIRMED]) })
-		.update({ status: AP_DELETED, deleted_at: now() });
-	return { code: 0, msg: '已删除', data: {} };
+		.limit(200).get();
+	const t = now();
+	for (const a of (aRes.data || [])) {
+		await db.collection(APPLY).doc(a._id).update({
+			status: AP_DELETED, deleted_at: t,
+			prev_status: a.status, cancel_reason: 'listing_cancelled'
+		});
+	}
+	return { code: 0, msg: '已取消', data: {} };
+}
+
+// A 恢复已取消的发布单：连同被联动取消的申请一并还原
+async function restoreListing(listingId, userId) {
+	const lRes = await db.collection(LISTING).doc(listingId).get();
+	const listing = lRes.data && lRes.data[0];
+	if (!listing) return { code: -1, msg: '发布单不存在' };
+	if (listing.user_id !== userId) return { code: -1, msg: '无权操作该发布单' };
+	if (listing.status !== LS_DELETED) return { code: 0, msg: '无需恢复', data: {} };
+
+	const aRes = await db.collection(APPLY)
+		.where({ listing_id: listingId, status: AP_DELETED, cancel_reason: 'listing_cancelled' })
+		.limit(200).get();
+	for (const a of (aRes.data || [])) {
+		await db.collection(APPLY).doc(a._id).update({
+			status: a.prev_status === AP_CONFIRMED ? AP_CONFIRMED : AP_PENDING,
+			cancel_reason: '', prev_status: ''
+		});
+	}
+
+	const expired = listing.expire_at && listing.expire_at < now();
+	const used = listing.used_qty || 0;
+	let target = used >= listing.total_qty ? LS_FULL : LS_ACTIVE;
+	if (expired) target = LS_EXPIRED;
+	await db.collection(LISTING).doc(listingId).update({ status: target, update_date: now() });
+	return { code: 0, msg: '已恢复', data: { status: target } };
+}
+
+// A 编辑发布内容（已取消的先恢复后再编辑）
+async function updateListing(listingId, userId, event) {
+	const lRes = await db.collection(LISTING).doc(listingId).get();
+	const listing = lRes.data && lRes.data[0];
+	if (!listing) return { code: -1, msg: '发布单不存在' };
+	if (listing.user_id !== userId) return { code: -1, msg: '无权编辑该发布单' };
+	if (listing.status === LS_DELETED) return { code: -1, msg: '发布已取消，请先恢复后再编辑' };
+
+	const upd = {};
+	if (event.name !== undefined) {
+		const name = String(event.name).trim();
+		if (!name) return { code: -1, msg: '请填写物料名称' };
+		if (name.length > 40) return { code: -1, msg: '名称最多 40 字' };
+		upd.name = name;
+	}
+	if (event.image !== undefined) upd.image = String(event.image).trim();
+	if (event.remark !== undefined) upd.remark = String(event.remark).trim().slice(0, 200);
+	if (event.allowFree !== undefined) upd.allow_free = event.allowFree !== false;
+	if (event.totalQty !== undefined) {
+		const tq = parseInt(event.totalQty);
+		if (!(tq >= 1)) return { code: -1, msg: '互换数量至少 1' };
+		if (tq > 999) return { code: -1, msg: '互换数量过大' };
+		if (tq < (listing.used_qty || 0)) return { code: -1, msg: `不能小于已分配的 ${listing.used_qty} 份` };
+		upd.total_qty = tq;
+	}
+	if (Object.keys(upd).length === 0) return { code: 0, msg: '无修改', data: {} };
+	upd.update_date = now();
+	await db.collection(LISTING).doc(listingId).update(upd);
+	// 总量调整后刷新满员/进行中原状
+	await refreshFullStatus(listingId);
+	return { code: 0, msg: '已保存', data: {} };
 }
 
 /* ============ 申请 ============ */
 // B 凭码查询（公开信息 + 剩余名额 + 是否已申请）
 async function getListingByCode(code, userId) {
 	if (!code) return { code: -1, msg: '请输入物料码' };
-	const res = await db.collection(LISTING).where({ code, status: dbCmd.neq(LS_DELETED) }).limit(1).get();
+	// 不排除已取消单：让申请者能看到「已取消」提示
+	const res = await db.collection(LISTING).where({ code }).limit(1).get();
 	const listing = res.data && res.data[0];
-	if (!listing) return { code: -1, msg: '物料码无效或已被删除' };
+	if (!listing) return { code: -1, msg: '物料码无效' };
 
 	const expired = listing.expire_at && listing.expire_at < now();
 	let showStatus = listing.status;
@@ -240,9 +327,18 @@ async function getListingByCode(code, userId) {
 		const mRes = await db.collection(APPLY)
 			.where({ listing_id: listing._id, applicant_id: userId, status: dbCmd.in([AP_PENDING, AP_CONFIRMED]) })
 			.limit(1).get();
-		if (mRes.data && mRes.data[0]) {
-			const m = mRes.data[0];
-			myApply = { _id: m._id, qty: m.qty, status: m.status, nickname: m.nickname, remark: m.remark || '', offer_item: m.offer_item || '' };
+		let m = mRes.data && mRes.data[0];
+		let applyCancelled = false;
+		// 发布单已取消：取被联动取消的申请，向本人提示「已取消」
+		if (!m && listing.status === LS_DELETED) {
+			const cRes = await db.collection(APPLY)
+				.where({ listing_id: listing._id, applicant_id: userId, status: AP_DELETED, cancel_reason: 'listing_cancelled' })
+				.orderBy('deleted_at', 'desc').limit(1).get();
+			m = cRes.data && cRes.data[0];
+			if (m) applyCancelled = true;
+		}
+		if (m) {
+			myApply = { _id: m._id, qty: m.qty, status: applyCancelled ? 2 : m.status, nickname: m.nickname, remark: m.remark || '', offer_item: m.offer_item || '' };
 		}
 	}
 
@@ -334,9 +430,68 @@ async function applyExchange(userId, event) {
 	return { code: 0, msg: '申请成功', data: { applyId: addRes.id } };
 }
 
+// A（发布者）自行补录一条申请：线下换物时代客登记，不关联申请人账号
+async function ownerAddApply(userId, event) {
+	const listingId = String(event.listingId || '').trim();
+	const nickname = String(event.nickname || '').trim().slice(0, 20);
+	const remark = String(event.remark || '').trim().slice(0, 100);
+	const note = String(event.note || '').trim().slice(0, 100); // 发布者私密备注
+	const offerItem = String(event.offerItem || '').trim().slice(0, 100);
+	const qty = Math.max(1, parseInt(event.qty) || 1);
+
+	if (!listingId) return { code: -1, msg: '缺少发布单' };
+	if (!nickname) return { code: -1, msg: '请填写对方昵称' };
+
+	const lRes = await db.collection(LISTING).doc(listingId).get();
+	const listing = lRes.data && lRes.data[0];
+	if (!listing || listing.status === LS_DELETED) return { code: -1, msg: '发布单不存在' };
+	if (listing.user_id !== userId) return { code: -1, msg: '无权操作该发布单' };
+
+	// 防超卖：与 applyExchange 同样的条件原子自增
+	const cap = listing.total_qty - qty;
+	if (cap < 0) return { code: -1, msg: '数量超过总名额' };
+	const upd = await db.collection(LISTING)
+		.where({ _id: listing._id, used_qty: dbCmd.lte(cap) })
+		.update({ used_qty: dbCmd.inc(qty), applicant_cnt: dbCmd.inc(1), update_date: now() });
+	if (!upd || upd.updated === 0) {
+		const remain = Math.max(0, listing.total_qty - (listing.used_qty || 0));
+		return { code: -1, msg: remain > 0 ? `名额不足，仅剩 ${remain} 份` : '名额已满' };
+	}
+
+	const t = now();
+	let addRes;
+	try {
+		addRes = await db.collection(APPLY).add({
+			listing_id: listing._id,
+			owner_id: userId,
+			applicant_id: '', // 补录记录无申请人账号
+			source: 'owner',
+			nickname,
+			qty,
+			remark,
+			owner_note: note,
+			offer_item: offerItem,
+			status: AP_PENDING,
+			applied_at: t
+		});
+	} catch (e) {
+		// 写申请失败，回滚名额
+		await db.collection(LISTING).where({ _id: listing._id })
+			.update({ used_qty: dbCmd.inc(-qty), applicant_cnt: dbCmd.inc(-1), update_date: now() });
+		throw e;
+	}
+
+	await refreshFullStatus(listing._id);
+	return { code: 0, msg: '已添加申请', data: { applyId: addRes.id } };
+}
+
 async function getMyApplies(userId) {
+	// 除有效申请外，一并取回因发布取消而被联动取消的申请（用于展示「已取消」）
 	const aRes = await db.collection(APPLY)
-		.where({ applicant_id: userId, status: dbCmd.in([AP_PENDING, AP_CONFIRMED]) })
+		.where(dbCmd.or([
+			{ applicant_id: userId, status: dbCmd.in([AP_PENDING, AP_CONFIRMED]) },
+			{ applicant_id: userId, status: AP_DELETED, cancel_reason: 'listing_cancelled' }
+		]))
 		.orderBy('applied_at', 'desc')
 		.limit(100)
 		.get();
@@ -353,7 +508,7 @@ async function getMyApplies(userId) {
 		listing_id: a.listing_id,
 		nickname: a.nickname,
 		qty: a.qty,
-		status: a.status,
+		status: a.status === AP_DELETED ? 2 : a.status, // 2 = 已取消（发布方取消联动）
 		applied_at: a.applied_at,
 		listingName: (nameMap[a.listing_id] && nameMap[a.listing_id].name) || '（发布单已删除）',
 		listingCode: (nameMap[a.listing_id] && nameMap[a.listing_id].code) || ''
@@ -432,6 +587,31 @@ async function confirmApply(applyId, ownerId) {
 
 	await db.collection(APPLY).doc(applyId).update({ status: AP_CONFIRMED, confirmed_at: now() });
 	return { code: 0, msg: '已标记互换', data: {} };
+}
+
+// B 申请后修改自己的备注（仅待处理状态可改）
+async function updateApplyRemark(applyId, userId, remark) {
+	remark = String(remark || '').trim().slice(0, 100);
+	const aRes = await db.collection(APPLY).doc(applyId).get();
+	const apply = aRes.data && aRes.data[0];
+	if (!apply || apply.status === AP_DELETED) return { code: -1, msg: '申请不存在' };
+	if (apply.applicant_id !== userId) return { code: -1, msg: '无权修改该申请' };
+	if (apply.status === AP_CONFIRMED) return { code: -1, msg: '已互换的申请不能修改备注' };
+
+	await db.collection(APPLY).doc(applyId).update({ remark, remark_update_at: now() });
+	return { code: 0, msg: '备注已保存', data: { remark } };
+}
+
+// A 给申请添加仅自己可见的备注（与申请者的 remark 相互独立）
+async function setApplyNote(applyId, ownerId, note) {
+	note = String(note || '').trim().slice(0, 100);
+	const aRes = await db.collection(APPLY).doc(applyId).get();
+	const apply = aRes.data && aRes.data[0];
+	if (!apply || apply.status === AP_DELETED) return { code: -1, msg: '申请不存在' };
+	if (apply.owner_id !== ownerId) return { code: -1, msg: '无权操作该申请' };
+
+	await db.collection(APPLY).doc(applyId).update({ owner_note: note });
+	return { code: 0, msg: '已保存', data: { owner_note: note } };
 }
 
 /* ============ 辅助 ============ */
